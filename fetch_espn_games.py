@@ -5,6 +5,7 @@
   raw/boxscores_2026-27.json 逐場的出手/罰球/籃板/失誤（算本季 PACE 用）。有快取：已經抓過的場次不會再抓，
                              所以第一次跑要幾分鐘，之後每次只抓新打完的比賽。
   raw/players_2026-27.json   逐場的球員數據（上場時間、得分、籃板、助攻、正負值），算每隊得分前三高的球員用。一樣是增量。
+  raw/injuries_latest.json   ESPN 現在的傷病名單（每次覆蓋），build_data.py 拿它算還沒開打的比賽的傷病扣分。
 
 只收 STATUS_FINAL（已完賽）的比賽，打到一半或還沒打的不收。ESPN 日期是美東日期，和
 Basketball-Reference 一致。任何一天或任何一場抓取失敗就直接報錯，不會默默少資料。
@@ -16,6 +17,7 @@ Basketball-Reference 一致。任何一天或任何一場抓取失敗就直接�
 執行：python fetch_espn_games.py
       python fetch_espn_games.py --end 2026-11-10     （只抓到指定日期）
       python fetch_espn_games.py --no-schedule        （不更新賽程）
+      python fetch_espn_games.py --injuries-only      （只更新傷病名單，幾秒鐘）
 """
 import argparse
 import json
@@ -35,6 +37,8 @@ BOX_FILE = RAW / "boxscores_2026-27.json"
 SCHEDULE_FILE = RAW / "schedule_2026-27.json"
 ODDS_FILE = RAW / "odds_2026-27.json"  # 已完賽比賽的賭盤紀錄（開盤與收盤）
 PLAYERS_FILE = RAW / "players_2026-27.json"  # 已完賽比賽的逐場球員數據
+INJ_FILE = RAW / "injuries_latest.json"  # ESPN 現在的傷病名單（最新一份，每次更新覆蓋）
+INJ_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
 PRE_HOURS = 48  # 未來幾小時內要開賽的比賽，更新時就先記下目前的盤口（開賽後 ESPN 賽事列表就不給盤口了）
 SEASON_END = date(2027, 4, 11)  # 例行賽最後一天（美東日期）
 # 賽程從哪個美東日期開始抓：網頁賽程分頁最早能看的台灣日期（build_data.py 的 SCHEDULE_SHOW_FROM）
@@ -266,6 +270,33 @@ def write_odds():
     print(f"賭盤紀錄：新存 {new} 場，查不到 {missing} 場，共 {len(cache)} 場 -> {ODDS_FILE}")
 
 
+def write_injuries():
+    """傷病名單 -> raw/injuries_latest.json（ESPN 現在的名單，每次更新整個重抓覆蓋）。
+
+    build_data.py 拿它算「還沒開打的比賽」每隊缺陣球員的傷病扣分；開賽後那場的扣分就凍結在
+    raw/injury_adj_2026-27.json，不會再跟著名單變，所以這份檔案只需要最新的一份。
+    每位球員記 id（ESPN 球員編號，和逐場球員數據的編號一樣）、名字、狀態（Out = 缺陣、Day-To-Day = 每日觀察）。
+    """
+    import re
+    j = fetch_json(INJ_URL, "傷病名單")
+    teams = {}
+    for t in j.get("injuries", []):
+        rows = []
+        for i in t.get("injuries", []):
+            a = i.get("athlete") or {}
+            m = re.search(r"/id/(\d+)/", json.dumps(a.get("links", [])))
+            pid = str(a.get("id") or (m.group(1) if m else ""))
+            if pid:
+                rows.append({"id": pid, "n": a.get("displayName", "?"), "s": i.get("status", "")})
+        teams[NAME_FIX.get(t["displayName"], t["displayName"])] = rows
+    fetched = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+    INJ_FILE.write_text('{\n"fetched": "' + fetched + '",\n"teams": {\n' +
+                        ",\n".join(f'{json.dumps(k, ensure_ascii=False)}: {json.dumps(v, ensure_ascii=False)}' for k, v in sorted(teams.items())) +
+                        "\n}\n}\n", encoding="utf-8")
+    n_out = sum(1 for v in teams.values() for r in v if r["s"] == "Out")
+    print(f"傷病名單：{len(teams)} 隊，缺陣 {n_out} 人 -> {INJ_FILE}")
+
+
 def main(end, with_schedule=True):
     cache = json.loads(BOX_FILE.read_text(encoding="utf-8")) if BOX_FILE.exists() else {}
     lines, n, new_boxes = [], 0, 0
@@ -293,11 +324,16 @@ def main(end, with_schedule=True):
         write_schedule()
     write_odds()
     write_players()
+    write_injuries()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="從 ESPN 抓新球季已完賽比分、boxscore 與賽程，寫進 raw/")
     parser.add_argument("--end", type=date.fromisoformat, default=date.today(), help="抓到哪一天（預設今天）")
     parser.add_argument("--no-schedule", action="store_true", help="不更新賽程")
+    parser.add_argument("--injuries-only", action="store_true", help="只更新傷病名單（開賽前想刷新傷病扣分時用，幾秒鐘）")
     args = parser.parse_args()
-    main(args.end, not args.no_schedule)
+    if args.injuries_only:
+        write_injuries()
+    else:
+        main(args.end, not args.no_schedule)

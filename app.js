@@ -87,12 +87,13 @@
     return (1 - w) * shrunk(t.gp, t.net) + w * shrunk(Math.min(10, t.gp), t.net10);
   }
 
-  function predictSeason(a, h, ha) {
+  // adj = 傷病扣分 { a: 客隊缺陣扣分, h: 主隊缺陣扣分 }（點數）；扣在預測分差上：新分差 = 原分差 - 主隊扣分 + 客隊扣分，總分不變
+  function predictSeason(a, h, ha, adj) {
     var w = MODEL.recentWeight;
     var totalSeason = (a.off + h.def) / 2 + (h.off + a.def) / 2;
     var totalRecent = (a.l10off + h.l10def) / 2 + (h.l10off + a.l10def) / 2;
     var total = (1 - w) * totalSeason + w * totalRecent;
-    var margin = rating(h) - rating(a) + (ha == null ? MODEL.homeAdv : ha);
+    var margin = rating(h) - rating(a) + (ha == null ? MODEL.homeAdv : ha) - (adj ? adj.h - adj.a : 0);
     return { away: total / 2 - margin / 2, home: total / 2 + margin / 2 };
   }
 
@@ -171,14 +172,16 @@
 
   // 隊色直接當文字色，有些顏色在卡片底色上會看不清楚（深色底上的深藍、淺色底上的亮黃）：
   // 對比不到 4.5 就往白色（深色底）或黑色（淺色底）一步步調整，直到看得清楚，色相不變
-  function readableOn(hex, bg) {
+  // minRatio 預設 4.5（文字用）；比例條這種色塊只要和底色分得開就好，傳比較小的值（金黃色才不會被壓成咖啡色）
+  function readableOn(hex, bg, minRatio) {
+    var need = minRatio || 4.5;
     var c = hexToRgb(hex);
     var bgL = luminance(bg);
     var target = bgL < 0.5 ? [255, 255, 255] : [0, 0, 0];
     for (var p = 0; p <= 1.0001; p += 0.05) {
       var m = c.map(function (v, i) { return Math.round(v + (target[i] - v) * p); });
       var l = luminance(m);
-      if ((Math.max(l, bgL) + 0.05) / (Math.min(l, bgL) + 0.05) >= 4.5) return "rgb(" + m.join(",") + ")";
+      if ((Math.max(l, bgL) + 0.05) / (Math.min(l, bgL) + 0.05) >= need) return "rgb(" + m.join(",") + ")";
     }
     return "rgb(" + target.join(",") + ")";
   }
@@ -239,12 +242,12 @@
 
   function winnerOf(p) { return p.home >= p.away ? "home" : "away"; }
 
-  // 預測信心：看大比分（①實力評分法）兩隊比分各四捨五入到 0.1 之後的分差（取絕對值），門檻來自三季回測：
-  //   0 ~ 3.5 分 低信心 ／ 3.6 ~ 6.5 分 中信心 ／ 6.6 分以上 高信心（猜對率見 README）
+  // 預測信心：看大比分（①實力評分法）兩隊比分各四捨五入到 0.1 之後的分差（取絕對值），門檻讓三個等級的場數大約各占三分之一
+  // （三季回測、含傷病扣分的預測分差）：0 ~ 3.5 分 低信心 ／ 3.6 ~ 8.0 分 中信心 ／ 8.1 分以上 高信心（猜對率見 README）
   function confidenceOf(p) {
     var gap = Math.round(Math.abs(Number(f1(p.home)) - Number(f1(p.away))) * 10) / 10;
     if (gap <= 3.5) return { key: "low", label: "低信心" };
-    if (gap <= 6.5) return { key: "mid", label: "中信心" };
+    if (gap <= 8.0) return { key: "mid", label: "中信心" };
     return { key: "high", label: "高信心" };
   }
 
@@ -254,9 +257,29 @@
   }
 
   // 球季進行中：兩個分數與「兩種模式方向是否一致」（賽程列表和對戰畫面共用）；neutral 時不加主場優勢
-  function compareModels(a, h, isNeutral) {
+  // 傷病扣分（資料由 build_data.py 寫進賽程，11/8 起的比賽才有；已開賽的比賽凍結在開賽前最後一次更新）
+  function gameAdj(g) {  // 這場比賽的扣分 { a, h }；沒人被扣回傳 null
+    return g && (g.ja || g.jh) ? { a: g.ja || 0, h: g.jh || 0 } : null;
+  }
+  function matchAdj(a, h) {  // 自選對戰：有這組的下一場賽程就用那場（和賽程上的預測一致），沒有就用兩隊「現在」的缺陣扣分
+    var ug = upcomingGameOf(a.abbr, h.abbr);
+    if (ug) return gameAdj(ug);
+    var inj = SCHEDULE && SCHEDULE.inj;
+    return inj && (inj[a.abbr] || inj[h.abbr]) ? { a: inj[a.abbr] || 0, h: inj[h.abbr] || 0 } : null;
+  }
+  function adjNote(a, h, g) {  // 預測頁「已納入傷病」那行字；沒人被扣回傳空字串
+    var list = [];
+    if (g) {
+      (g.jp || []).forEach(function (x) { list.push([x[0] === "a" ? a : h, x[1], x[2]]); });
+    } else if (SCHEDULE && SCHEDULE.injn) {
+      [a, h].forEach(function (t) { (SCHEDULE.injn[t.abbr] || []).forEach(function (x) { list.push([t, x[0], x[1]]); }); });
+    }
+    return list.map(function (x) { return x[0].zh + " " + x[1]; }).join("、");
+  }
+
+  function compareModels(a, h, isNeutral, adj) {
     var ha = isNeutral ? 0 : null;
-    var p1 = predictSeason(a, h, ha);
+    var p1 = predictSeason(a, h, ha, adj);
     var p2 = predictLast10(a, h, ha);
     return { p1: p1, p2: p2, w1: winnerOf(p1), w2: winnerOf(p2), same: winnerOf(p1) === winnerOf(p2) };
   }
@@ -322,7 +345,11 @@
     }
     hint.hidden = true;
 
-    var cmp = MODEL ? compareModels(a, h, neutral) : null;
+    var adjGame = !MODEL ? null : pregame ? finalGame : upcomingGameOf(a.abbr, h.abbr);  // 傷病扣分來自這場比賽的賽程資料；沒有對應賽程（自選）就用兩隊現在的缺陣
+    var cmp = MODEL ? compareModels(a, h, neutral, adjGame ? gameAdj(adjGame) : matchAdj(a, h)) : null;
+    var injText = MODEL ? adjNote(a, h, adjGame) : "";
+    $("inj-adj-note").textContent = injText ? (adjGame && adjGame.jb ? "事後回補傷病：" : "已納入傷病：") + injText : "";
+    $("inj-adj-note").hidden = !injText;
     var pace = MODEL ? cmp.p1 : predictPace(a, h, neutral ? 0 : null);
     var wPace = winnerOf(pace);
     curPace = pace;  // 「依預測選擇」要用這次的預測比分
@@ -634,15 +661,18 @@
   }
 
   // ---------- 傷病名單（ESPN；打開頁面時即時抓，不寫進資料檔） ----------
-  // 預測數據沒有參考傷病，這張卡片只是放在賭盤上面給大家對照；已完賽的固定頁面不顯示（那是現在的名單，不是當時的）
+  // 11/8 起的預測有納入傷病（缺陣球員依場均得分分級扣分，見 build_data.py 的 apply_injury_adj）；這張卡片是現在的完整名單，
+  // 放在賭盤上面給大家對照；已完賽的固定頁面不顯示（那是現在的名單，不是當時的）
   var ESPN_INJ = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries";
   var injCache = null;  // { t: 抓取時間, p: Promise({ by: 球隊名 -> 傷病名單 }) }；5 分鐘內重用，不重複打 ESPN
   var injToken = 0;     // 切換球隊很快時，只畫最後一次的結果
   var INJ_PART = { Knee: "膝蓋", Toe: "腳趾", Hip: "髖部", Ankle: "腳踝", Foot: "腳掌", Eye: "眼睛", Illness: "生病", Undisclosed: "傷勢未公開",
     Leg: "腿", Shoulder: "肩膀", Thigh: "大腿", Quadriceps: "大腿前側", Hamstring: "大腿後側", Hand: "手", Heel: "腳跟", Back: "背部",
-    Calf: "小腿", Achilles: "阿基里斯腱", Groin: "鼠蹊" };
+    Calf: "小腿", Achilles: "阿基里斯腱", Groin: "鼠蹊", Elbow: "手肘", Wrist: "手腕", Neck: "頸部", Rib: "肋骨", Finger: "手指",
+    Head: "頭部", Chest: "胸部", Abdomen: "腹部", Forearm: "前臂", Ribs: "肋骨", Concussion: "腦震盪" };
   var INJ_KIND = { Inflammation: "發炎", Fracture: "骨折", Abrasion: "擦傷", Soreness: "痠痛", Bruise: "瘀傷", Sprain: "扭傷", Strain: "拉傷",
-    Surgery: "手術", Spasms: "痙攣", Dislocated: "脫臼", "Pinched Nerve": "神經夾擠" };
+    Surgery: "手術", Spasms: "痙攣", Dislocated: "脫臼", "Pinched Nerve": "神經夾擠", Tightness: "緊繃", Tendinitis: "肌腱炎",
+    Contusion: "挫傷", Tear: "撕裂", Laceration: "撕裂傷" };
 
   function fetchInjuries() {
     if (injCache && Date.now() - injCache.t < 300000) return injCache.p;
@@ -659,41 +689,105 @@
     return p;
   }
 
-  function injRow(x) {
+  // 這隊的下一個對手（中文隊名）：賽程裡今天（台灣）起第一場還沒打完的比賽；找不到回傳空字串
+  function nextOpponent(abbr) {
+    if (!SCHEDULE || !abbr) return "";
+    var today = todayTW();
+    for (var i = 0; i < SCHEDULE.games.length; i++) {
+      var g = withLive(SCHEDULE.games[i]);
+      if ((g.a !== abbr && g.h !== abbr) || (g.s !== "S" && g.s !== "L") || g.d < today || !g.a || !g.h) continue;
+      var opp = T[ABBR[g.h === abbr ? g.a : g.h]];
+      return opp ? opp.zh : "";
+    }
+    return "";
+  }
+
+  // 出賽狀態（賽前決定這一類），寫在「預計回歸」後面，例如「對公牛 出賽成疑」「對公牛 預計會出賽」：
+  // ESPN 的傷病資料只分「缺陣 / 每日觀察」，更細的（出賽成疑、臨場決定…）只寫在傷病快訊文字裡，
+  // 所以從快訊文字找關鍵字；只採用 2 天內的快訊，太舊的快訊講的不是下一場，不採用
+  function injGameStatus(x, abbr) {
+    var t = x.date ? Date.parse(x.date) : NaN;
+    var opp = nextOpponent(abbr);
+    if (isNaN(t) || Date.now() - t > 48 * 3600 * 1000 || !opp) return "";
+    var rules = [[/game[- ]time decision/i, "臨場決定"], [/\bquestionable\b/i, "出賽成疑"],
+      [/\bdoubtful\b/i, "不太可能出賽"], [/\bprobable\b/i, "預計會出賽"]];
+    var texts = [x.shortComment || "", x.longComment || ""];
+    for (var k = 0; k < texts.length; k++) {
+      for (var r = 0; r < rules.length; r++) {
+        if (rules[r][0].test(texts[k])) return "對" + opp + " " + rules[r][1];
+      }
+    }
+    return "";
+  }
+
+  var SEASON_END_US = "2027-04-12";  // 2026-27 例行賽結束後的第一天（美國日期）；預計回歸日不早於這天就算整季報銷
+
+  // 球員本季場均數據（data/player_tiers.js，ESPN 球員編號 -> {gp, pts, reb, ast, pm}）；傷病名單每位球員名字下面顯示
+  var PSTAT = null;
+  function playerStat(pid) {
+    var tr = window.NBA_PLAYER_TIERS;
+    if (!tr) return null;
+    if (!PSTAT) {
+      PSTAT = {};
+      Object.keys(tr.teams).forEach(function (t) { tr.teams[t].forEach(function (p) { PSTAT[p.id] = p; }); });
+    }
+    return PSTAT[pid] || null;
+  }
+
+  function injRow(x, abbr) {
     var d = x.details || {};
+    var idm = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));  // ESPN 傷病資料的球員編號藏在連結裡
+    var ps = idm ? playerStat(idm[1]) : null;
+    var stat = ps && ps.pts >= 10 ? '<div class="inj-stat">得分 ' + f1(ps.pts) + " / 籃板 " + f1(ps.reb) + " / 助攻 " + f1(ps.ast) + " / +/- " + sgn(ps.pm) +
+      ' <span class="inj-gp">（' + ps.gp + " 場）</span></div>" : "";  // 場均得分不到 10 分、或本季沒出賽過的人不提供數據
     var place = (d.side === "Left" ? "左" : d.side === "Right" ? "右" : "") + (INJ_PART[d.type] || d.type || "");
     var kind = d.detail && d.detail !== "Not Specified" ? (INJ_KIND[d.detail] || d.detail) : "";
-    var ret = /^\d{4}-\d{2}-\d{2}$/.test(d.returnDate || "") ? "預計 " + Number(d.returnDate.slice(5, 7)) + "/" + Number(d.returnDate.slice(8)) + " 回歸" : "";
+    // ESPN 給的預計回歸是美國日期（指那天晚上的比賽）；美國晚上的比賽是台灣隔天，所以加 1 天換成台灣日期
+    var tw = /^\d{4}-\d{2}-\d{2}$/.test(d.returnDate || "") ? addDays(d.returnDate, 1) : "";
+    var ret = tw ? "預計 " + Number(tw.slice(5, 7)) + "/" + Number(tw.slice(8)) + " 回歸" : "";
     var st = x.status === "Out" ? '<span class="inj-st out">缺陣</span>' : x.status === "Day-To-Day" ? '<span class="inj-st dtd">每日觀察</span>' :
       '<span class="inj-st">' + (x.status || "") + "</span>";
     var pos = x.athlete && x.athlete.position && x.athlete.position.abbreviation;
-    return '<li><div class="inj-who"><b>' + ((x.athlete && x.athlete.displayName) || "?") + "</b>" + (pos ? " <span class=\"inj-pos\">" + pos + "</span>" : "") +
-      " " + st + '</div><div class="inj-what">' + [place + kind, ret].filter(Boolean).join("・") + "</div></li>";
+    // 整季報銷：預計回歸日在例行賽結束之後（ESPN 對長期傷勢會填一個很遠的日期），或傷病快訊明說 season-ending / 剩下整季都缺席
+    var seasonOut = (d.returnDate || "") >= SEASON_END_US ||
+      /season-ending|rest of the (2026-27 )?season|miss the (entire |rest of the )?(2026-27 )?season|remainder of the season|out for the (season|year)/i.test((x.shortComment || "") + " " + (x.longComment || ""));
+    st += seasonOut ? '<span class="inj-season">整季報銷</span>' : "";
+    return '<li><div class="inj-who"><span class="inj-nm"><b>' + ((x.athlete && x.athlete.displayName) || "?") + "</b>" + (pos ? " <span class=\"inj-pos\">" + pos + "</span>" : "") +
+      "</span> " + st + "</div>" + stat + '<div class="inj-what">' + [place + kind, ret, injGameStatus(x, abbr)].filter(Boolean).join("・") + "</div></li>";
   }
 
-  // 傷病名單排序：缺陣在前、每日觀察其次、其他最後
+  // 傷病名單：全部列出，排序依本季場均得分由高到低（本季沒出賽過、沒有場均得分的排最後）；得分一樣就缺陣在前、每日觀察其次，再依名字
   function injSorted(list) {
     var order = { "Out": 0, "Day-To-Day": 1 };
     var rank = function (x) { return order[x.status] != null ? order[x.status] : 2; };
-    return (list || []).slice().sort(function (x, y) { return rank(x) - rank(y); });
+    var ppg = function (x) {
+      var m = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));
+      var ps = m ? playerStat(m[1]) : null;
+      return ps ? ps.pts : -1;
+    };
+    var name = function (x) { return (x.athlete && x.athlete.displayName) || ""; };
+    return (list || []).slice().sort(function (x, y) {
+      return ppg(y) - ppg(x) || rank(x) - rank(y) || name(x).localeCompare(name(y));
+    });
   }
 
   function renderInjuries(aKey, hKey, a, h, aColor, hColor) {
     var card = $("inj-card");
     var token = ++injToken;
-    var head = '<div class="odds-title">🚑 傷病名單</div><p class="inj-warn">預測數據沒有參考傷病</p>';
+    var head = '<div class="odds-title">🚑 傷病名單</div><p class="inj-warn">11/8 開始有納入傷病</p>';
     card.innerHTML = head + '<p class="odds-msg">載入中…</p>';
     card.hidden = false;
     fetchInjuries().then(function (res) {
       if (token !== injToken) return;
       var team = function (key, t, color) {
         var list = injSorted(res.by[key]);
-        return '<div class="inj-team" style="color:' + color + '">' + t.zh + "</div>" +
-          (list.length ? '<ul class="inj-list">' + list.map(injRow).join("") + "</ul>" : '<p class="inj-none">目前沒有傷病名單</p>');
+        return '<div class="inj-team"><span class="badge" style="background:' + t.color + ";color:" + badgeTextColor(t.color) + '">' + t.abbr +
+          '</span><span class="inj-tn">' + t.zh + "</span></div>" +
+          (list.length ? '<ul class="inj-list">' + list.map(function (x) { return injRow(x, t.abbr); }).join("") + "</ul>" : '<p class="inj-none">目前沒有傷病名單</p>');
       };
       var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
       card.innerHTML = head + team(aKey, a, aColor) + team(hKey, h, hColor) +
-        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新</p>";
+        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新；場均分低於10分不提供數據；預計回歸日期為台灣日期；出賽狀態取自 2 天內的傷病快訊，沒標示代表 ESPN 沒有更新</p>";
     }, function () {
       if (token !== injToken) return;
       card.innerHTML = head + '<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>';
@@ -809,7 +903,7 @@
     var a = teams[ABBR[g.a]];
     var h = teams[ABBR[g.h]];
     if (!a.gp || !h.gp) return null;
-    var c = compareModels(a, h, g.n);
+    var c = compareModels(a, h, g.n, gameAdj(g));
     var homeWon = g.hs > g.as;
     // an / hn：兩隊的名稱資料（隊名、隊徽）一律從球隊總表拿，PRE_DAYS 裡只有算預測要用的數字
     return { a: a, h: h, an: T[ABBR[g.a]], hn: T[ABBR[g.h]], c: c,
@@ -844,7 +938,7 @@
     var h = g.h ? T[ABBR[g.h]] : null;
     var pi = MODEL ? preGameInfo(g) : null;
     // 首頁簡版：還沒開打的顯示預測比分；開打後已經抓到即時比分的，就跟賽程一樣顯示即時比分
-    var homePred = mode === "home" && MODEL && a && h && (g.s === "S" || g.s === "L") && !liveMidCache[date + "|" + g.a + "|" + g.h] ? compareModels(a, h, g.n) : null;
+    var homePred = mode === "home" && MODEL && a && h && (g.s === "S" || g.s === "L") && !liveMidCache[date + "|" + g.a + "|" + g.h] ? compareModels(a, h, g.n, gameAdj(g)) : null;
     var past = date < todayTW();
     var clickable = isClickable(g, date);
     var el = document.createElement(clickable ? "a" : "div");
@@ -892,7 +986,7 @@
     } else if (homePred) {
       line = confHtml(homePred.p1);
     } else if (MODEL && date === nextUpcomingDate()) {  // 只有「下一個比賽日」顯示預測和信心，更後面的日子先不顯示
-      var c = compareModels(a, h, g.n);
+      var c = compareModels(a, h, g.n, gameAdj(g));
       var wn = c.w1 === "home" ? h.zh : a.zh;  // 預測會贏的那隊
       line = "賽前預測比分：" + a.zh + " " + f1(c.p1.away) + " : " + f1(c.p1.home) + " " + h.zh + "<br>預測 <b>" + wn + "</b> 勝";
       if (timeMid) {  // 信心程度移到開賽時間下面（置中）；已經開打、中間換成即時比分的，就還是接在下面那行
@@ -1139,6 +1233,14 @@
   // 一場比賽的投票內容（投票頁每張卡、單場頁的投票卡片共用）：
   // btns 兩個投票按鈕（還能投才有）、bar 票數比例條、info 開賽後的對照（網友多數猜誰、我們預測誰，已完賽再標對錯）
   // crowd / model：已完賽時網友、我們猜對 (true) 或猜錯 (false)；沒得比就是 null
+  // 第二隊色：兩隊主色太像時，主隊改用這個（只有投票比例條會用到）
+  var ALT_COLOR = {
+    ATL: "#C1D32F", BOS: "#BA9653", BKN: "#000000", CHA: "#1D1160", CHI: "#000000", CLE: "#041E42", DAL: "#002B5E", DEN: "#0E2240",
+    DET: "#1D42BA", GSW: "#FFC72C", HOU: "#C4CED4", IND: "#002D62", LAC: "#1D428A", LAL: "#FDB927", MEM: "#12173F", MIA: "#F9A01B",
+    MIL: "#EEE1C6", MIN: "#78BE20", NOP: "#0C2340", NYK: "#006BB6", OKC: "#EF3B24", ORL: "#C4CED4", PHI: "#ED174C", PHX: "#1D1160",
+    POR: "#000000", SAC: "#63727A", SAS: "#000000", TOR: "#753BBD", UTA: "#002B5C", WAS: "#E31837"
+  };
+
   function voteParts(g, date) {
     var a = T[ABBR[g.a]], h = T[ABBR[g.h]];
     var v = votes[voteKey(g)] || {};
@@ -1154,11 +1256,18 @@
 
     // 比例條和票數都用兩隊的隊色（跟數據對照同一套，深色底上太暗的顏色會自動調亮）；兩隊顏色太像時，主隊改用灰色，才分得出來
     var bg = cardBackground();
-    var ca = readableOn(a.color, bg), ch = readableOn(h.color, bg);
+    var ca = readableOn(a.color, bg), ch = readableOn(h.color, bg);        // 文字色：要看得清楚
+    var ba = readableOn(a.color, bg, 1.5), bh = readableOn(h.color, bg, 1.5);  // 比例條色塊：只要和底色分得開，盡量保持原本的隊色（金塊才是金色）
     var rgbA = hexToRgb(a.color), rgbH = hexToRgb(h.color);
-    if (Math.abs(rgbA[0] - rgbH[0]) + Math.abs(rgbA[1] - rgbH[1]) + Math.abs(rgbA[2] - rgbH[2]) < 90) ch = "var(--muted)";
-    var bar = '<div class="vote-bar' + (tot ? "" : " empty") + '"' + (tot ? ' style="background:' + ch + '"' : "") +
-      '><span class="vb-a" style="width:' + pa + '%;background:' + ca + '"></span></div>' +
+    var colorGap = function (x, y) { return Math.abs(x[0] - y[0]) + Math.abs(x[1] - y[1]) + Math.abs(x[2] - y[2]); };
+    if (colorGap(rgbA, rgbH) < 90) {  // 兩隊顏色太像（例如金塊和溜馬都是黃色）：主隊改用牠的第二隊色，還是太像才用灰色
+      var alt = ALT_COLOR[h.abbr];
+      var useAlt = alt && colorGap(rgbA, hexToRgb(alt)) >= 90;
+      ch = useAlt ? readableOn(alt, bg) : "var(--muted)";
+      bh = useAlt ? readableOn(alt, bg, 1.5) : "var(--muted)";
+    }
+    var bar = '<div class="vote-bar' + (tot ? "" : " empty") + '"' + (tot ? ' style="background:' + bh + '"' : "") +
+      '><span class="vb-a" style="width:' + pa + '%;background:' + ba + '"></span></div>' +
       '<div class="vote-nums"><span style="color:' + ca + '">' + a.zh + " " + (ready ? na + " 票" + (tot ? "（" + pa + "%）" : "") : "—") + '</span><span style="color:' + ch + '">' +
       h.zh + " " + (ready ? nh + " 票" + (tot ? "（" + (100 - pa) + "%）" : "") : "—") + "</span></div>";
 
@@ -1175,7 +1284,7 @@
         }
         lines.push("網友多數猜 " + (crowd ? (crowd === "home" ? h : a).zh + " 勝" : "五五開") + cm);
       }
-      var c = pi ? pi.c : (MODEL && g.s !== "F" ? compareModels(a, h, g.n) : null);
+      var c = pi ? pi.c : (MODEL && g.s !== "F" ? compareModels(a, h, g.n, gameAdj(g)) : null);
       if (c) {
         if (pi) modelRes = pi.ok1;
         lines.push("我們預測 " + (c.w1 === "home" ? h : a).zh + " 勝（" + confHtml(c.p1) + "）" + (pi ? (pi.ok1 ? " ✅" : " ❌") : ""));
@@ -1379,10 +1488,10 @@
             (list.length - out - dtd ? '<span class="inj-st">其他 ' + (list.length - out - dtd) + "</span>" : "")
           : '<span class="inj-none">無</span>';
         return '<details class="inj-t"><summary><span class="st-team">' + miniBadge(T[k]) + "<span>" + T[k].zh + '</span></span><span class="inj-cnt">' + cnt + "</span></summary>" +
-          (list.length ? '<ul class="inj-list">' + list.map(injRow).join("") + "</ul>" : '<p class="inj-none">目前沒有傷病名單</p>') + "</details>";
+          (list.length ? '<ul class="inj-list">' + list.map(function (x) { return injRow(x); }).join("") + "</ul>" : '<p class="inj-none">目前沒有傷病名單</p>') + "</details>";
       }).join("");
       var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
-      $("inj-home-note").textContent = "經 ESPN 取得，台灣時間 " + hh + " 更新";
+      $("inj-home-note").innerHTML = "經 ESPN 取得，台灣時間 " + hh + " 更新<br>場均分低於10分不提供數據";
     }, function () {
       if (token !== injHomeToken) return;
       box.innerHTML = '<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>';
@@ -1391,9 +1500,9 @@
   }
 
   // ---------- 準確率：已完賽、有賽前數據的比賽，賽前預測（大比分）猜得準不準 ----------
-  // 三季回測（3643 場）的對照數字
-  var BACKTEST = { all: "66.3%", low: "54.1%", mid: "66.5%", high: "79.4%" };
-
+  // 三季回測（2023-24 ~ 2025-26，3643 場）的對照數字：現行方法（含傷病扣分，傷病用「事後誰沒上場」代替，偏樂觀）、
+  // 信心用上面的門檻（3.5 / 8.0）：低 668/1196、中 786/1190、高 1020/1257、全部 2474/3643
+  var BACKTEST = { all: "67.9%", low: "55.9%", mid: "66.1%", high: "81.1%" };
   function accuracyRows() {
     var rows = [];
     if (!MODEL || !SCHEDULE) return rows;
@@ -1401,7 +1510,7 @@
       var g = withLive(g0);  // ESPN 剛說打完、資料還沒更新的比賽也算
       var pi = g.s === "F" ? preGameInfo(g) : null;
       if (!pi) return;
-      rows.push({ d: g.d, ok: pi.ok1, lvl: confidenceOf(pi.c.p1).key });
+      rows.push({ d: g.d, ok: pi.ok1, lvl: confidenceOf(pi.c.p1).key, bf: !!g.jb });  // bf = 傷病扣分是事後回補的
     });
     return rows;
   }
@@ -1442,9 +1551,15 @@
     rows.forEach(function (r) { if (!days[r.d]) { days[r.d] = [0, 0]; order.push(r.d); } days[r.d][1]++; if (r.ok) days[r.d][0]++; });
     order.sort();
 
+    // 傷病扣分是事後回補的那幾天（11/8 以前，當時還沒有賽前傷病名單）要標明，不能說成賽前預測
+    var bfDays = rows.filter(function (r) { return r.bf; }).map(function (r) { return r.d; }).sort();
+    var md = function (d) { return Number(d.slice(5, 7)) + "/" + Number(d.slice(8)); };
+    var bfNote = bfDays.length
+      ? "；" + md(bfDays[0]) + "~" + md(bfDays[bfDays.length - 1]) + " 的傷病扣分是事後回補（以實際沒上場的球員代替當時的名單），不是賽前名單；其他都是用開賽前的數據預測，沒有看過結果"
+      : "；每一場都是用開賽前的數據預測，沒有看過結果";
     var html = '<div class="card acc-big"><div class="acc-label">賽前預測猜對勝負（台灣 ' + fmtDate(order[0]) + " 起，共 " + rows.length + " 場）</div>" +
       '<div class="acc-num">' + right + " / " + rows.length + "<small>" + pct(right, rows.length) + "</small></div>" +
-      '<p class="acc-note">三季回測 ' + BACKTEST.all + "；每一場都是用開賽前的數據預測，沒有看過結果</p></div>";
+      '<p class="acc-note">三季回測 ' + BACKTEST.all + bfNote + "</p></div>";
 
     // 每天的明細會越來越長（每個比賽日一列），預設收起來，點開才看
     html += '<details class="card acc-details"><summary>每天（' + order.length + ' 個比賽日）</summary><table class="acc-table"><thead><tr><th>日期（台灣）</th><th>猜對</th><th>準確率</th></tr></thead><tbody>' +

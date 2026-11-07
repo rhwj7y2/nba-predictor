@@ -1,0 +1,33 @@
+{
+"fetched": "2026-11-07T15:29Z",
+"teams": {
+"Atlanta Hawks": [{"id": "4585618", "n": "Keshon Gilbert", "s": "Day-To-Day"}, {"id": "4873201", "n": "Asa Newell", "s": "Day-To-Day"}, {"id": "4701230", "n": "Jalen Johnson", "s": "Out"}, {"id": "3146557", "n": "Jock Landale", "s": "Out"}, {"id": "4712863", "n": "Mouhamed Gueye", "s": "Out"}, {"id": "5105571", "n": "Henri Veesaar", "s": "Out"}],
+"Boston Celtics": [{"id": "4433188", "n": "Devin Carter", "s": "Out"}],
+"Brooklyn Nets": [{"id": "4712896", "n": "Noah Clowney", "s": "Day-To-Day"}, {"id": "4432194", "n": "Day'Ron Sharpe", "s": "Day-To-Day"}, {"id": "5175643", "n": "Egor Demin", "s": "Out"}, {"id": "5105626", "n": "Tyler Bilodeau", "s": "Out"}],
+"Charlotte Hornets": [{"id": "4433287", "n": "Brandon Miller", "s": "Day-To-Day"}, {"id": "3032979", "n": "Dennis Schroder", "s": "Out"}, {"id": "4433249", "n": "Moussa Diabate", "s": "Out"}, {"id": "5061575", "n": "Kon Knueppel", "s": "Out"}, {"id": "4066218", "n": "Grant Williams", "s": "Out"}],
+"Chicago Bulls": [{"id": "4066650", "n": "Zach Collins", "s": "Day-To-Day"}, {"id": "4278067", "n": "Nic Claxton", "s": "Out"}, {"id": "4397189", "n": "Jalen Smith", "s": "Day-To-Day"}],
+"Cleveland Cavaliers": [{"id": "4066757", "n": "Sam Merrill", "s": "Day-To-Day"}, {"id": "4066328", "n": "Jarrett Allen", "s": "Day-To-Day"}, {"id": "4683747", "n": "Jaylon Tyson", "s": "Out"}],
+"Dallas Mavericks": [{"id": "5279129", "n": "Sergio de Larrea", "s": "Out"}, {"id": "5148538", "n": "Tarik Biberovic", "s": "Out"}, {"id": "4683688", "n": "Dereck Lively II", "s": "Out"}],
+"Denver Nuggets": [{"id": "3978", "n": "DeMar DeRozan", "s": "Day-To-Day"}, {"id": "4432181", "n": "Julian Strawther", "s": "Out"}],
+"Detroit Pistons": [{"id": "4395702", "n": "Isaiah Joe", "s": "Out"}, {"id": "4433621", "n": "Jalen Duren", "s": "Out"}],
+"Golden State Warriors": [{"id": "6589", "n": "Draymond Green", "s": "Day-To-Day"}, {"id": "3134903", "n": "Gary Payton II", "s": "Day-To-Day"}, {"id": "3102531", "n": "Kristaps Porzingis", "s": "Out"}, {"id": "4997536", "n": "Gui Santos", "s": "Day-To-Day"}, {"id": "4432171", "n": "Moses Moody", "s": "Out"}, {"id": "6430", "n": "Jimmy Butler III", "s": "Out"}],
+"Houston Rockets": [{"id": "3102529", "n": "Clint Capela", "s": "Out"}, {"id": "2991235", "n": "Steven Adams", "s": "Out"}],
+"Indiana Pacers": [{"id": "2530530", "n": "T.J. McConnell", "s": "Out"}, {"id": "3133603", "n": "Kelly Oubre Jr.", "s": "Day-To-Day"}, {"id": "5157066", "n": "Johnny Furphy", "s": "Out"}, {"id": "4433076", "n": "Ben Sheppard", "s": "Out"}, {"id": "4396993", "n": "Tyrese Haliburton", "s": "Out"}],
+"Los Angeles Clippers": [{"id": "3913176", "n": "Brandon Ingram", "s": "Out"}, {"id": "5108024", "n": "Yanic Konan Niederhauser", "s": "Out"}, {"id": "6580", "n": "Bradley Beal", "s": "Out"}, {"id": "4396818", "n": "Jordan Miller", "s": "Out"}],
+"Memphis Grizzlies": [{"id": "4432810", "n": "Isaiah Stewart", "s": "Out"}, {"id": "4431785", "n": "Scotty Pippen Jr.", "s": "Out"}],
+"Milwaukee Bucks": [{"id": "4697268", "n": "Kam Jones", "s": "Day-To-Day"}],
+"Minnesota Timberwolves": [{"id": "5279133", "n": "Joan Beringer", "s": "Day-To-Day"}, {"id": "4432847", "n": "Terrence Shannon Jr.", "s": "Out"}, {"id": "4594268", "n": "Anthony Edwards", "s": "Out"}, {"id": "3934673", "n": "Donte DiVincenzo", "s": "Out"}],
+"New Orleans Pelicans": [{"id": "5061589", "n": "Yves Missi", "s": "Out"}],
+"New York Knicks": [{"id": "3062679", "n": "Josh Hart", "s": "Out"}],
+"Oklahoma City Thunder": [{"id": "4432823", "n": "Jaylin Williams", "s": "Day-To-Day"}, {"id": "5159925", "n": "Nikola Topic", "s": "Out"}, {"id": "5061603", "n": "Thomas Sorber", "s": "Out"}, {"id": "4683692", "n": "Cason Wallace", "s": "Out"}, {"id": "4433255", "n": "Chet Holmgren", "s": "Out"}, {"id": "4593803", "n": "Jalen Williams", "s": "Out"}],
+"Orlando Magic": [{"id": "4065654", "n": "Jonathan Isaac", "s": "Out"}, {"id": "4432165", "n": "Jalen Suggs", "s": "Out"}, {"id": "4432573", "n": "Paolo Banchero", "s": "Out"}, {"id": "5214637", "n": "Noah Penda", "s": "Out"}, {"id": "5107251", "n": "Izaiyah Nelson", "s": "Out"}],
+"Philadelphia 76ers": [{"id": "5105637", "n": "Adem Bona", "s": "Out"}, {"id": "4870562", "n": "Dominick Barlow", "s": "Out"}, {"id": "4871141", "n": "Ariel Hukporti", "s": "Out"}],
+"Phoenix Suns": [{"id": "5105977", "n": "Rasheer Fleming", "s": "Day-To-Day"}, {"id": "4278402", "n": "Jordan Goodwin", "s": "Day-To-Day"}, {"id": "4701232", "n": "Mark Williams", "s": "Out"}],
+"Portland Trail Blazers": [{"id": "4578893", "n": "Vit Krejci", "s": "Out"}, {"id": "4279888", "n": "Ja Morant", "s": "Out"}, {"id": "4914336", "n": "Shaedon Sharpe", "s": "Out"}],
+"Sacramento Kings": [{"id": "4065732", "n": "De'Andre Hunter", "s": "Day-To-Day"}, {"id": "4898371", "n": "Maxime Raynaud", "s": "Out"}, {"id": "4594327", "n": "Keegan Murray", "s": "Out"}, {"id": "3907387", "n": "Ben Simmons", "s": "Out"}],
+"San Antonio Spurs": [{"id": "6440", "n": "Tobias Harris", "s": "Out"}, {"id": "5101845", "n": "Jayden Quaintance", "s": "Out"}],
+"Toronto Raptors": [{"id": "4433134", "n": "Scottie Barnes", "s": "Out"}, {"id": "4395724", "n": "Immanuel Quickley", "s": "Out"}, {"id": "6450", "n": "Kawhi Leonard", "s": "Out"}, {"id": "4432586", "n": "Nate Bittle", "s": "Out"}],
+"Utah Jazz": [{"id": "3102530", "n": "Jusuf Nurkic", "s": "Out"}, {"id": "4277961", "n": "Jaren Jackson Jr.", "s": "Out"}, {"id": "4433268", "n": "Trey Alexander", "s": "Out"}],
+"Washington Wizards": [{"id": "6583", "n": "Anthony Davis", "s": "Day-To-Day"}, {"id": "4432187", "n": "Reece Beekman", "s": "Out"}, {"id": "4997537", "n": "Tristan Vukcevic", "s": "Out"}, {"id": "4432907", "n": "Justin Champagnie", "s": "Out"}, {"id": "4606840", "n": "Jamir Watkins", "s": "Out"}]
+}
+}
