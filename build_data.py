@@ -55,8 +55,8 @@ REGULAR_SEASON_GAMES = 1230  # 30隊 x 82場 / 2
 REGULAR_SEASON_END = datetime(2027, 4, 11)  # 例行賽最後一天，之後是附加賽/季後賽
 # 原始資料混有一場「NBA盃決賽」(不計入例行賽戰績)，要排除：(日期, 客隊, 主隊)
 # 只比對日期和隊伍，不比對比分（決賽打完前不知道比分，資料有一分誤差也不會漏排）。
-# 2026-27 的盃賽決賽在 2026-12-11，兩隊 12/9 準決賽後才知道，到時再加進來。
-# 盃賽小組賽、八強、四強都算例行賽，不用排除。
+# 2026-27 的盃賽決賽（2026-12-11）打完後會自動排除：cup_final_games() 從賽程備註「NBA Cup Championship」找出來，
+# 所以不用手動加；這裡只留給其他想手動排除的比賽。盃賽小組賽、八強、四強都算例行賽，不用排除。
 EXCLUDED_GAMES = set()
 
 # 上一季整季資料：球季進行中時，只用來在網頁顯示「上季兩隊交手紀錄」，不進預測公式
@@ -119,6 +119,24 @@ def next_season_label(label):
     """'2025-26' -> '2026-27'"""
     start = int(label[:4]) + 1
     return f"{start}-{(start + 1) % 100:02d}"
+
+
+def cup_final_games(raw_dir):
+    """NBA 盃決賽（不計入例行賽）要排除的比賽：{(日期, 客隊, 主隊)}。
+
+    賽程裡備註是「NBA Cup Championship」的那場，決賽打完（進了每場數據的紀錄）就自動排除，
+    不用再手動加進 EXCLUDED_GAMES（每天自動更新時沒人會記得改）。打完之前它不在比分檔裡，所以什麼都不會發生。
+    """
+    sched, box = raw_dir / SCHEDULE_FILE, raw_dir / BOX_FILE
+    if not sched.exists() or not box.exists():
+        return set()
+    boxes = json.loads(box.read_text(encoding="utf-8"))
+    out = set()
+    for g in json.loads(sched.read_text(encoding="utf-8")):
+        b = boxes.get(g["id"]) if g.get("note") == "NBA Cup Championship" else None
+        if b:
+            out.add((datetime.fromisoformat(b["date"]), b["away"], b["home"]))
+    return out
 
 
 class RawDataError(ValueError):
@@ -617,7 +635,7 @@ def build_pre_days(raw_dir, games, schedule, latest):
 
 
 def main(raw_dir, target, complete, backfill_injuries=False):
-    games, excluded = load_games(raw_dir, GAME_FILES, REGULAR_SEASON_END, EXCLUDED_GAMES)
+    games, excluded = load_games(raw_dir, GAME_FILES, REGULAR_SEASON_END, EXCLUDED_GAMES | cup_final_games(raw_dir))
     assert games, "沒有任何比賽資料"
     check_no_duplicates_or_future(games, date.today())
     if complete:

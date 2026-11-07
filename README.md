@@ -53,6 +53,17 @@
 
 ## 更新資料（球季進行中）
 
+### 自動更新（預設）
+
+`.github/workflows/update-data.yml` 讓 GitHub 每天自己跑四次（台灣時間 00:00、05:30、08:00、14:30）：抓 ESPN 最新資料 → 整理 → 有變動就 commit 回 `main`（commit 訊息是 `data: auto update …`）→ 叫發布流程更新網站。
+- 四次的用意：14:30 比賽都打完了，更新比分和準確率；00:00、05:30、08:00 在美國比賽開打前更新傷病名單，開賽前最後一次的名單就是那場「賽前凍結」的傷病扣分。
+- 只在例行賽期間跑（2026-10-20 ~ 2027-04-20）；想立刻更新，到 GitHub 的 Actions 頁面選 **Update data** 按 **Run workflow**。
+- 機器人會 commit 到 `main`，所以**你在本機改東西、要 push 之前，先 `git pull`**，不然會被拒絕。
+- 抓取失敗（ESPN 暫時連不上）整個流程會失敗、不 commit，GitHub 會寄信通知；網站維持上一次的資料。
+- NBA 盃決賽（2026-12-11）不算例行賽，打完會自動排除（見 `build_data.py` 的 `cup_final_games`），不用手動處理。
+
+### 手動更新
+
 ```
 python fetch_espn_games.py     # 從 ESPN 抓最新比分、每場數據、整季賽程、已完賽比賽的賭盤紀錄，以及現在的傷病名單（約 1～2 分鐘）
 python build_data.py           # 整理成網頁用的資料（含還沒開打的比賽的傷病扣分）
@@ -63,13 +74,13 @@ python build_data.py           # 整理成網頁用的資料（含還沒開打�
 然後雙擊 `index.html` 看一下，再 `git commit`、`git push`。
 
 注意：
-- **NBA 盃決賽（2026-12-11）不算例行賽**：決賽確定後，把（日期, 客隊, 主隊）加進 `build_data.py` 的 `EXCLUDED_GAMES`。小組賽、八強、四強都算例行賽。
+- NBA 盃的小組賽、八強、四強都算例行賽；只有決賽不算，會自動排除。
 - 賽程是更新時的快照，改期或盃賽決賽兩隊確定，要等下次更新才會變。
 - 只有「最近一個比賽日」有賽前預測；下次更新後，前一批的賽前預測就看不到了。
 
 ## 球季結束後
 
-把 `build_data.py` 的 `SEASON_COMPLETE` 改成 `True`，網頁就會切回賽季前模式。下一季開打前，換掉 `build_data.py` 最上面的賽季設定，以及 `fetch_espn_games.py` 的 `SEASON_START`、檔名。
+把 `build_data.py` 的 `SEASON_COMPLETE` 改成 `True`，網頁就會切回賽季前模式；自動更新在 2027-04-20 之後會自己停（想提早停，到 Actions 頁面把 **Update data** 停用）。下一季開打前，換掉 `build_data.py` 最上面的賽季設定，以及 `fetch_espn_games.py` 的 `SEASON_START`、檔名。
 
 ## 檔案
 
@@ -80,6 +91,8 @@ python build_data.py           # 整理成網頁用的資料（含還沒開打�
 | `data/player_tiers.js` | 所有出賽過的球員的場均得分／籃板／助攻／正負值與等級（1～5），由 `build_data.py` 產生；傷病扣分用等級，網頁的傷病名單在每位球員名字下面顯示這幾項場均數據（本季沒出賽過的人沒有） |
 | `build_data.py` | 把 `raw/` 的原始資料整理成網頁資料；預測參數在最上面的 `MODEL` |
 | `fetch_espn_games.py` | 從 ESPN 抓本季資料，存進 `raw/` |
+| `.github/workflows/update-data.yml` | 每天自動跑 fetch + build、有變動就 commit 並發布（見「更新資料」） |
+| `.github/workflows/pages.yml` | 把網站發布到 GitHub Pages（push 到 main 或被 update-data 叫起來時跑） |
 | `raw/` | 原始比分、每場數據、賽程、賭盤紀錄（`odds_2026-27.json`：每場完賽後存下 DraftKings 的開盤與收盤讓分、總分、賠率、獨贏賠率，增量更新不重抓）、傷病（`injuries_latest.json`：ESPN 現在的名單，每次覆蓋；`injury_adj_2026-27.json`：每場比賽凍結的傷病扣分） |
 
 ## 資料來源

@@ -1,0 +1,81 @@
+# 每天自動更新資料：從 ESPN 抓最新比分、賽程、盤口、傷病名單，整理成網頁資料，有變動就 commit 回 main，再觸發網站發布。
+# 等於把 README 裡「更新資料」那兩行指令（fetch_espn_games.py、build_data.py）交給 GitHub 自己跑。
+# 也可以在 Actions 頁面手動按 Run workflow（想立刻更新時用）。
+name: Update data
+
+on:
+  schedule:
+    # 時間是 UTC（台灣時間 = UTC + 8）。一天四次，因為開賽前最後一次更新的傷病名單，就是那場「賽前凍結」的扣分：
+    - cron: "0 16 * * *"   # 台灣 00:00
+    - cron: "30 21 * * *"  # 台灣 05:30
+    - cron: "0 0 * * *"    # 台灣 08:00
+    - cron: "30 6 * * *"   # 台灣 14:30：昨晚到今天凌晨（美國）的比賽都打完了，更新比分和準確率
+    - cron: "37 16 * * *"  # 台灣 00:37：【實驗用】測排程有沒有自動跑，測完把這行刪掉
+  workflow_dispatch:
+
+# 要 commit 資料回 repo（contents: write），並手動叫發布流程跑一次（actions: write）。
+# 用內建的 GITHUB_TOKEN push 不會自動觸發別的流程，所以最後一步要自己叫 pages.yml。
+permissions:
+  contents: write
+  actions: write
+
+# 同一時間只跑一次，避免兩次更新同時 push 打架
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # 只在例行賽期間自動跑（季前、季後不跑）。例行賽結束後要改成「整季完成」模式，見 README「球季結束後」
+      - name: Check season window
+        id: window
+        run: |
+          today=$(date -u +%F)
+          if [[ "$today" < "2026-10-20" || "$today" > "2027-04-20" ]]; then
+            echo "$today 不在例行賽期間，這次不更新"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.window.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 兩支程式只用 Python 內建的套件，不用另外安裝
+      - name: Fetch latest data from ESPN
+        if: steps.window.outputs.skip != 'true'
+        run: python fetch_espn_games.py
+
+      - name: Build site data
+        if: steps.window.outputs.skip != 'true'
+        run: python build_data.py
+
+      - name: Commit changes
+        id: commit
+        if: steps.window.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add raw data
+          if git diff --cached --quiet; then
+            echo "資料沒有變動，不 commit"
+            exit 0
+          fi
+          git commit -m "data: auto update $(date -u +'%Y-%m-%d %H:%M') UTC"
+          # 這段時間如果有人（你）也 push 了，先接上最新的再 push
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy site
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
