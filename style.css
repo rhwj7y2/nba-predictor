@@ -351,8 +351,9 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .acc-num { margin: 4px 0; font-size: 2.4rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .acc-num small { margin-left: 8px; font-size: 1.1rem; font-weight: 700; color: var(--accent); }
 .acc-note { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
+#stats-page .card h2, #stats-page .acc-note { text-align: center; }
 .acc-details summary {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
   cursor: pointer; list-style: none; font-size: 1.05rem; font-weight: 700;
 }
 .acc-details summary::-webkit-details-marker { display: none; }

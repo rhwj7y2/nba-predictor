@@ -1408,6 +1408,31 @@
 
   function pct(a, b) { return b ? (a * 100 / b).toFixed(1) + "%" : "—"; }
 
+  // 盤口勝率：已完賽、有記下開賽前盤口的比賽，賽前預測比分對著盤口選的邊，猜中幾次。
+  // 規則和賽後頁面的 ✅ ❌ 一樣：預測剛好等於盤口的不選、實際剛好打平盤的不算輸贏。
+  // 回傳 { ml, sp, tt, tot }，每項 [猜中, 總次數]；單隊大小每場最多算兩次（客隊、主隊各一次）
+  function betStats() {
+    var s = { ml: [0, 0], sp: [0, 0], tt: [0, 0], tot: [0, 0] };
+    if (!MODEL || !SCHEDULE) return s;
+    SCHEDULE.games.forEach(function (g0) {
+      var g = withLive(g0);
+      var pi = g.s === "F" && g.sp != null && g.ou != null ? preGameInfo(g) : null;
+      if (!pi) return;
+      var pa = Number(f1(pi.c.p1.away)), ph = Number(f1(pi.c.p1.home));
+      s.ml[1]++; if (pi.ok1) s.ml[0]++;
+      var cover = g.hs - g.as + g.sp, pick = ph - pa + g.sp;
+      if (pick !== 0 && cover !== 0) { s.sp[1]++; if ((cover > 0) === (pick > 0)) s.sp[0]++; }
+      var ou = function (box, pred, line, actual) {
+        if (pred === line || actual === line) return;
+        box[1]++; if ((actual > line) === (pred > line)) box[0]++;
+      };
+      ou(s.tt, pa, Number(half(g.ou / 2 + g.sp / 2)), g.as);
+      ou(s.tt, ph, Number(half(g.ou / 2 - g.sp / 2)), g.hs);
+      ou(s.tot, pa + ph, g.ou, g.as + g.hs);
+    });
+    return s;
+  }
+
   function renderStats() {
     var rows = accuracyRows();
     var box = $("stats-page");
@@ -1433,6 +1458,15 @@
         return '<tr><td><span class="conf conf-' + x[0] + '">' + x[1] + "</span></td><td>" + ok + " / " + sub.length + "</td><td>" + pct(ok, sub.length) +
           '</td><td class="muted">' + BACKTEST[x[0]] + "</td></tr>";
       }).join("") + "</tbody></table></div>";
+
+    // 對盤口的勝率：只算有記下開賽前盤口的比賽
+    var bs = betStats();
+    if (bs.ml[1]) {
+      html += '<div class="card"><h2>各個玩法準確率</h2><table class="acc-table"><thead><tr><th>項目</th><th>猜中</th><th>勝率</th></tr></thead><tbody>' +
+        [["ml", "不讓分"], ["sp", "讓分"], ["tt", "單隊大小"], ["tot", "總分大小"]].map(function (x) {
+          return "<tr><td>" + x[1] + "</td><td>" + bs[x[0]][0] + " / " + bs[x[0]][1] + "</td><td>" + pct(bs[x[0]][0], bs[x[0]][1]) + "</td></tr>";
+        }).join("") + '</tbody></table><p class="acc-note">以準確率來看，不讓分、讓分比較值得參考，大小分很靠運氣</p></div>';
+    }
 
     box.innerHTML = html;
   }
