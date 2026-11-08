@@ -134,11 +134,11 @@
     return 1.05 / (lum + 0.05) >= 4.5 ? "#fff" : "#000";
   }
 
-  // 連勝 / 連敗：超過 3 場（4 場起）才在隊徽上方標出來；連勝橘色 🔥、連敗藍色 🥶
+  // 連勝 / 連敗：超過 3 場（4 場起）才在隊徽上方標出來；連勝橘色 🔥、連敗藍色 🧊
   var STREAK_MIN = 4;
   function streakText(t) {
     if (t.streak >= STREAK_MIN) return "🔥 " + t.streak + " 連勝";
-    if (t.lstreak >= STREAK_MIN) return '<span class="cold">🥶 ' + t.lstreak + " 連敗</span>";
+    if (t.lstreak >= STREAK_MIN) return '<span class="cold">🧊 ' + t.lstreak + " 連敗</span>";
     return "";
   }
 
