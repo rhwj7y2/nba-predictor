@@ -424,6 +424,11 @@ def build_schedule(conn):
         rec = odds.get(g["id"]) if s in ("F", "S", "L") else None
         if rec:  # 記下來的盤口：sp = 主隊讓分、ou = 總分（已完賽預測頁、已開賽的比賽顯示用，ESPN 開賽後就不給盤口了；開盤和賠率留在 raw/ 的紀錄檔）
             item["sp"], item["ou"] = rec["spread_home"][1], rec["total"][1]
+            ml = rec.get("moneyline") or {}
+            mh, ma = ml.get("home") or [], ml.get("away") or []
+            if s == "S" and len(mh) >= 2 and len(ma) >= 2 and mh[1] is not None and ma[1] is not None:
+                # 還沒開打：賭盤預估勝率 mq = 主隊的去抽水勝率（用「目前」勝負盤賠率，四捨五入成整數百分比），賽程卡片的勝率條用
+                item["mq"] = round(fair_probs(american_to_decimal(mh[1]), american_to_decimal(ma[1]))[0] * 100)
         games.append(item)
     games.sort(key=lambda x: (x["d"], x["t"], x["a"] or "", x["h"] or ""))
     return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "retro": [B2B_FROM, RETRO_UNTIL], "games": games}

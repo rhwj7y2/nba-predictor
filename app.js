@@ -951,12 +951,23 @@
     var e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
     return 0.5 * (1 + (z < 0 ? -e : e));
   }
-  function winBar(p, a, h) {  // p = 預測比分 { away, home }；a、h = 兩隊（隊色）
-    if (!p || !a || !h) return "";
-    var ph = Math.round(normCdf((p.home - p.away) / 13.5) * 100), pa = 100 - ph;
-    return '<div class="gm-wp" title="我們預測的勝率：客隊 ' + pa + "%｜主隊 " + ph + '%"><span class="gm-wn">' + pa + '%</span>' +
+  // 勝率條：客隊 % | 條 | 主隊 %（客隊用客隊隊色、主隊用主隊隊色），整條置中
+  function probBar(pa, ph, a, h, title, caption) {  // caption：條下面的小字（「賭盤勝率」/「模型勝率」）
+    return '<div class="gm-wb"><div class="gm-wp" title="' + title + pa + "%｜主隊 " + ph + '%"><span class="gm-wn gm-wna">' + pa + "%</span>" +
       '<span class="gm-wbar"><span style="width:' + pa + "%;background:" + a.color + '"></span><span style="background:' + h.color + '"></span></span>' +
-      '<span class="gm-wn">' + ph + "%</span></div>";
+      '<span class="gm-wn">' + ph + "%</span></div>" + '<div class="gm-wc">' + caption + "</div></div>";
+  }
+  function confCorner(p) {  // 卡片右下角的信心程度（絕對定位在下半部那塊的右下角）
+    return '<div class="gm-conf-c">' + confHtml(p) + "</div>";
+  }
+  function winBar(p, a, h) {  // 我們預測的勝率；p = 預測比分 { away, home }
+    if (!p || !a || !h) return "";
+    var ph = Math.round(normCdf((p.home - p.away) / 13.5) * 100);
+    return probBar(100 - ph, ph, a, h, "我們預測的勝率：客隊 ", "模型勝率");
+  }
+  function marketBar(g, a, h) {  // 賭盤預估勝率（去抽水）；還沒有賭盤的比賽不放。g.mq = 主隊勝率（%），build_data.py 用「目前」勝負盤賠率算
+    if (typeof g.mq !== "number" || !a || !h) return "";
+    return probBar(100 - g.mq, g.mq, a, h, "賭盤預估勝率（去抽水）：客隊 ", "賭盤勝率");
   }
   // tag："show" = 這隊是「冷門觀察」名單選的那隊，隊徽上面放小標籤；"space" = 對手，放一個看不見的同樣高度的空位（兩隊才會對齊）；沒有就不放
   function teamCell(t, tag) {
@@ -1013,7 +1024,7 @@
     if (g.s === "F") {
       if (pi) {  // 賽前預測（大比分那個算法）vs 實際結果
         line = "賽前預測比分：" + pi.an.zh + " " + f1(pi.c.p1.away) + " : " + f1(pi.c.p1.home) + " " + pi.hn.zh +
-          "<br>" + confHtml(pi.c.p1) + winBar(pi.c.p1, a, h);
+          winBar(pi.c.p1, a, h) + confCorner(pi.c.p1);
       }
     } else if (g.s === "X") {
       line = "";
@@ -1028,10 +1039,11 @@
       var wn = c.w1 === "home" ? h.zh : a.zh;  // 預測會贏的那隊
       line = "賽前預測比分：" + a.zh + " " + f1(c.p1.away) + " : " + f1(c.p1.home) + " " + h.zh + "<br>預測 <b>" + wn + "</b> 勝";
       if (timeMid) {  // 信心程度移到開賽時間下面（置中）；已經開打、中間換成即時比分的，就還是接在下面那行
-        mid += '<div class="gm-conf">' + confHtml(c.p1) + winBar(c.p1, a, h) + "</div>";
+        mid += marketBar(g, a, h);  // 開賽時間下面放賭盤預估勝率
+        line += winBar(c.p1, a, h) + confCorner(c.p1);  // 「預測 X 勝」下面放我們預測的勝率，信心放在卡片右下角
         el.setAttribute("data-cm", "1");  // 記號：中間這塊含信心，即時比分來時整張卡重畫（不然信心會跟著時間一起被蓋掉）
       } else {
-        line += "<br>" + confHtml(c.p1) + winBar(c.p1, a, h);
+        line += winBar(c.p1, a, h) + confCorner(c.p1);
       }
     }
 
