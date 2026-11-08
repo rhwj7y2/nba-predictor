@@ -40,10 +40,11 @@
 "2026-11-08|DEN|IND": {"ja": 0, "jh": 2.0, "jp": [["h", "Tyrese Haliburton", 2.0]], "at": "2026-11-07T17:04Z"},
 "2026-11-08|NYK|CLE": {"ja": 0, "jh": 1.5, "jp": [["h", "Jarrett Allen", 1.5]], "at": "2026-11-08T00:56Z"},
 "2026-11-08|ORL|GSW": {"ja": 1.5, "jh": 0, "jp": [["a", "Desmond Bane", 1.5]], "at": "2026-11-08T00:56Z"},
-"2026-11-08|SAS|POR": {"ja": 0, "jh": 1.5, "jp": [["h", "Ja Morant", 1.5]], "at": "2026-11-08T00:56Z"},
+"2026-11-08|SAS|POR": {"ja": 0, "jh": 1.5, "jp": [["h", "Ja Morant", 1.5]], "at": "2026-11-08T02:45Z"},
 "2026-11-08|WAS|OKC": {"ja": 2.0, "jh": 3.0, "jp": [["a", "Anthony Davis", 2.0], ["h", "Chet Holmgren", 1.5], ["h", "Jalen Williams", 1.5]], "at": "2026-11-08T00:56Z"},
-"2026-11-09|UTA|MIN": {"ja": 1.5, "jh": 3.0, "jp": [["a", "Jaren Jackson Jr.", 1.5], ["h", "Anthony Edwards", 3.0]], "at": "2026-11-08T00:56Z"},
-"2026-11-10|CLE|CHA": {"ja": 1.5, "jh": 1.5, "jp": [["a", "Jarrett Allen", 1.5], ["h", "Dennis Schroder", 1.5]], "at": "2026-11-08T00:56Z"},
-"2026-11-10|MEM|TOR": {"ja": 1.5, "jh": 0, "jp": [["a", "Isaiah Stewart", 1.5]], "at": "2026-11-08T00:56Z"},
-"2026-11-10|WAS|DET": {"ja": 2.0, "jh": 0, "jp": [["a", "Anthony Davis", 2.0]], "at": "2026-11-08T00:56Z"}
+"2026-11-09|UTA|MIN": {"ja": 1.5, "jh": 3.0, "jp": [["a", "Jaren Jackson Jr.", 1.5], ["h", "Anthony Edwards", 3.0]], "at": "2026-11-08T02:45Z"},
+"2026-11-10|CLE|CHA": {"ja": 1.5, "jh": 1.5, "jp": [["a", "Jarrett Allen", 1.5], ["h", "Dennis Schroder", 1.5]], "at": "2026-11-08T02:45Z"},
+"2026-11-10|IND|DAL": {"ja": 2.0, "jh": 0, "jp": [["a", "Tyrese Haliburton", 2.0]], "at": "2026-11-08T02:45Z"},
+"2026-11-10|MEM|TOR": {"ja": 1.5, "jh": 0, "jp": [["a", "Isaiah Stewart", 1.5]], "at": "2026-11-08T02:45Z"},
+"2026-11-10|WAS|DET": {"ja": 2.0, "jh": 0, "jp": [["a", "Anthony Davis", 2.0]], "at": "2026-11-08T02:45Z"}
 }
