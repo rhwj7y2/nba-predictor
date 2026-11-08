@@ -1474,7 +1474,7 @@
     $("st-body").innerHTML = list.map(function (t, i) {
       var gb = ((lead.w - t.w) + (t.l - lead.l)) / 2;
       var run = t.streak > 0 ? '<span class="st-w">W' + t.streak + "</span>" : t.lstreak > 0 ? '<span class="st-l">L' + t.lstreak + "</span>" : "—";
-      return "<tr><td>" + (i + 1) + "</td>" +
+      return "<tr" + (i === 5 || i === 9 ? ' class="st-cut"' : i >= 10 ? ' class="st-out"' : "") + "><td>" + (i + 1) + "</td>" +
         '<td><div class="st-team">' + miniBadge(t) + "<span>" + t.zh + "</span></div></td>" +
         "<td>" + t.w + "</td><td>" + t.l + "</td><td>" + (i === 0 ? "—" : String(gb)) + "</td><td>" + run + "</td></tr>";
     }).join("");

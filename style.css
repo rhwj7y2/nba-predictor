@@ -365,7 +365,11 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .st-table td:first-child { color: var(--muted); width: 1.8em; }
 .st-table td:nth-child(2) { white-space: nowrap; }
 .st-table .st-team { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-.st-table .st-w { color: var(--win); font-weight: 800; }
+/* 7～10 名（附加賽區間）：不上底色，只在第 6 與 7 名、第 10 與 11 名之間畫虛線 */
+.st-table tr.st-cut td { border-bottom: 1px dashed var(--muted); }
+.st-table tr.st-out td { background: rgba(0, 0, 0, .13); }  /* 11 名以後（淘汰區）：很淡的黑色底 */
+:root[data-theme="dark"] .st-table tr.st-out td, :root[data-theme="black"] .st-table tr.st-out td { background: rgba(0, 0, 0, .28); }
+:root[data-theme="dark"] .st-table .st-w { color: var(--win); font-weight: 800; }
 .st-table .st-l { color: var(--bad); font-weight: 800; }
 
 /* 準確率頁 */
