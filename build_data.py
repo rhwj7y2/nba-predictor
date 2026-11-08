@@ -90,7 +90,7 @@ PREV_SEASON = {
 MODEL = {"shrinkK": 5, "homeAdv": 2, "recentWeight": 0.5}
 SRS = {"lam": 5, "halfLife": 60, "prevWeight": 0.5}
 
-# 開盤反打觀察名單（實驗功能）規則 v1：凍結，上線後不准改；要改就開 v2、重新計算，不要動這個。
+# 開盤冷門觀察名單（實驗功能）規則 v1：凍結，上線後不准改；要改就開 v2、重新計算，不要動這個。
 #   minOdds：被選那隊「目前」的小數賠率至少多少；minEdge：模型勝率 - 市場去抽水勝率至少多少；
 #   sigma：模型分差換成勝率用的標準差（勝率 = Φ(分差 / sigma)）；horizonHours：只看未來幾小時內要開打的比賽
 UPSET_RULE = {"version": "v1", "minOdds": 2.0, "minEdge": 0.06, "sigma": 13.5, "horizonHours": 48}
@@ -509,13 +509,13 @@ def update_upset_log(conn, schedule, team_rows_now):
             row = {"game_id": g["id"], "version": UPSET_RULE["version"], "picked_at": now.strftime("%Y-%m-%dT%H:%MZ"), "team": team, **hit}
             if store.insert_upset(conn, row):
                 n_new += 1
-                print(f"反打觀察：{tw} {TEAMS[g['away']][1]} @ {TEAMS[g['home']][1]} 選 {TEAMS[team][1]}（賠率 {hit['odds_pick']:.2f}，模型 {hit['model_prob']:.1%} 對市場 {hit['fair_pick']:.1%}）")
+                print(f"冷門觀察：{tw} {TEAMS[g['away']][1]} @ {TEAMS[g['home']][1]} 選 {TEAMS[team][1]}（賠率 {hit['odds_pick']:.2f}，模型 {hit['model_prob']:.1%} 對市場 {hit['fair_pick']:.1%}）")
     conn.commit()
     return n_new
 
 
 def build_upsets(conn):
-    """輸出給網頁的反打觀察名單：資料表 upset_log 每一筆，打完的再現算收盤去抽水勝率、CLV、勝負。
+    """輸出給網頁的冷門觀察名單：資料表 upset_log 每一筆，打完的再現算收盤去抽水勝率、CLV、勝負。
     CLV（收盤價值）= 被選那隊「收盤去抽水勝率」- 選的當下的去抽水勝率；正數 = 選的時候買到比收盤便宜。
     收盤用 odds 資料表 st = final 那筆的 moneyline 收盤；查不到收盤的不給 qc / clv（網頁顯示「無收盤」）。"""
     odds = store.read_odds(conn)
@@ -933,7 +933,7 @@ def main(db_path, target, complete, backfill_injuries=False):
         apply_injury_adj(conn, schedule, tiers, games if backfill_injuries else None)
     if schedule:
         apply_h2h_pace_adj(conn, schedule)
-    if schedule and not complete:  # 開盤反打觀察名單：要在傷病扣分之後才算分差；只新增不修改
+    if schedule and not complete:  # 開盤冷門觀察名單：要在傷病扣分之後才算分差；只新增不修改
         update_upset_log(conn, schedule, out)
 
     # 球季進行中：附上預測模型參數，以及上季交手紀錄（只供顯示，不進預測）
@@ -969,7 +969,7 @@ def main(db_path, target, complete, backfill_injuries=False):
     if schedule:
         print(f"賽程：{len(schedule['games'])} 場（台灣時間）-> {schedule_target}")
 
-    # 開盤反打觀察名單（只有球季進行中才有；網頁沒有這個檔也不會壞）
+    # 開盤冷門觀察名單（只有球季進行中才有；網頁沒有這個檔也不會壞）
     if not complete:
         upsets = build_upsets(conn)
         upsets_target = target.parent / "upsets.js"
@@ -978,7 +978,7 @@ def main(db_path, target, complete, backfill_injuries=False):
             + json.dumps(upsets, ensure_ascii=False, separators=(",", ":")).replace('},{"d"', '},\n{"d"') + ";\n",
             encoding="utf-8",
         )
-        print(f"反打觀察：累計 {len(upsets['picks'])} 筆 -> {upsets_target}")
+        print(f"冷門觀察：累計 {len(upsets['picks'])} 筆 -> {upsets_target}")
 
     # 每隊得分前三高的球員（只有球季進行中才有；沒有球員數據檔就寫 null，網頁就不會顯示這張卡片）
     players = None if complete else build_players(conn, games)

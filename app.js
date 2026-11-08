@@ -12,9 +12,8 @@
   // 球季進行中：資料帶有模型參數時，預測只用本季已打的比賽（不用上季表現；參數見 build_data.py 的 MODEL）
   var MODEL = D.mode === "in_season" && D.model ? D.model : null;
 
-  // 開盤反打觀察名單（實驗功能，build_data.py 規則 v1 往後記錄；檔案不存在就是空的，網頁照常）：每筆 { d 台灣日期, t, a, h, side "a"/"h" 被選那隊, od 賠率, mp 模型勝率, qp 市場勝率, w 勝負, qc 收盤市場勝率, clv }
+  // 開盤冷門觀察名單（實驗功能，build_data.py 規則 v1 往後記錄；檔案不存在就是空的，網頁照常）：每筆 { d 台灣日期, t, a, h, side "a"/"h" 被選那隊, od 賠率, mp 模型勝率, qp 市場勝率, w 勝負, qc 收盤市場勝率, clv }
   var UPSETS = window.NBA_UPSETS && window.NBA_UPSETS.picks ? window.NBA_UPSETS.picks : [];
-  var UPSET_RULE = window.NBA_UPSETS && window.NBA_UPSETS.rule ? window.NBA_UPSETS.rule : null;
   var UPSET_BY = {};
   UPSETS.forEach(function (u) { UPSET_BY[u.d + "|" + u.a + "|" + u.h] = u; });
   var SCHEDULE = window.NBA_SCHEDULE || null;  // 賽程（球季進行中才有，build_data.py 產生；日期與時間都是台灣時間）
@@ -945,10 +944,26 @@
   }
 
   // 一邊的球隊：隊徽、隊名、戰績（沒決定的隊伍顯示「待定」）
-  function teamCell(t, upset) {  // upset：這隊是「反打觀察」名單選的那隊，戰績下面加小標籤
-    if (!t) return '<div class="gm-team"><span class="mini-badge tbd">?</span><div class="gm-name">待定</div></div>';
-    return '<div class="gm-team">' + miniBadge(t) + '<div class="gm-name">' + t.zh + '</div><div class="gm-rec">' +
-      t.w + "-" + t.l + "</div>" + (upset ? '<div class="gm-up">反打觀察</div>' : "") + "</div>";
+  // 預測勝率條（信心下面）：模型預測分差 M（主隊 - 客隊，已含傷病、連兩天）換成主隊勝率 = Φ(M / 13.5)，Φ 是標準常態累積分布
+  // 13.5 和冷門觀察規則 v1 用的 sigma 一樣；三季回測（3,643 場）各勝率區間的預測和實際大致吻合
+  function normCdf(z) {  // Φ(z)，用 erf 的近似公式（誤差 < 1.5e-7）
+    var x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.3275911 * x);
+    var e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return 0.5 * (1 + (z < 0 ? -e : e));
+  }
+  function winBar(p, a, h) {  // p = 預測比分 { away, home }；a、h = 兩隊（隊色）
+    if (!p || !a || !h) return "";
+    var ph = Math.round(normCdf((p.home - p.away) / 13.5) * 100), pa = 100 - ph;
+    return '<div class="gm-wp" title="我們預測的勝率：客隊 ' + pa + "%｜主隊 " + ph + '%"><span class="gm-wn">' + pa + '%</span>' +
+      '<span class="gm-wbar"><span style="width:' + pa + "%;background:" + a.color + '"></span><span style="background:' + h.color + '"></span></span>' +
+      '<span class="gm-wn">' + ph + "%</span></div>";
+  }
+  // tag："show" = 這隊是「冷門觀察」名單選的那隊，隊徽上面放小標籤；"space" = 對手，放一個看不見的同樣高度的空位（兩隊才會對齊）；沒有就不放
+  function teamCell(t, tag) {
+    var tg = tag ? '<div class="gm-up' + (tag === "space" ? " gm-up-gap" : "") + '">冷門觀察</div>' : "";
+    if (!t) return '<div class="gm-team">' + tg + '<span class="mini-badge tbd">?</span><div class="gm-name">待定</div></div>';
+    return '<div class="gm-team">' + tg + miniBadge(t) + '<div class="gm-name">' + t.zh + '</div><div class="gm-rec">' +
+      t.w + "-" + t.l + "</div></div>";
   }
 
   // 賽程列表的一場比賽，版型仿 NBA 官網：客隊在左、主隊在右，中間是開賽時間（已完賽改顯示比分）。
@@ -958,7 +973,7 @@
     var a = g.a ? T[ABBR[g.a]] : null;
     var h = g.h ? T[ABBR[g.h]] : null;
     var pi = MODEL ? preGameInfo(g) : null;
-    var up = a && h ? UPSET_BY[date + "|" + g.a + "|" + g.h] : null;  // 這場有沒有反打觀察
+    var up = a && h ? UPSET_BY[date + "|" + g.a + "|" + g.h] : null;  // 這場有沒有冷門觀察
     // 首頁簡版：還沒開打的顯示預測比分；開打後已經抓到即時比分的，就跟賽程一樣顯示即時比分
     var homePred = mode === "home" && MODEL && a && h && (g.s === "S" || g.s === "L") && !liveMidCache[date + "|" + g.a + "|" + g.h] ? compareModels(a, h, g.n, gameAdj(g)) : null;
     var past = date < todayTW();
@@ -998,7 +1013,7 @@
     if (g.s === "F") {
       if (pi) {  // 賽前預測（大比分那個算法）vs 實際結果
         line = "賽前預測比分：" + pi.an.zh + " " + f1(pi.c.p1.away) + " : " + f1(pi.c.p1.home) + " " + pi.hn.zh +
-          "<br>" + confHtml(pi.c.p1);
+          "<br>" + confHtml(pi.c.p1) + winBar(pi.c.p1, a, h);
       }
     } else if (g.s === "X") {
       line = "";
@@ -1007,16 +1022,16 @@
     } else if (!(a && h)) {
       line = "兩隊要等前一輪打完才決定";
     } else if (homePred) {
-      line = confHtml(homePred.p1);
+      line = confHtml(homePred.p1) + winBar(homePred.p1, a, h);
     } else if (MODEL && canPredict(g, date)) {  // 下一個比賽日、或兩隊都已沒有未打完比賽的隔天，才顯示預測和信心；更後面的日子先不顯示
       var c = compareModels(a, h, g.n, gameAdj(g));
       var wn = c.w1 === "home" ? h.zh : a.zh;  // 預測會贏的那隊
       line = "賽前預測比分：" + a.zh + " " + f1(c.p1.away) + " : " + f1(c.p1.home) + " " + h.zh + "<br>預測 <b>" + wn + "</b> 勝";
       if (timeMid) {  // 信心程度移到開賽時間下面（置中）；已經開打、中間換成即時比分的，就還是接在下面那行
-        mid += '<div class="gm-conf">' + confHtml(c.p1) + "</div>";
+        mid += '<div class="gm-conf">' + confHtml(c.p1) + winBar(c.p1, a, h) + "</div>";
         el.setAttribute("data-cm", "1");  // 記號：中間這塊含信心，即時比分來時整張卡重畫（不然信心會跟著時間一起被蓋掉）
       } else {
-        line += "<br>" + confHtml(c.p1);
+        line += "<br>" + confHtml(c.p1) + winBar(c.p1, a, h);
       }
     }
 
@@ -1025,7 +1040,7 @@
       ? '<div class="gm-head' + (tags ? "" : " solo") + '"><div class="gm-head-l">' + tags + '</div><span class="gm-res ' + (pi.ok1 ? "ok" : "bad") + '">' + (pi.ok1 ? "預測正確" : "預測失敗") + '</span></div>'
       : tags ? '<div class="gm-tags">' + tags + "</div>" : "";
     el.innerHTML = head +
-      '<div class="gm-row">' + teamCell(a, up && up.side === "a") + '<div class="gm-mid">' + mid + "</div>" + teamCell(h, up && up.side === "h") + "</div>" +
+      '<div class="gm-row">' + teamCell(a, up ? (up.side === "a" ? "show" : "space") : null) + '<div class="gm-mid">' + mid + "</div>" + teamCell(h, up ? (up.side === "h" ? "show" : "space") : null) + "</div>" +
       (line ? '<div class="game-pred">' + line + "</div>" : "");
     var li = document.createElement("li");
     li.appendChild(el);
@@ -1608,34 +1623,7 @@
         }).join("") + '</tbody></table><p class="acc-note">以準確率來看，不讓分值得參考，其他太看運氣啦</p></div>';
     }
 
-    html += upsetCardHtml();
     box.innerHTML = html;
-  }
-
-  // 開盤反打觀察（實驗中，規則 v1）：往後記錄，用 CLV（收盤價值：選的當下的市場勝率 vs 收盤的市場勝率，收盤往我們這邊移 = 正）判斷有沒有優勢
-  function upsetCardHtml() {
-    var title = "開盤反打觀察（實驗中，v1）";
-    var note = "用 CLV 判斷有沒有優勢，約 150 注才能下結論；報酬率樣本少時誤差很大；非投注建議";
-    if (!UPSETS.length) return '<div class="card"><h2>' + title + '</h2><p class="odds-msg">尚無紀錄</p><p class="acc-note">' + note + "</p></div>";
-    var done = UPSETS.filter(function (u) { return u.w === 0 || u.w === 1; });
-    var clv = UPSETS.filter(function (u) { return typeof u.clv === "number"; }).map(function (u) { return u.clv; });
-    var n = clv.length, mean = 0, sd = 0;
-    if (n) { mean = clv.reduce(function (s, x) { return s + x; }, 0) / n; }
-    if (n > 1) { sd = Math.sqrt(clv.reduce(function (s, x) { return s + (x - mean) * (x - mean); }, 0) / (n - 1)); }
-    var moved = clv.filter(function (x) { return x > 0; }).length;
-    var wins = done.filter(function (u) { return u.w === 1; }).length;
-    var profit = done.reduce(function (s, u) { return s + (u.w === 1 ? u.od - 1 : -1); }, 0);
-    var sgnN = function (x, d) { return (x > 0 ? "+" : "") + x.toFixed(d); };
-    var rows = [
-      ["累計注數", UPSETS.length + "（已打完 " + done.length + "，有收盤 " + n + "）"],
-      ["平均 CLV", n ? sgnN(mean, 1) + " 個百分點" + (n > 1 ? " ± " + (1.96 * sd / Math.sqrt(n)).toFixed(1) : "") : "—"],
-      ["收盤往我們這邊移", n ? moved + " / " + n + "（" + pct(moved, n) + "）" : "—"],
-      ["勝-負", done.length ? wins + "-" + (done.length - wins) : "—"],
-      ["報酬率（1 注 1 單位）", done.length ? sgnN(profit / done.length * 100, 1) + "%" : "—"]
-    ];
-    return '<div class="card"><h2>' + title + '</h2><table class="acc-table"><tbody>' +
-      rows.map(function (r) { return "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>"; }).join("") +
-      '</tbody></table><p class="acc-note">' + note + "</p></div>";
   }
 
   function updateBack() {

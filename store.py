@@ -126,7 +126,7 @@ def write_injury_adj(conn, mem):
 
 
 def insert_upset(conn, row):
-    """開盤反打觀察名單：某場第一次符合規則時寫入一筆（INSERT OR IGNORE，之後不修改、不刪除）。
+    """開盤冷門觀察名單：某場第一次符合規則時寫入一筆（INSERT OR IGNORE，之後不修改、不刪除）。
     row：{game_id, version, picked_at, side, team, margin, model_prob, odds_pick, fair_pick, odds_open, fair_open, provider}。
     回傳這次有沒有真的新增。"""
     cur = conn.execute("INSERT OR IGNORE INTO upset_log VALUES (:game_id, :version, :picked_at, :side, :team, :margin, :model_prob, :odds_pick, :fair_pick, :odds_open, :fair_open, :provider)", row)

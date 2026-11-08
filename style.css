@@ -457,7 +457,14 @@ a.game:hover { border-color: var(--accent); }
 .gm-team { min-width: 0; text-align: center; }
 .gm-name { margin-top: 4px; font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
 .gm-rec { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
-.gm-up { display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 1.4; }  /* 反打觀察名單選的那隊 */
+.gm-up { display: block; width: fit-content; margin: 0 auto 5px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 1.4; }  /* 冷門觀察名單選的那隊：隊徽上面的小標籤 */
+.gm-up-gap { visibility: hidden; }  /* 對手：同樣高度的看不見空位，兩隊才會對齊 */
+.gm-wp { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px; position: relative; }  /* 預測勝率條：客隊% | 條 | 主隊%（信心下面） */
+.gm-wbar { display: flex; width: 4.2rem; height: 5px; border-radius: 999px; overflow: hidden; background: var(--line); gap: 1px; }
+.gm-wbar > span { display: block; height: 100%; }
+.gm-wbar > span:last-child { flex: 1; }
+.gm-wn { color: var(--muted); font-size: .68rem; font-variant-numeric: tabular-nums; min-width: 2.1em; }
+.gm-wn:first-child { text-align: right; }
 .gm-mid { min-width: 4.5em; text-align: center; }
 .game-time { font-size: 1.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .gm-conf { margin-top: 5px; font-size: .95rem; position: relative; top: 11px; }  /* 賽程卡片：開賽時間下面的信心程度（置中靠 .gm-mid 的 text-align；top 只視覺下移，對齊兩側戰績那一行） */
