@@ -473,9 +473,10 @@ a.game:hover { border-color: var(--accent); }
 /* 中間欄有賭盤勝率條時：不用上面那個「視覺下移」，改成真的撐開、留足空間（不然條和小字會貼到下面的分隔線） */
 .gm-mid:has(.gm-wp) .gm-conf { top: 0; margin-top: 7px; }
 .gm-mid:has(.gm-wp) .game-time { top: 0; }
-.gm-mid .gm-wp { margin-top: 9px; }
+.gm-mid .gm-wp { margin-top: 1px; }  /* 勝率條的中心 = 戰績那一行的中心 */
 .gm-mid .gm-wc { margin-top: 3px; font-size: .62rem; }
-.gm-row:has(.gm-mid .gm-wp) { padding-top: 21px; padding-bottom: 8px; }  /* 時間上方（卡片上緣到數字）和勝率條下方（到分隔線）的空間相等（約 42px）；小字很小很淡，視覺上以條為底 */
+.gm-row:has(.gm-mid .gm-wp) { align-items: start; padding-top: 7px; padding-bottom: 11px; }  /* 有賭盤勝率條的卡片：兩側隊徽欄和中間欄都從上緣開始排，下面的中間欄用 padding 對齊兩側 */
+.gm-mid:has(.gm-wp) { padding-top: 27.5px; }  /* 開賽時間的中心 = 隊名那一行的中心 */
 .game-pred .gm-wp { margin-top: 9px; }
 .gm-conf-c { position: absolute; right: 0; bottom: 0; font-size: .85rem; line-height: 1.2; }  /* 信心：卡片右下角 */
 .game-pred .gm-wc { margin-top: 3px; font-size: .62rem; }
