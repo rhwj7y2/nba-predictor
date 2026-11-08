@@ -236,9 +236,10 @@ def _player_totals(conn, games):
             continue
         for team in (vis, home):
             team_gp[team] += 1
-            for pid, name, _mins, pts, reb, ast, pm in rec["p"][team]:
-                p = tot[team].setdefault(pid, {"id": pid, "n": name, "gp": 0, "pts": 0, "reb": 0, "ast": 0, "pm": 0})
+            for pid, name, mins, pts, reb, ast, pm in rec["p"][team]:
+                p = tot[team].setdefault(pid, {"id": pid, "n": name, "gp": 0, "min": 0, "pts": 0, "reb": 0, "ast": 0, "pm": 0})
                 p["gp"] += 1
+                p["min"] += mins
                 p["pts"] += pts
                 p["reb"] += reb
                 p["ast"] += ast
@@ -277,7 +278,7 @@ def tier_of(pts):
 def build_player_tiers(conn, games):
     """所有出賽過的球員，依「場均得分」分級（給之後的傷病扣分用）。回傳 None = 沒有球員數據檔。
 
-    每位球員：id = ESPN 球員編號（和 ESPN 傷病名單的球員編號對得上）、n = 名字、gp = 出賽場數、pts / reb / ast / pm = 場均得分 / 籃板 / 助攻 / 正負值、
+    每位球員：id = ESPN 球員編號（和 ESPN 傷病名單的球員編號對得上）、n = 名字、gp = 出賽場數、mn = 場均上場分鐘（網頁傷病名單用它決定要不要顯示數據）、pts / reb / ast / pm = 場均得分 / 籃板 / 助攻 / 正負值、
     t = 等級（1~5，1 最高，對照 tiers）、small = 1 表示出賽場數不到球隊已打場數的一半（樣本小，場均得分可能不準，
     常見於剛傷癒或剛傷倒的人；用等級做事前要自己決定要不要信它）。球隊內依場均得分高到低排。
     """
@@ -291,7 +292,7 @@ def build_player_tiers(conn, games):
         rows = []
         for p in sorted(tot[team].values(), key=lambda p: (-p["pts"] / p["gp"], p["n"])):
             pts = round(p["pts"] / p["gp"], 1)
-            rows.append({"id": p["id"], "n": p["n"], "gp": p["gp"], "pts": pts, "reb": round(p["reb"] / p["gp"], 1),
+            rows.append({"id": p["id"], "n": p["n"], "gp": p["gp"], "mn": round(p["min"] / p["gp"], 1), "pts": pts, "reb": round(p["reb"] / p["gp"], 1),
                          "ast": round(p["ast"] / p["gp"], 1), "pm": round(p["pm"] / p["gp"], 1), "t": tier_of(pts),
                          **({"small": 1} if p["gp"] < need else {})})
         teams[team] = rows

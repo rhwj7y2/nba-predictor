@@ -716,7 +716,7 @@
 
   var SEASON_END_US = "2027-04-12";  // 2026-27 例行賽結束後的第一天（美國日期）；預計回歸日不早於這天就算整季報銷
 
-  // 球員本季場均數據（data/player_tiers.js，ESPN 球員編號 -> {gp, pts, reb, ast, pm}）；傷病名單每位球員名字下面顯示
+  // 球員本季場均數據（data/player_tiers.js，ESPN 球員編號 -> {gp, mn, pts, reb, ast, pm}）；傷病名單每位球員名字下面顯示
   var PSTAT = null;
   function playerStat(pid) {
     var tr = window.NBA_PLAYER_TIERS;
@@ -732,8 +732,8 @@
     var d = x.details || {};
     var idm = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));  // ESPN 傷病資料的球員編號藏在連結裡
     var ps = idm ? playerStat(idm[1]) : null;
-    var stat = ps && ps.pts >= 10 ? '<div class="inj-stat">得分 ' + f1(ps.pts) + " / 籃板 " + f1(ps.reb) + " / 助攻 " + f1(ps.ast) + " / +/- " + sgn(ps.pm) +
-      ' <span class="inj-gp">（' + ps.gp + " 場）</span></div>" : "";  // 場均得分不到 10 分、或本季沒出賽過的人不提供數據
+    var stat = ps && ps.mn >= 8 ? '<div class="inj-stat">得分 ' + f1(ps.pts) + " / 籃板 " + f1(ps.reb) + " / 助攻 " + f1(ps.ast) + " / " + sgn(ps.pm) +
+      ' <span class="inj-gp">（' + ps.gp + " 場）</span></div>" : "";  // 場均上場時間不到 8 分鐘、或本季沒出賽過的人不提供數據
     var place = (d.side === "Left" ? "左" : d.side === "Right" ? "右" : "") + (INJ_PART[d.type] || d.type || "");
     var kind = d.detail && d.detail !== "Not Specified" ? (INJ_KIND[d.detail] || d.detail) : "";
     // ESPN 給的預計回歸是美國日期（指那天晚上的比賽）；美國晚上的比賽是台灣隔天，所以加 1 天換成台灣日期
@@ -781,7 +781,7 @@
       };
       var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
       card.innerHTML = head + team(aKey, a, aColor) + team(hKey, h, hColor) +
-        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新；場均分低於10分不提供數據；預計回歸日期為台灣日期；出賽狀態取自 2 天內的傷病快訊，沒標示代表 ESPN 沒有更新</p>";
+        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新；場均上場時間不到8分鐘不提供數據；預計回歸日期為台灣日期；出賽狀態取自 2 天內的傷病快訊，沒標示代表 ESPN 沒有更新</p>";
     }, function () {
       if (token !== injToken) return;
       card.innerHTML = head + '<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>';
@@ -1505,7 +1505,7 @@
           (list.length ? '<ul class="inj-list">' + list.map(function (x) { return injRow(x); }).join("") + "</ul>" : '<p class="inj-none">目前沒有傷病名單</p>') + "</details>";
       }).join("");
       var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
-      $("inj-home-note").innerHTML = "經 ESPN 取得，台灣時間 " + hh + " 更新<br>場均分低於10分不提供數據";
+      $("inj-home-note").innerHTML = "經 ESPN 取得，台灣時間 " + hh + " 更新<br>場均上場時間不到8分鐘不提供數據";
     }, function () {
       if (token !== injHomeToken) return;
       box.innerHTML = '<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>';

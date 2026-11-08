@@ -98,7 +98,7 @@ python build_data.py           # 從資料庫整理成網頁用的資料 data/*.
 |---|---|
 | `index.html`、`style.css`、`app.js` | 網頁（預測公式在 `app.js`） |
 | `data/teams.js`、`data/schedule.js` | 網頁讀的資料，由 `build_data.py` 產生，不要手改（`schedule.js` 裡有每場的傷病扣分 `ja`/`jh`、連兩天 `b`、對戰節奏總分調整 `pt`、已完賽的各節得分 `q`） |
-| `data/player_tiers.js` | 所有出賽過的球員的場均得分／籃板／助攻／正負值與等級（1～5），由 `build_data.py` 產生；傷病扣分用等級，網頁的傷病名單在每位球員名字下面顯示這幾項場均數據（本季沒出賽過的人沒有） |
+| `data/player_tiers.js` | 所有出賽過的球員的場均上場分鐘／得分／籃板／助攻／正負值與等級（1～5），由 `build_data.py` 產生；傷病扣分用等級，網頁的傷病名單在每位球員名字下面顯示這幾項場均數據（場均上場不到 8 分鐘的球員不顯示）（本季沒出賽過的人沒有） |
 | `build_data.py` | 從資料庫 `db/nba.db` 讀資料，整理成網頁用的 `data/*.js`；預測參數在最上面的 `MODEL` |
 | `store.py` | 資料庫（SQLite）的資料表定義與讀寫；fetch 往裡面寫、build 從裡面讀 |
 | `fetch_espn_games.py` | 從 ESPN 抓本季資料，寫進資料庫 `db/nba.db` |
