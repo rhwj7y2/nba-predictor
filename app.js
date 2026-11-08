@@ -812,7 +812,7 @@
   // 頁尾每項一行：資料來源、整理範圍、免責聲明
   // 11/1~11/8 的比賽：賽後（11/8）才把傷病、連兩天、新的對戰節奏、球隊評分算法補進預測，所以比分和當時不一樣：頁尾註明（日期範圍來自賽程資料的 retro）
   var md = function (d) { return Number(d.slice(5, 7)) + "/" + Number(d.slice(8)); };
-  var retroLine = SCHEDULE && SCHEDULE.retro ? md(SCHEDULE.retro[0]) + "~" + md(SCHEDULE.retro[1]) + " 比賽在" + md(SCHEDULE.retro[1]) + "賽後更新納入傷病<br>新的對戰節奏、球隊評分算法<br>因此比分與之前有所差異" : null;  // 斷句固定成三行
+  var retroLine = SCHEDULE && SCHEDULE.retro ? md(SCHEDULE.retro[0]) + "~" + md(SCHEDULE.retro[1]) + " 比賽在" + md(SCHEDULE.retro[1]) + "賽後更新納入傷病<br>新的PACE、球隊評分算法<br>因此比分與之前有所差異" : null;  // 斷句固定成三行
   $("foot-text").innerHTML = COPY.sources.concat([COPY.foot], retroLine ? [retroLine] : [], ["僅供興趣參考，非投注建議!!"]).join("<br>");
 
   fillSelect(awaySel);
@@ -1523,11 +1523,12 @@
 
   // ---------- 準確率：已完賽、有賽前數據的比賽，賽前預測（大比分）猜得準不準 ----------
   // 三季回測（2023-24 ~ 2025-26，3643 場）的對照數字：現行方法（含傷病扣分，傷病用「事後誰沒上場」代替，偏樂觀）、
-  // 信心用上面的門檻（3.5 / 8.0）：低 668/1196、中 786/1190、高 1020/1257、全部 2474/3643
-  var BACKTEST = { all: "68.0%", low: "55.2%", mid: "66.6%", high: "81.2%" };
+  // 新球隊評分（SRS＋上季當開季起點）、信心用上面的門檻（3.5 / 8.0）：低 648/1164、中 753/1149、高 1095/1330、全部 2496/3643
+  // （2023-24 的上季起點用 2022-23 整季）
+  var BACKTEST = { all: "68.5%", low: "55.7%", mid: "65.5%", high: "82.3%" };
   // 各個玩法三季回測勝率（2023-24～2025-26，用現在的模型逐場往前推：含傷病、連兩天、對戰節奏調整；盤口只用有開盤的場次，打平盤與預測剛好等於盤口的不算）：
-  // 不讓分 2478 / 3643、讓分 1846 / 3580、單隊大小 3632 / 7196、總分大小 1811 / 3587
-  var BET_BACKTEST = { ml: "68.0%", sp: "51.6%", tt: "50.5%", tot: "50.5%" };
+  // 新球隊評分：不讓分 2496 / 3643、讓分 1831 / 3574、單隊大小 3597 / 7200、總分大小 1813 / 3589
+  var BET_BACKTEST = { ml: "68.5%", sp: "51.2%", tt: "50.0%", tot: "50.5%" };
   function accuracyRows() {
     var rows = [];
     if (!MODEL || !SCHEDULE) return rows;
@@ -1577,7 +1578,7 @@
 
     var html = '<div class="card acc-big"><div class="acc-label">賽前預測猜對勝負</div>' +
       '<div class="acc-num">' + right + " / " + rows.length + "<small>" + pct(right, rows.length) + "</small></div>" +
-      '<p class="acc-note">三季回測 ' + BACKTEST.all + "（2478 / 3643）<br>台灣 " + Number(order[0].slice(5, 7)) + "/" + Number(order[0].slice(8)) + "起，統計 " + rows.length + " 場</p></div>";
+      '<p class="acc-note">三季回測 ' + BACKTEST.all + "（2496 / 3643）<br>台灣 " + Number(order[0].slice(5, 7)) + "/" + Number(order[0].slice(8)) + "起，統計 " + rows.length + " 場</p></div>";
 
     // 每天的明細會越來越長（每個比賽日一列），預設收起來，點開才看
     html += '<details class="card acc-details"><summary>每天（' + order.length + ' 個比賽日）</summary><table class="acc-table"><thead><tr><th>日期（台灣）</th><th>猜對</th><th>準確率</th></tr></thead><tbody>' +
