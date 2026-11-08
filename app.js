@@ -802,10 +802,10 @@
   }
   $("stats-title").textContent = COPY.statsTitle;
   // 頁尾每項一行：資料來源、整理範圍、免責聲明
-  // 傷病扣分是事後回補的那幾天（當時還沒有賽前傷病名單）：頁尾註明
-  var bfDates = SCHEDULE ? SCHEDULE.games.filter(function (g) { return g.jb; }).map(function (g) { return g.d; }).sort() : [];
-  var bfLine = bfDates.length ? Number(bfDates[0].slice(5, 7)) + "/" + Number(bfDates[0].slice(8)) + "~" + Number(bfDates[bfDates.length - 1].slice(5, 7)) + "/" + Number(bfDates[bfDates.length - 1].slice(8)) + " 傷病為事後回補，非賽前名單" : null;
-  $("foot-text").innerHTML = COPY.sources.concat([COPY.foot], bfLine ? [bfLine] : [], ["僅供興趣參考，非投注建議!!"]).join("<br>");
+  // 11/1~11/8 的比賽：賽後（11/8）才把傷病、連兩天、新的對戰節奏算法補進預測，所以比分和當時不一樣：頁尾註明（日期範圍來自賽程資料的 retro）
+  var md = function (d) { return Number(d.slice(5, 7)) + "/" + Number(d.slice(8)); };
+  var retroLine = SCHEDULE && SCHEDULE.retro ? md(SCHEDULE.retro[0]) + "~" + md(SCHEDULE.retro[1]) + " 比賽在" + md(SCHEDULE.retro[1]) + "賽後更新納入傷病<br>新的對戰節奏算法<br>因此比分與之前有所差異" : null;  // 斷句固定成三行
+  $("foot-text").innerHTML = COPY.sources.concat([COPY.foot], retroLine ? [retroLine] : [], ["僅供興趣參考，非投注建議!!"]).join("<br>");
 
   fillSelect(awaySel);
   fillSelect(homeSel);

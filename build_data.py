@@ -36,14 +36,15 @@ INJURY_MIN_GP = 3  # 本季至少出賽幾場才有等級可扣（場數太少�
 INJURY_STALE_HOURS = 48  # 傷病名單抓取超過這麼久就不拿來重算（避免用很舊的名單蓋掉比賽的扣分）
 INJURY_HORIZON_HOURS = 48  # 只對「未來這麼多小時內要開打」的比賽扣分：更遠的比賽，現在的缺陣名單到時候多半已經變了，不扣
 B2B_DEDUCT = 2.0     # 連兩天：這隊的預測分差扣幾分（三季回測：連兩天的球隊平均比預測少約 1.25 分；只動分差、不動總分，因為對手平均反而多拿約 1 分，總分沒偏）
-B2B_FROM = "2026-11-09"  # 台灣日期，這天起的比賽才套用連兩天扣分（以前已打的預測維持當時的樣子）
+B2B_FROM = "2026-11-01"  # 台灣日期，這天起的比賽套用連兩天扣分。11/1~11/8 是 11/9 上線時才補套用的（連兩天賽前就查得到，沒有用到結果）
 # 兩隊歷史對戰節奏（PACE）調整預測總分：這兩隊碰面時，回合數常比「兩隊本季平均」多或少，用過去的碰面來修正（只動總分、不動分差）。
 # 資料表 h2h_pace（過去三季每組兩隊的節奏殘差總和，由 make_h2h_pace_history.py 產生）加上本季已打的碰面。
 # 調整量 = 乘數 × 殘差總和 ÷（碰面場數 + K）：K = 收縮（碰面少時不全信）、乘數 = 每多 1 個回合約多幾分（兩隊各約 1.15 分／回合）。
 # 三季回測（驗證 2,550 場）：總分誤差 15.175 -> 15.066，大小分猜對率 48.2% -> 49.5%
 H2H_PACE_K = 6
 H2H_PACE_MULT = 2.3
-H2H_PACE_FROM = "2026-11-09"  # 台灣日期，這天起的比賽才套用（以前已打的預測維持當時的樣子）
+H2H_PACE_FROM = "2026-11-01"  # 台灣日期，這天起的比賽套用。11/1~11/8 是 11/9 上線時才補套用的（每場只用它之前的碰面，沒有用到結果）
+RETRO_UNTIL = "2026-11-08"  # 到這天為止的連兩天、對戰節奏調整是事後補套用的（網頁頁尾會註明）
 H2H_SHRINK_GAMES = 5  # 預估節奏往聯盟平均拉回的場數（和 make_h2h_pace_history.py 同一套算法）
 INJURY_BACKFILL_UNTIL = "2026-11-08"  # 台灣日期，這天以前（不含）已完賽的比賽可以「事後回補」傷病扣分（當時還沒有傷病扣分）
 # 賽程分頁最早能看到的台灣日期：這天起的已完賽比賽會顯示「賽前預測比分 + 結果」，
@@ -341,7 +342,7 @@ def build_schedule(conn):
             item["sp"], item["ou"] = rec["spread_home"][1], rec["total"][1]
         games.append(item)
     games.sort(key=lambda x: (x["d"], x["t"], x["a"] or "", x["h"] or ""))
-    return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "games": games}
+    return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "retro": [B2B_FROM, RETRO_UNTIL], "games": games}
 
 
 def backfill_injury_adj(conn, games, schedule):
