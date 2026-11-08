@@ -314,7 +314,7 @@
   function withLive(g) {
     var f = liveFinals[g.d + "|" + g.a + "|" + g.h];
     if (!f || (g.s !== "S" && g.s !== "L")) return g;
-    return Object.assign({}, g, { s: "F", as: f.as, hs: f.hs, live: true });
+    return Object.assign({}, g, { s: "F", as: f.as, hs: f.hs, ot: f.ot, live: true });
   }
 
   function render() {
@@ -390,6 +390,7 @@
       // 第一張卡：實際比分（隊徽、隊名、大比分，贏的一方綠色）
       setBlock("final-away", teamBlock(a, "客隊", String(finalGame.as), finalGame.as > finalGame.hs));
       setBlock("final-home", teamBlock(h, "主隊", String(finalGame.hs), finalGame.hs > finalGame.as));
+      $("final-board").querySelector(".tag").textContent = finalLabel(finalGame);
       $("final-q").innerHTML = quarterTable(a, h, finalGame);
       $("final-q").hidden = !finalGame.q;
       // 第二張卡：賽前預測、信心、各選項對錯
@@ -514,6 +515,13 @@
   // 已完賽：把賽前預測拿去對盤口，每個選項對不對（讓分選哪一邊、單隊總分與總分選大或小）。
   // 預測比分用畫面上顯示的 0.1 位數；剛好等於盤口的不選、實際剛好打平盤的不標對錯
   // 各節得分表：第 1~4 節 + 延長賽（OT1、OT2…）+ 總分；每節得分比對手高的那格加粗，一眼看出哪一節誰佔上風
+  // 已完賽卡片中間的字：打完四節 = 「已完賽」，有延長賽 = 「OT」（兩次延長 = 2OT、三次 = 3OT…）
+  // 節數看各節得分表（q）；剛打完、資料還沒更新的比賽看 ESPN 回報的節數（ot）
+  function finalLabel(g) {
+    var n = g.q ? Math.max(g.q[0].length, g.q[1].length) - 4 : g.ot || 0;
+    return n > 0 ? (n > 1 ? n : "") + "OT" : "已完賽";
+  }
+
   function quarterTable(a, h, g) {
     if (!g.q) return "";
     var qa = g.q[0], qh = g.q[1], n = Math.max(qa.length, qh.length);
@@ -969,7 +977,7 @@
     } else if (g.s === "F" && a && h) {
       var homeWon = g.hs > g.as;
       mid = '<div class="gm-score"><span class="gm-pts ' + (homeWon ? "lose" : "win") + '">' + g.as + "</span>" +
-        '<span class="gm-final"><b>' + (homeWon ? "▶" : "◀") + "</b>已完賽</span>" +
+        '<span class="gm-final"><b>' + (homeWon ? "▶" : "◀") + "</b>" + finalLabel(g) + "</span>" +
         '<span class="gm-pts ' + (homeWon ? "win" : "lose") + '">' + g.hs + "</span></div>";
     } else if ((g.s === "S" || g.s === "L") && liveMidCache[date + "|" + g.a + "|" + g.h]) {
       mid = liveMidCache[date + "|" + g.a + "|" + g.h];  // 已經抓到的即時比分，重畫時先用這份
@@ -1094,7 +1102,7 @@
     var per = livePeriod(e.status);
     return '<div class="gm-score"><span class="gm-pts ' + (lead === "home" ? "lose" : "win") + '">' + sc.away + "</span>" +
       '<span class="gm-final' + (final ? "" : " live") + '"><b>' + (lead === "home" ? "▶" : lead === "away" ? "◀" : "＝") + "</b>" +
-      (final ? "已完賽" : per[0] + (per[1] ? "<br>" + per[1] : "")) + "</span>" +
+      (final ? (e.status.period > 4 ? (e.status.period > 5 ? e.status.period - 4 : "") + "OT" : "已完賽") : per[0] + (per[1] ? "<br>" + per[1] : "")) + "</span>" +
       '<span class="gm-pts ' + (lead === "away" ? "lose" : "win") + '">' + sc.home + "</span></div>";
   }
 
@@ -1113,7 +1121,7 @@
   function finalScore(e) {  // { as: 客隊得分, hs: 主隊得分 }
     var sc = {};
     e.competitions[0].competitors.forEach(function (c) { sc[c.homeAway] = Number(c.score) || 0; });
-    return { as: sc.away, hs: sc.home };
+    return { as: sc.away, hs: sc.home, ot: Math.max(0, (e.status.period || 0) - 4) };
   }
 
   // 準確率、首頁的「猜對 X / Y」不顯示比賽卡片，只要知道「哪幾場剛打完」：
@@ -1325,7 +1333,7 @@
       if (g.s === "F") {
         var homeWon = g.hs > g.as;
         mid = '<div class="gm-score"><span class="gm-pts ' + (homeWon ? "lose" : "win") + '">' + g.as + "</span>" +
-          '<span class="gm-final"><b>' + (homeWon ? "▶" : "◀") + "</b>已完賽</span>" +
+          '<span class="gm-final"><b>' + (homeWon ? "▶" : "◀") + "</b>" + finalLabel(g) + "</span>" +
           '<span class="gm-pts ' + (homeWon ? "win" : "lose") + '">' + g.hs + "</span></div>";
       } else if ((g.s === "S" || g.s === "L") && liveMidCache[date + "|" + g.a + "|" + g.h]) {
         mid = liveMidCache[date + "|" + g.a + "|" + g.h];  // 即時比分（開賽後每 30 秒更新）
