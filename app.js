@@ -73,16 +73,16 @@
   }
 
   // ---------- 球季進行中的預測（只用本季已打的比賽） ----------
-  // 整季評分 = 已打場數 x 整季至今淨勝分 / (已打場數 + K)，淨勝分 = 場均得分 - 場均失分（打得少時往平均拉回）
-  // 近況評分 = 近 10 場場數 x 近 10 場淨勝分 / (近 10 場場數 + K)，不滿 10 場就用已打場數
-  // 球隊評分 = 整季評分和近況評分按 recentWeight 混合（目前各占一半）
+  // 球隊評分 = SRS（考慮對手強弱的評分，每場比賽越近權重越高）＋ 上季評分當開季起點，由 build_data.py 算好放在 t.rating
+  // （舊資料檔沒有 rating 時退回舊公式：整季、近 10 場的淨勝分各往平均拉回，按 recentWeight 混合）
   // 預測分差 = 主隊評分 - 客隊評分 + 主場優勢（完整分差，不像 PACE 法把分差砍半，所以主場是 2 分不是 1 分）
   // 預測總分 = 兩隊場均得失分直接平均（整季至今與近 10 場按同樣比例混合，不用 PACE）；
   // 再用 主隊 = 總分/2 + 分差/2 拆成兩隊比分
   function shrunk(n, net) { return n * net / (n + MODEL.shrinkK); }
 
   function rating(t) {
-    var w = MODEL.recentWeight;
+    if (typeof t.rating === "number") return t.rating;  // build_data.py 算好的 SRS 球隊評分（考慮對手強弱＋上季當開季起點）
+    var w = MODEL.recentWeight;  // 舊資料檔沒有 rating 欄位時，退回舊公式
     return (1 - w) * shrunk(t.gp, t.net) + w * shrunk(Math.min(10, t.gp), t.net10);
   }
 
@@ -810,9 +810,9 @@
   }
   $("stats-title").textContent = COPY.statsTitle;
   // 頁尾每項一行：資料來源、整理範圍、免責聲明
-  // 11/1~11/8 的比賽：賽後（11/8）才把傷病、連兩天、新的對戰節奏算法補進預測，所以比分和當時不一樣：頁尾註明（日期範圍來自賽程資料的 retro）
+  // 11/1~11/8 的比賽：賽後（11/8）才把傷病、連兩天、新的對戰節奏、球隊評分算法補進預測，所以比分和當時不一樣：頁尾註明（日期範圍來自賽程資料的 retro）
   var md = function (d) { return Number(d.slice(5, 7)) + "/" + Number(d.slice(8)); };
-  var retroLine = SCHEDULE && SCHEDULE.retro ? md(SCHEDULE.retro[0]) + "~" + md(SCHEDULE.retro[1]) + " 比賽在" + md(SCHEDULE.retro[1]) + "賽後更新納入傷病<br>新的對戰節奏算法<br>因此比分與之前有所差異" : null;  // 斷句固定成三行
+  var retroLine = SCHEDULE && SCHEDULE.retro ? md(SCHEDULE.retro[0]) + "~" + md(SCHEDULE.retro[1]) + " 比賽在" + md(SCHEDULE.retro[1]) + "賽後更新納入傷病<br>新的對戰節奏、球隊評分算法<br>因此比分與之前有所差異" : null;  // 斷句固定成三行
   $("foot-text").innerHTML = COPY.sources.concat([COPY.foot], retroLine ? [retroLine] : [], ["僅供興趣參考，非投注建議!!"]).join("<br>");
 
   fillSelect(awaySel);

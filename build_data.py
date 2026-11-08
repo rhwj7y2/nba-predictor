@@ -65,25 +65,29 @@ REGULAR_SEASON_END = datetime(2027, 4, 11)  # 例行賽最後一天，之後是�
 # 所以不用手動加；這裡只留給其他想手動排除的比賽。盃賽小組賽、八強、四強都算例行賽，不用排除。
 EXCLUDED_GAMES = set()
 
-# 上一季整季資料：球季進行中時，只用來在網頁顯示「上季兩隊交手紀錄」，不進預測公式
-# （休賽季球員異動大，上季表現不拿來預測本季）。不想顯示就設成 None。
+# 上一季整季資料：球季進行中時，(1) 網頁顯示「上季兩隊交手紀錄」，(2) 當作本季球隊評分的開季起點（見下面 SRS，
+# 起點只打五折，本季打得越多越以本季為準）。不想用就設成 None（交手紀錄不顯示、起點變成「每隊都是 0」）。
 PREV_SEASON = {
     "label": "2025-26",
     "end": datetime(2026, 4, 12),
     "excluded": {(datetime(2025, 12, 16), "San Antonio Spurs", "New York Knicks")},
 }
-# 球季進行中的預測模型 ①「實力評分法」（只用本季已打的比賽）：
-#   整季評分 = 已打場數 x 整季至今淨勝分 / (已打場數 + shrinkK)        淨勝分 = 場均得分 - 場均失分
-#   近況評分 = 近10場場數 x 近10場淨勝分 / (近10場場數 + shrinkK)       不滿10場就用已打場數
-#   球隊評分 = (1 - recentWeight) x 整季評分 + recentWeight x 近況評分
-#   預測分差 = 主隊評分 - 客隊評分 + homeAdv
-#   預測總分 = 整季場均得失分平均與近10場場均得失分平均，兩者按同樣比例混合（不用 PACE）
+# 球季進行中的預測模型 ①「實力評分法」：
+#   球隊評分 = SRS（考慮對手強弱的評分，單位是分）＋ 上季評分當開季起點，算法見下面 srs_ratings()
+#   預測分差 = 主隊評分 - 客隊評分 + homeAdv（中立場地 0），再減傷病、連兩天扣分差
+#   預測總分 = 整季場均得失分平均與近10場場均得失分平均，兩者按 recentWeight 混合（不用 PACE；這部分沒變）
 #   主隊 = 總分/2 + 分差/2，客隊 = 總分/2 - 分差/2
-# shrinkK：打得少時把評分往「平均球隊」拉回，避免一兩場大比分把強弱放太大。用 2024-25、2025-26
-#   兩季逐場回測（見 Project_NBA_Preseason_review），K=5 時分差校正斜率最接近 1。
-# recentWeight：近況占多少。回測三季：純整季猜對 2408 / 3643，純近10場 2368，各占一半（0.5）2416。
+# recentWeight：只用在預測總分。回測三季：純整季猜對 2408 / 3643，純近10場 2368，各占一半（0.5）2416。
 # homeAdv：主場優勢（分），三季實測主場平均多贏 +1.6 ~ +2.2。
+# shrinkK：舊版球隊評分（整季、近10場淨勝分往平均拉回）的參數。球隊評分改用 SRS 之後，網頁只在資料檔沒有 rating 欄位時
+#   才退回舊公式，所以還留著。
+# SRS 球隊評分（三季逐場回測，每場只用賽前資料，共 3,643 場）：不讓分 68.02% -> 68.54%，分差平均誤差 11.02 -> 10.90，
+#   三季每一季都進步，開季前 200 場 65.0% -> 68.2%；上季權重 0.3~0.7 之間都有效，取 0.5。
+#   lam：把每隊評分往起點拉的力道，等於假裝每隊多打 lam 場「表現剛好等於起點」的比賽
+#   halfLife：比賽的權重每過這麼多天減半（越近的比賽越重要）
+#   prevWeight：上季評分當起點時打幾折
 MODEL = {"shrinkK": 5, "homeAdv": 2, "recentWeight": 0.5}
+SRS = {"lam": 5, "halfLife": 60, "prevWeight": 0.5}
 
 # 英文隊名 -> (縮寫, 中文名, 分區, 代表色)
 TEAMS = {
@@ -118,6 +122,78 @@ TEAMS = {
     "Utah Jazz": ("UTA", "爵士", "W", "#F9A01B"),
     "Washington Wizards": ("WAS", "巫師", "E", "#002B5C"),
 }
+
+
+def _solve(A, b):
+    """高斯消去法（部分選主元），解 A x = b。A 是 n×n list，b 是長度 n 的 list。
+    （GitHub Actions 沒有裝 numpy，所以用純 Python 解 30×30 聯立方程式。）"""
+    n = len(b)
+    M = [row[:] + [b[i]] for i, row in enumerate(A)]
+    for c in range(n):
+        p = max(range(c, n), key=lambda r: abs(M[r][c]))
+        M[c], M[p] = M[p], M[c]
+        for r in range(c + 1, n):
+            f = M[r][c] / M[c][c]
+            if f:
+                for k in range(c, n + 1):
+                    M[r][k] -= f * M[c][k]
+    x = [0.0] * n
+    for r in range(n - 1, -1, -1):
+        x[r] = (M[r][n] - sum(M[r][k] * x[k] for k in range(r + 1, n))) / M[r][r]
+    return x
+
+
+def srs_ratings(games, prior, neutral=frozenset(), lam=None, half_life=None):
+    """考慮對手強弱的球隊評分（SRS，加權脊迴歸）。
+
+    games：[(美東日期 datetime, 客隊, 客隊得分, 主隊, 主隊得分)]（只能放預測日以前的比賽）；
+    prior：{隊名: 起點評分}；neutral：{(美東日期 date, 客隊, 主隊)} 中立場地（主場優勢用 0）。
+    回傳 {隊名: 評分}（越高越強，單位是分）。
+
+    每場比賽列一個式子：主隊分差 - 主場優勢 ≈ 主隊評分 - 客隊評分。
+    每場權重 w = 0.5 ** (距預測日的天數 / halfLife)，預測日 = 這批比賽最後一天 + 1 天。
+    再加一項把每隊評分往 prior 拉的懲罰（力道 lam），用最小平方法解出 30 隊評分。
+    打過強隊的贏球比打過弱隊的贏球更值錢，這是它比「只看場均得失分」準的地方。
+    """
+    lam = SRS["lam"] if lam is None else lam
+    hl = SRS["halfLife"] if half_life is None else half_life
+    teams = list(TEAMS)
+    idx = {t: i for i, t in enumerate(teams)}
+    n = len(teams)
+    A = [[lam if i == j else 0.0 for j in range(n)] for i in range(n)]
+    b = [lam * prior.get(t, 0.0) for t in teams]
+    if games:
+        ref = max(g[0] for g in games) + timedelta(days=1)
+        for d, vis, vpts, home, hpts in games:
+            w = 0.5 ** ((ref - d).days / hl) if hl else 1.0
+            hca = 0 if (d.date(), vis, home) in neutral else MODEL["homeAdv"]
+            r = hpts - vpts - hca
+            h, a = idx[home], idx[vis]
+            A[h][h] += w
+            A[a][a] += w
+            A[h][a] -= w
+            A[a][h] -= w
+            b[h] += w * r
+            b[a] -= w * r
+    x = _solve(A, b)
+    return {t: x[idx[t]] for t in teams}
+
+
+def srs_prior(conn):
+    """開季起點：上季整季解一次 SRS（lam 幾乎不拉回、不衰減、主場 2），減掉平均讓平均 = 0，再乘 prevWeight。
+    上季資料沒設定（PREV_SEASON = None）就回傳空 dict，每隊起點都是 0。"""
+    if not PREV_SEASON:
+        return {}
+    prev_games, _, _ = load_prev_season(conn)
+    raw = srs_ratings(prev_games, {}, lam=0.001, half_life=None)
+    mean = sum(raw.values()) / len(raw)
+    return {t: SRS["prevWeight"] * (v - mean) for t, v in raw.items()}
+
+
+def neutral_games(conn):
+    """本季中立場地的比賽 {(美東日期 date, 客隊, 主隊)}（墨西哥城、NBA 盃決賽等；這些比賽沒有主場優勢）。"""
+    rows = conn.execute("SELECT date, away, home FROM games WHERE neutral = 1 AND season = ? AND away IS NOT NULL AND home IS NOT NULL", (SEASON_LABEL,))
+    return {(date.fromisoformat(r[0]), r[1], r[2]) for r in rows}
 
 
 def next_season_label(label):
@@ -573,9 +649,11 @@ def load_prev_season(conn):
     return games, log, h2h
 
 
-def team_rows(games, pace, with_model):
-    """每隊的場數、戰績、場均得失分、近10場、PACE（球季進行中另外加預測模型用的淨勝分 net / net10）。"""
+def team_rows(games, pace, with_model, prior=None, neutral=frozenset()):
+    """每隊的場數、戰績、場均得失分、近10場、PACE（球季進行中另外加預測模型用的淨勝分 net / net10，
+    有給 prior 時再加 SRS 球隊評分 rating）。"""
     log = build_log(games)
+    ratings = srs_ratings(games, prior, neutral) if with_model and prior is not None else None
     out = {}
     for en, (abbr, zh, conf, color) in TEAMS.items():
         g = log[en]
@@ -612,10 +690,12 @@ def team_rows(games, pace, with_model):
         if with_model:  # 預測模型要用的淨勝分（整季至今、近10場），多留一位小數（0 場的球隊是 null）
             out[en]["net"] = round(sum(p - o for p, o, _ in g) / n, 2) if n else None
             out[en]["net10"] = round(sum(p - o for p, o, _ in last10) / n10, 2) if n10 else None
+            if ratings is not None:  # SRS 球隊評分（預測分差用）；0 場的球隊是 null
+                out[en]["rating"] = round(ratings[en], 2) if n else None
     return out
 
 
-def build_pregame(conn, games, schedule):
+def build_pregame(conn, games, schedule, prior, neutral):
     """「最近一個打過比賽的台灣日期」開打之前的球隊數據，給網頁看那天已完賽比賽的賽前預測用。
 
     為什麼要另外存一份：網頁上的球隊數據已經包含那天打完的比賽，直接拿來預測等於看過結果才預測。
@@ -640,7 +720,7 @@ def build_pregame(conn, games, schedule):
         "date": pre_date,
         "asOf": pre_games[-1][0].strftime("%Y-%m-%d"),
         "h2h": build_h2h(pre_games),
-        "teams": team_rows(pre_games, season_pace(conn, pre_games), with_model=True),
+        "teams": team_rows(pre_games, season_pace(conn, pre_games), with_model=True, prior=prior, neutral=neutral),
     }
 
 
@@ -665,7 +745,7 @@ def games_before_tw_day(games, schedule, day):
     return out
 
 
-def build_pre_days(conn, games, schedule, latest):
+def build_pre_days(conn, games, schedule, latest, prior, neutral):
     """賽程分頁裡「比最近一個比賽日更早」的每個比賽日，各存一份開打前的球隊數據，
     讓那些日子的卡片也能顯示賽前預測比分。只留預測公式要用的欄位，檔案才不會太大。
     （最近一個比賽日另外存在 pre，裡面還有交手紀錄，因為那天的比賽可以點進去看完整預測。）
@@ -673,13 +753,13 @@ def build_pre_days(conn, games, schedule, latest):
     days = sorted({g["d"] for g in schedule["games"]
                    if g["s"] == "F" and g["a"] and g["h"] and SCHEDULE_SHOW_FROM <= g["d"] < latest})
     # 預測公式要用的欄位，加上對戰頁「本季數據對照」表要用的戰績欄位（已完賽的固定頁面顯示那天賽前的數據）
-    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "net", "net10")
+    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "net", "net10", "rating")
     out = {}
     for d in days:
         pre_games = games_before_tw_day(games, schedule, date.fromisoformat(d))
         if not pre_games:
             continue
-        rows = team_rows(pre_games, season_pace(conn, pre_games), with_model=True)
+        rows = team_rows(pre_games, season_pace(conn, pre_games), with_model=True, prior=prior, neutral=neutral)
         out[d] = {k: {f: r[f] for f in keep} for k, r in rows.items()}
     return out
 
@@ -703,7 +783,10 @@ def main(db_path, target, complete, backfill_injuries=False):
         bad = {k: len(v) for k, v in log.items() if len(v) != 82}
         assert not bad, f"有球隊場次不是82場：{bad}"
 
-    out = team_rows(games, pace, with_model=not complete)
+    # SRS 球隊評分要用的開季起點（上季評分）和中立場地清單（只有球季進行中才用）
+    prior = None if complete else srs_prior(conn)
+    neutral = frozenset() if complete else neutral_games(conn)
+    out = team_rows(games, pace, with_model=not complete, prior=prior, neutral=neutral)
 
     h2h = build_h2h(games)
     if complete:
@@ -731,15 +814,15 @@ def main(db_path, target, complete, backfill_injuries=False):
 
     # 球季進行中：附上預測模型參數，以及上季交手紀錄（只供顯示，不進預測）
     if not complete:
-        payload["model"] = MODEL
+        payload["model"] = {**MODEL, "srs": SRS}
         if PREV_SEASON:
             _, _, prev_h2h = load_prev_season(conn)
             payload["prevSeason"] = PREV_SEASON["label"]
             payload["h2hPrev"] = prev_h2h
-        pre = build_pregame(conn, games, schedule)
+        pre = build_pregame(conn, games, schedule, prior, neutral)
         if pre:
             payload["pre"] = pre
-            payload["preDays"] = build_pre_days(conn, games, schedule, pre["date"])
+            payload["preDays"] = build_pre_days(conn, games, schedule, pre["date"], prior, neutral)
 
     payload["teams"] = out
     target.parent.mkdir(parents=True, exist_ok=True)
