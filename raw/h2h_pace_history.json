@@ -1,0 +1,1749 @@
+{
+"seasons": [
+"2023-24",
+"2024-25",
+"2025-26"
+],
+"pairs": {
+"Atlanta Hawks|Boston Celtics": [
+-3.713,
+11
+],
+"Atlanta Hawks|Brooklyn Nets": [
+5.286,
+10
+],
+"Atlanta Hawks|Charlotte Hornets": [
+-22.556,
+11
+],
+"Atlanta Hawks|Chicago Bulls": [
+14.12,
+10
+],
+"Atlanta Hawks|Cleveland Cavaliers": [
+8.278,
+11
+],
+"Atlanta Hawks|Dallas Mavericks": [
+9.086,
+6
+],
+"Atlanta Hawks|Denver Nuggets": [
+8.699,
+6
+],
+"Atlanta Hawks|Detroit Pistons": [
+35.622,
+11
+],
+"Atlanta Hawks|Golden State Warriors": [
+17.972,
+6
+],
+"Atlanta Hawks|Houston Rockets": [
+-4.941,
+6
+],
+"Atlanta Hawks|Indiana Pacers": [
+22.822,
+10
+],
+"Atlanta Hawks|Los Angeles Clippers": [
+-11.831,
+6
+],
+"Atlanta Hawks|Los Angeles Lakers": [
+7.547,
+6
+],
+"Atlanta Hawks|Memphis Grizzlies": [
+-1.501,
+6
+],
+"Atlanta Hawks|Miami Heat": [
+-6.307,
+12
+],
+"Atlanta Hawks|Milwaukee Bucks": [
+3.001,
+11
+],
+"Atlanta Hawks|Minnesota Timberwolves": [
+-0.525,
+6
+],
+"Atlanta Hawks|New Orleans Pelicans": [
+-12.746,
+6
+],
+"Atlanta Hawks|New York Knicks": [
+5.373,
+11
+],
+"Atlanta Hawks|Oklahoma City Thunder": [
+4.178,
+6
+],
+"Atlanta Hawks|Orlando Magic": [
+-8.783,
+12
+],
+"Atlanta Hawks|Philadelphia 76ers": [
+42.792,
+11
+],
+"Atlanta Hawks|Phoenix Suns": [
+-13.573,
+6
+],
+"Atlanta Hawks|Portland Trail Blazers": [
+6.968,
+6
+],
+"Atlanta Hawks|Sacramento Kings": [
+-3.198,
+6
+],
+"Atlanta Hawks|San Antonio Spurs": [
+32.842,
+6
+],
+"Atlanta Hawks|Toronto Raptors": [
+22.513,
+10
+],
+"Atlanta Hawks|Utah Jazz": [
+4.197,
+6
+],
+"Atlanta Hawks|Washington Wizards": [
+45.942,
+12
+],
+"Boston Celtics|Brooklyn Nets": [
+-30.467,
+12
+],
+"Boston Celtics|Charlotte Hornets": [
+-26.643,
+10
+],
+"Boston Celtics|Chicago Bulls": [
+-24.408,
+10
+],
+"Boston Celtics|Cleveland Cavaliers": [
+-39.044,
+10
+],
+"Boston Celtics|Dallas Mavericks": [
+-12.568,
+6
+],
+"Boston Celtics|Denver Nuggets": [
+-37.507,
+6
+],
+"Boston Celtics|Detroit Pistons": [
+-11.151,
+11
+],
+"Boston Celtics|Golden State Warriors": [
+-4.197,
+6
+],
+"Boston Celtics|Houston Rockets": [
+-14.951,
+6
+],
+"Boston Celtics|Indiana Pacers": [
+1.461,
+12
+],
+"Boston Celtics|Los Angeles Clippers": [
+-4.377,
+6
+],
+"Boston Celtics|Los Angeles Lakers": [
+-25.108,
+6
+],
+"Boston Celtics|Memphis Grizzlies": [
+-4.252,
+6
+],
+"Boston Celtics|Miami Heat": [
+-56.223,
+11
+],
+"Boston Celtics|Milwaukee Bucks": [
+-52.359,
+11
+],
+"Boston Celtics|Minnesota Timberwolves": [
+-8.901,
+6
+],
+"Boston Celtics|New Orleans Pelicans": [
+-3.981,
+6
+],
+"Boston Celtics|New York Knicks": [
+-66.508,
+11
+],
+"Boston Celtics|Oklahoma City Thunder": [
+-16.679,
+6
+],
+"Boston Celtics|Orlando Magic": [
+-15.928,
+10
+],
+"Boston Celtics|Philadelphia 76ers": [
+-41.932,
+11
+],
+"Boston Celtics|Phoenix Suns": [
+-28.214,
+6
+],
+"Boston Celtics|Portland Trail Blazers": [
+-16.788,
+6
+],
+"Boston Celtics|Sacramento Kings": [
+-27.072,
+6
+],
+"Boston Celtics|San Antonio Spurs": [
+-12.63,
+6
+],
+"Boston Celtics|Toronto Raptors": [
+-41.615,
+12
+],
+"Boston Celtics|Utah Jazz": [
+-13.079,
+6
+],
+"Boston Celtics|Washington Wizards": [
+-9.081,
+10
+],
+"Brooklyn Nets|Charlotte Hornets": [
+-30.217,
+9
+],
+"Brooklyn Nets|Chicago Bulls": [
+-21.164,
+10
+],
+"Brooklyn Nets|Cleveland Cavaliers": [
+-22.962,
+10
+],
+"Brooklyn Nets|Dallas Mavericks": [
+-18.376,
+7
+],
+"Brooklyn Nets|Denver Nuggets": [
+-9.99,
+6
+],
+"Brooklyn Nets|Detroit Pistons": [
+-11.213,
+11
+],
+"Brooklyn Nets|Golden State Warriors": [
+-9.793,
+6
+],
+"Brooklyn Nets|Houston Rockets": [
+-28.507,
+6
+],
+"Brooklyn Nets|Indiana Pacers": [
+5.299,
+10
+],
+"Brooklyn Nets|Los Angeles Clippers": [
+1.839,
+6
+],
+"Brooklyn Nets|Los Angeles Lakers": [
+-3.316,
+6
+],
+"Brooklyn Nets|Memphis Grizzlies": [
+-24.171,
+7
+],
+"Brooklyn Nets|Miami Heat": [
+-14.183,
+10
+],
+"Brooklyn Nets|Milwaukee Bucks": [
+-27.693,
+11
+],
+"Brooklyn Nets|Minnesota Timberwolves": [
+-26.841,
+6
+],
+"Brooklyn Nets|New Orleans Pelicans": [
+-20.361,
+6
+],
+"Brooklyn Nets|New York Knicks": [
+-49.935,
+12
+],
+"Brooklyn Nets|Oklahoma City Thunder": [
+-0.261,
+6
+],
+"Brooklyn Nets|Orlando Magic": [
+-30.188,
+11
+],
+"Brooklyn Nets|Philadelphia 76ers": [
+-15.554,
+12
+],
+"Brooklyn Nets|Phoenix Suns": [
+-28.255,
+6
+],
+"Brooklyn Nets|Portland Trail Blazers": [
+4.585,
+6
+],
+"Brooklyn Nets|Sacramento Kings": [
+-22.476,
+6
+],
+"Brooklyn Nets|San Antonio Spurs": [
+-13.618,
+6
+],
+"Brooklyn Nets|Toronto Raptors": [
+-18.704,
+12
+],
+"Brooklyn Nets|Utah Jazz": [
+-4.837,
+6
+],
+"Brooklyn Nets|Washington Wizards": [
+-20.491,
+11
+],
+"Charlotte Hornets|Chicago Bulls": [
+2.796,
+12
+],
+"Charlotte Hornets|Cleveland Cavaliers": [
+-24.676,
+11
+],
+"Charlotte Hornets|Dallas Mavericks": [
+0.149,
+6
+],
+"Charlotte Hornets|Denver Nuggets": [
+-19.842,
+6
+],
+"Charlotte Hornets|Detroit Pistons": [
+-0.647,
+10
+],
+"Charlotte Hornets|Golden State Warriors": [
+-1.184,
+6
+],
+"Charlotte Hornets|Houston Rockets": [
+-6.167,
+5
+],
+"Charlotte Hornets|Indiana Pacers": [
+-33.052,
+11
+],
+"Charlotte Hornets|Los Angeles Clippers": [
+-21.119,
+6
+],
+"Charlotte Hornets|Los Angeles Lakers": [
+4.79,
+6
+],
+"Charlotte Hornets|Memphis Grizzlies": [
+-13.53,
+6
+],
+"Charlotte Hornets|Miami Heat": [
+-15.893,
+12
+],
+"Charlotte Hornets|Milwaukee Bucks": [
+-32.903,
+11
+],
+"Charlotte Hornets|Minnesota Timberwolves": [
+-21.612,
+6
+],
+"Charlotte Hornets|New Orleans Pelicans": [
+-15.117,
+6
+],
+"Charlotte Hornets|New York Knicks": [
+-54.992,
+11
+],
+"Charlotte Hornets|Oklahoma City Thunder": [
+-12.172,
+6
+],
+"Charlotte Hornets|Orlando Magic": [
+-38.697,
+12
+],
+"Charlotte Hornets|Philadelphia 76ers": [
+-27.482,
+11
+],
+"Charlotte Hornets|Phoenix Suns": [
+-18.725,
+6
+],
+"Charlotte Hornets|Portland Trail Blazers": [
+-8.655,
+6
+],
+"Charlotte Hornets|Sacramento Kings": [
+-13.586,
+6
+],
+"Charlotte Hornets|San Antonio Spurs": [
+-11.142,
+6
+],
+"Charlotte Hornets|Toronto Raptors": [
+-10.533,
+11
+],
+"Charlotte Hornets|Utah Jazz": [
+-11.902,
+6
+],
+"Charlotte Hornets|Washington Wizards": [
+-18.687,
+12
+],
+"Chicago Bulls|Cleveland Cavaliers": [
+33.199,
+12
+],
+"Chicago Bulls|Dallas Mavericks": [
+5.207,
+6
+],
+"Chicago Bulls|Denver Nuggets": [
+-7.97,
+6
+],
+"Chicago Bulls|Detroit Pistons": [
+-11.262,
+11
+],
+"Chicago Bulls|Golden State Warriors": [
+3.695,
+6
+],
+"Chicago Bulls|Houston Rockets": [
+35.48,
+6
+],
+"Chicago Bulls|Indiana Pacers": [
+-1.376,
+12
+],
+"Chicago Bulls|Los Angeles Clippers": [
+-31.222,
+6
+],
+"Chicago Bulls|Los Angeles Lakers": [
+10.389,
+6
+],
+"Chicago Bulls|Memphis Grizzlies": [
+5.854,
+6
+],
+"Chicago Bulls|Miami Heat": [
+5.427,
+11
+],
+"Chicago Bulls|Milwaukee Bucks": [
+16.17,
+12
+],
+"Chicago Bulls|Minnesota Timberwolves": [
+-2.77,
+6
+],
+"Chicago Bulls|New Orleans Pelicans": [
+4.747,
+6
+],
+"Chicago Bulls|New York Knicks": [
+1.338,
+11
+],
+"Chicago Bulls|Oklahoma City Thunder": [
+25.179,
+5
+],
+"Chicago Bulls|Orlando Magic": [
+-2.491,
+11
+],
+"Chicago Bulls|Philadelphia 76ers": [
+14.514,
+10
+],
+"Chicago Bulls|Phoenix Suns": [
+4.107,
+6
+],
+"Chicago Bulls|Portland Trail Blazers": [
+6.019,
+6
+],
+"Chicago Bulls|Sacramento Kings": [
+-8.779,
+6
+],
+"Chicago Bulls|San Antonio Spurs": [
+-2.445,
+7
+],
+"Chicago Bulls|Toronto Raptors": [
+19.212,
+11
+],
+"Chicago Bulls|Utah Jazz": [
+14.836,
+6
+],
+"Chicago Bulls|Washington Wizards": [
+21.738,
+10
+],
+"Cleveland Cavaliers|Dallas Mavericks": [
+0.852,
+6
+],
+"Cleveland Cavaliers|Denver Nuggets": [
+3.138,
+6
+],
+"Cleveland Cavaliers|Detroit Pistons": [
+-11.165,
+12
+],
+"Cleveland Cavaliers|Golden State Warriors": [
+10.604,
+6
+],
+"Cleveland Cavaliers|Houston Rockets": [
+-5.053,
+6
+],
+"Cleveland Cavaliers|Indiana Pacers": [
+11.538,
+12
+],
+"Cleveland Cavaliers|Los Angeles Clippers": [
+-5.071,
+6
+],
+"Cleveland Cavaliers|Los Angeles Lakers": [
+2.197,
+6
+],
+"Cleveland Cavaliers|Memphis Grizzlies": [
+7.487,
+6
+],
+"Cleveland Cavaliers|Miami Heat": [
+-6.486,
+11
+],
+"Cleveland Cavaliers|Milwaukee Bucks": [
+-20.198,
+12
+],
+"Cleveland Cavaliers|Minnesota Timberwolves": [
+-2.109,
+6
+],
+"Cleveland Cavaliers|New Orleans Pelicans": [
+-15.283,
+6
+],
+"Cleveland Cavaliers|New York Knicks": [
+-30.227,
+9
+],
+"Cleveland Cavaliers|Oklahoma City Thunder": [
+14.295,
+6
+],
+"Cleveland Cavaliers|Orlando Magic": [
+-43.41,
+11
+],
+"Cleveland Cavaliers|Philadelphia 76ers": [
+-23.399,
+11
+],
+"Cleveland Cavaliers|Phoenix Suns": [
+-6.345,
+6
+],
+"Cleveland Cavaliers|Portland Trail Blazers": [
+4.642,
+6
+],
+"Cleveland Cavaliers|Sacramento Kings": [
+-22.827,
+6
+],
+"Cleveland Cavaliers|San Antonio Spurs": [
+10.875,
+6
+],
+"Cleveland Cavaliers|Toronto Raptors": [
+-20.014,
+9
+],
+"Cleveland Cavaliers|Utah Jazz": [
+-0.848,
+6
+],
+"Cleveland Cavaliers|Washington Wizards": [
+-1.179,
+12
+],
+"Dallas Mavericks|Denver Nuggets": [
+-26.606,
+11
+],
+"Dallas Mavericks|Detroit Pistons": [
+12.875,
+6
+],
+"Dallas Mavericks|Golden State Warriors": [
+16.582,
+11
+],
+"Dallas Mavericks|Houston Rockets": [
+-0.743,
+12
+],
+"Dallas Mavericks|Indiana Pacers": [
+16.945,
+6
+],
+"Dallas Mavericks|Los Angeles Clippers": [
+19.972,
+11
+],
+"Dallas Mavericks|Los Angeles Lakers": [
+-35.621,
+10
+],
+"Dallas Mavericks|Memphis Grizzlies": [
+-9.276,
+12
+],
+"Dallas Mavericks|Miami Heat": [
+-4.024,
+6
+],
+"Dallas Mavericks|Milwaukee Bucks": [
+19.119,
+6
+],
+"Dallas Mavericks|Minnesota Timberwolves": [
+-7.686,
+11
+],
+"Dallas Mavericks|New Orleans Pelicans": [
+18.313,
+12
+],
+"Dallas Mavericks|New York Knicks": [
+-3.005,
+6
+],
+"Dallas Mavericks|Oklahoma City Thunder": [
+-20.581,
+11
+],
+"Dallas Mavericks|Orlando Magic": [
+2.356,
+6
+],
+"Dallas Mavericks|Philadelphia 76ers": [
+-7.055,
+6
+],
+"Dallas Mavericks|Phoenix Suns": [
+-33.047,
+10
+],
+"Dallas Mavericks|Portland Trail Blazers": [
+36.206,
+11
+],
+"Dallas Mavericks|Sacramento Kings": [
+-8.097,
+10
+],
+"Dallas Mavericks|San Antonio Spurs": [
+22.398,
+9
+],
+"Dallas Mavericks|Toronto Raptors": [
+19.806,
+6
+],
+"Dallas Mavericks|Utah Jazz": [
+4.928,
+11
+],
+"Dallas Mavericks|Washington Wizards": [
+12.527,
+6
+],
+"Denver Nuggets|Detroit Pistons": [
+-5.701,
+6
+],
+"Denver Nuggets|Golden State Warriors": [
+-22.575,
+10
+],
+"Denver Nuggets|Houston Rockets": [
+-31.939,
+11
+],
+"Denver Nuggets|Indiana Pacers": [
+-6.775,
+6
+],
+"Denver Nuggets|Los Angeles Clippers": [
+-17.222,
+11
+],
+"Denver Nuggets|Los Angeles Lakers": [
+-1.54,
+9
+],
+"Denver Nuggets|Memphis Grizzlies": [
+13.656,
+11
+],
+"Denver Nuggets|Miami Heat": [
+-10.892,
+6
+],
+"Denver Nuggets|Milwaukee Bucks": [
+-9.751,
+6
+],
+"Denver Nuggets|Minnesota Timberwolves": [
+7.233,
+12
+],
+"Denver Nuggets|New Orleans Pelicans": [
+-0.658,
+10
+],
+"Denver Nuggets|New York Knicks": [
+1.433,
+6
+],
+"Denver Nuggets|Oklahoma City Thunder": [
+1.604,
+11
+],
+"Denver Nuggets|Orlando Magic": [
+-9.451,
+6
+],
+"Denver Nuggets|Philadelphia 76ers": [
+-15.008,
+6
+],
+"Denver Nuggets|Phoenix Suns": [
+-35.457,
+10
+],
+"Denver Nuggets|Portland Trail Blazers": [
+-17.989,
+12
+],
+"Denver Nuggets|Sacramento Kings": [
+11.706,
+12
+],
+"Denver Nuggets|San Antonio Spurs": [
+35.269,
+11
+],
+"Denver Nuggets|Toronto Raptors": [
+-4.851,
+6
+],
+"Denver Nuggets|Utah Jazz": [
+-3.867,
+12
+],
+"Denver Nuggets|Washington Wizards": [
+8.534,
+6
+],
+"Detroit Pistons|Golden State Warriors": [
+10.408,
+6
+],
+"Detroit Pistons|Houston Rockets": [
+-10.186,
+6
+],
+"Detroit Pistons|Indiana Pacers": [
+18.918,
+11
+],
+"Detroit Pistons|Los Angeles Clippers": [
+-8.837,
+6
+],
+"Detroit Pistons|Los Angeles Lakers": [
+2.419,
+6
+],
+"Detroit Pistons|Memphis Grizzlies": [
+-10.235,
+7
+],
+"Detroit Pistons|Miami Heat": [
+8.923,
+10
+],
+"Detroit Pistons|Milwaukee Bucks": [
+26.886,
+12
+],
+"Detroit Pistons|Minnesota Timberwolves": [
+-9.326,
+6
+],
+"Detroit Pistons|New Orleans Pelicans": [
+-4.76,
+6
+],
+"Detroit Pistons|New York Knicks": [
+-16.954,
+10
+],
+"Detroit Pistons|Oklahoma City Thunder": [
+9.031,
+6
+],
+"Detroit Pistons|Orlando Magic": [
+-13.004,
+11
+],
+"Detroit Pistons|Philadelphia 76ers": [
+-22.863,
+11
+],
+"Detroit Pistons|Phoenix Suns": [
+1.769,
+6
+],
+"Detroit Pistons|Portland Trail Blazers": [
+7.835,
+6
+],
+"Detroit Pistons|Sacramento Kings": [
+-4.994,
+6
+],
+"Detroit Pistons|San Antonio Spurs": [
+-13.418,
+6
+],
+"Detroit Pistons|Toronto Raptors": [
+-3.505,
+10
+],
+"Detroit Pistons|Utah Jazz": [
+28.937,
+6
+],
+"Detroit Pistons|Washington Wizards": [
+11.769,
+11
+],
+"Golden State Warriors|Houston Rockets": [
+-38.797,
+11
+],
+"Golden State Warriors|Indiana Pacers": [
+-9.072,
+6
+],
+"Golden State Warriors|Los Angeles Clippers": [
+-32.468,
+12
+],
+"Golden State Warriors|Los Angeles Lakers": [
+-2.702,
+11
+],
+"Golden State Warriors|Memphis Grizzlies": [
+9.65,
+10
+],
+"Golden State Warriors|Miami Heat": [
+-11.911,
+6
+],
+"Golden State Warriors|Milwaukee Bucks": [
+-3.761,
+6
+],
+"Golden State Warriors|Minnesota Timberwolves": [
+-14.308,
+11
+],
+"Golden State Warriors|New Orleans Pelicans": [
+-24.963,
+10
+],
+"Golden State Warriors|New York Knicks": [
+-26.397,
+6
+],
+"Golden State Warriors|Oklahoma City Thunder": [
+16.104,
+11
+],
+"Golden State Warriors|Orlando Magic": [
+-18.803,
+6
+],
+"Golden State Warriors|Philadelphia 76ers": [
+-18.065,
+6
+],
+"Golden State Warriors|Phoenix Suns": [
+-3.702,
+11
+],
+"Golden State Warriors|Portland Trail Blazers": [
+-7.828,
+10
+],
+"Golden State Warriors|Sacramento Kings": [
+-26.23,
+12
+],
+"Golden State Warriors|San Antonio Spurs": [
+-9.204,
+11
+],
+"Golden State Warriors|Toronto Raptors": [
+11.746,
+6
+],
+"Golden State Warriors|Utah Jazz": [
+0.964,
+11
+],
+"Golden State Warriors|Washington Wizards": [
+3.185,
+6
+],
+"Houston Rockets|Indiana Pacers": [
+-1.607,
+6
+],
+"Houston Rockets|Los Angeles Clippers": [
+-22.098,
+11
+],
+"Houston Rockets|Los Angeles Lakers": [
+-16.238,
+10
+],
+"Houston Rockets|Memphis Grizzlies": [
+8.477,
+12
+],
+"Houston Rockets|Miami Heat": [
+-26.387,
+6
+],
+"Houston Rockets|Milwaukee Bucks": [
+-15.694,
+6
+],
+"Houston Rockets|Minnesota Timberwolves": [
+14.622,
+10
+],
+"Houston Rockets|New Orleans Pelicans": [
+-11.907,
+12
+],
+"Houston Rockets|New York Knicks": [
+-23.28,
+6
+],
+"Houston Rockets|Oklahoma City Thunder": [
+24.626,
+11
+],
+"Houston Rockets|Orlando Magic": [
+-12.591,
+5
+],
+"Houston Rockets|Philadelphia 76ers": [
+23.248,
+6
+],
+"Houston Rockets|Phoenix Suns": [
+3.504,
+11
+],
+"Houston Rockets|Portland Trail Blazers": [
+-6.187,
+11
+],
+"Houston Rockets|Sacramento Kings": [
+-36.236,
+10
+],
+"Houston Rockets|San Antonio Spurs": [
+-6.467,
+12
+],
+"Houston Rockets|Toronto Raptors": [
+-2.662,
+6
+],
+"Houston Rockets|Utah Jazz": [
+11.554,
+11
+],
+"Houston Rockets|Washington Wizards": [
+-6.495,
+6
+],
+"Indiana Pacers|Los Angeles Clippers": [
+1.982,
+6
+],
+"Indiana Pacers|Los Angeles Lakers": [
+8.943,
+6
+],
+"Indiana Pacers|Memphis Grizzlies": [
+-12.278,
+6
+],
+"Indiana Pacers|Miami Heat": [
+-2.443,
+10
+],
+"Indiana Pacers|Milwaukee Bucks": [
+13.833,
+13
+],
+"Indiana Pacers|Minnesota Timberwolves": [
+8.4,
+6
+],
+"Indiana Pacers|New Orleans Pelicans": [
+4.965,
+7
+],
+"Indiana Pacers|New York Knicks": [
+-1.497,
+10
+],
+"Indiana Pacers|Oklahoma City Thunder": [
+-4.099,
+5
+],
+"Indiana Pacers|Orlando Magic": [
+-5.364,
+10
+],
+"Indiana Pacers|Philadelphia 76ers": [
+8.0,
+11
+],
+"Indiana Pacers|Phoenix Suns": [
+-10.873,
+6
+],
+"Indiana Pacers|Portland Trail Blazers": [
+-5.556,
+6
+],
+"Indiana Pacers|Sacramento Kings": [
+4.411,
+6
+],
+"Indiana Pacers|San Antonio Spurs": [
+5.736,
+6
+],
+"Indiana Pacers|Toronto Raptors": [
+28.431,
+11
+],
+"Indiana Pacers|Utah Jazz": [
+7.119,
+6
+],
+"Indiana Pacers|Washington Wizards": [
+1.028,
+10
+],
+"Los Angeles Clippers|Los Angeles Lakers": [
+-21.206,
+12
+],
+"Los Angeles Clippers|Memphis Grizzlies": [
+-8.757,
+11
+],
+"Los Angeles Clippers|Miami Heat": [
+-11.118,
+6
+],
+"Los Angeles Clippers|Milwaukee Bucks": [
+-5.272,
+6
+],
+"Los Angeles Clippers|Minnesota Timberwolves": [
+-45.935,
+11
+],
+"Los Angeles Clippers|New Orleans Pelicans": [
+-27.404,
+11
+],
+"Los Angeles Clippers|New York Knicks": [
+-13.212,
+6
+],
+"Los Angeles Clippers|Oklahoma City Thunder": [
+-14.168,
+10
+],
+"Los Angeles Clippers|Orlando Magic": [
+-11.318,
+6
+],
+"Los Angeles Clippers|Philadelphia 76ers": [
+-36.385,
+6
+],
+"Los Angeles Clippers|Phoenix Suns": [
+-41.377,
+11
+],
+"Los Angeles Clippers|Portland Trail Blazers": [
+-44.754,
+10
+],
+"Los Angeles Clippers|Sacramento Kings": [
+-33.444,
+12
+],
+"Los Angeles Clippers|San Antonio Spurs": [
+-13.056,
+10
+],
+"Los Angeles Clippers|Toronto Raptors": [
+-15.467,
+6
+],
+"Los Angeles Clippers|Utah Jazz": [
+-4.988,
+10
+],
+"Los Angeles Clippers|Washington Wizards": [
+-3.281,
+6
+],
+"Los Angeles Lakers|Memphis Grizzlies": [
+23.869,
+11
+],
+"Los Angeles Lakers|Miami Heat": [
+-6.787,
+6
+],
+"Los Angeles Lakers|Milwaukee Bucks": [
+4.094,
+6
+],
+"Los Angeles Lakers|Minnesota Timberwolves": [
+-26.634,
+10
+],
+"Los Angeles Lakers|New Orleans Pelicans": [
+-15.734,
+11
+],
+"Los Angeles Lakers|New York Knicks": [
+-5.784,
+6
+],
+"Los Angeles Lakers|Oklahoma City Thunder": [
+-29.578,
+11
+],
+"Los Angeles Lakers|Orlando Magic": [
+-15.296,
+6
+],
+"Los Angeles Lakers|Philadelphia 76ers": [
+-10.737,
+6
+],
+"Los Angeles Lakers|Phoenix Suns": [
+-37.611,
+14
+],
+"Los Angeles Lakers|Portland Trail Blazers": [
+-15.21,
+10
+],
+"Los Angeles Lakers|Sacramento Kings": [
+15.526,
+12
+],
+"Los Angeles Lakers|San Antonio Spurs": [
+-2.494,
+11
+],
+"Los Angeles Lakers|Toronto Raptors": [
+-2.805,
+6
+],
+"Los Angeles Lakers|Utah Jazz": [
+13.262,
+11
+],
+"Los Angeles Lakers|Washington Wizards": [
+19.584,
+6
+],
+"Memphis Grizzlies|Miami Heat": [
+-1.11,
+6
+],
+"Memphis Grizzlies|Milwaukee Bucks": [
+-4.029,
+6
+],
+"Memphis Grizzlies|Minnesota Timberwolves": [
+-4.532,
+11
+],
+"Memphis Grizzlies|New Orleans Pelicans": [
+13.74,
+10
+],
+"Memphis Grizzlies|New York Knicks": [
+-0.275,
+6
+],
+"Memphis Grizzlies|Oklahoma City Thunder": [
+-5.607,
+10
+],
+"Memphis Grizzlies|Orlando Magic": [
+-0.106,
+6
+],
+"Memphis Grizzlies|Philadelphia 76ers": [
+10.895,
+6
+],
+"Memphis Grizzlies|Phoenix Suns": [
+20.553,
+10
+],
+"Memphis Grizzlies|Portland Trail Blazers": [
+25.741,
+11
+],
+"Memphis Grizzlies|Sacramento Kings": [
+15.054,
+10
+],
+"Memphis Grizzlies|San Antonio Spurs": [
+0.935,
+12
+],
+"Memphis Grizzlies|Toronto Raptors": [
+-6.187,
+6
+],
+"Memphis Grizzlies|Utah Jazz": [
+28.679,
+10
+],
+"Memphis Grizzlies|Washington Wizards": [
+24.743,
+6
+],
+"Miami Heat|Milwaukee Bucks": [
+-12.449,
+10
+],
+"Miami Heat|Minnesota Timberwolves": [
+-10.747,
+6
+],
+"Miami Heat|New Orleans Pelicans": [
+1.254,
+6
+],
+"Miami Heat|New York Knicks": [
+-13.478,
+10
+],
+"Miami Heat|Oklahoma City Thunder": [
+-14.938,
+6
+],
+"Miami Heat|Orlando Magic": [
+-12.104,
+11
+],
+"Miami Heat|Philadelphia 76ers": [
+-9.438,
+11
+],
+"Miami Heat|Phoenix Suns": [
+-16.878,
+6
+],
+"Miami Heat|Portland Trail Blazers": [
+5.947,
+6
+],
+"Miami Heat|Sacramento Kings": [
+-0.7,
+6
+],
+"Miami Heat|San Antonio Spurs": [
+-4.671,
+6
+],
+"Miami Heat|Toronto Raptors": [
+-28.435,
+12
+],
+"Miami Heat|Utah Jazz": [
+1.292,
+6
+],
+"Miami Heat|Washington Wizards": [
+23.206,
+12
+],
+"Milwaukee Bucks|Minnesota Timberwolves": [
+-17.072,
+6
+],
+"Milwaukee Bucks|New Orleans Pelicans": [
+12.739,
+6
+],
+"Milwaukee Bucks|New York Knicks": [
+-33.102,
+11
+],
+"Milwaukee Bucks|Oklahoma City Thunder": [
+-16.115,
+6
+],
+"Milwaukee Bucks|Orlando Magic": [
+-20.313,
+11
+],
+"Milwaukee Bucks|Philadelphia 76ers": [
+-9.941,
+9
+],
+"Milwaukee Bucks|Phoenix Suns": [
+-17.713,
+6
+],
+"Milwaukee Bucks|Portland Trail Blazers": [
+-11.981,
+6
+],
+"Milwaukee Bucks|Sacramento Kings": [
+-5.151,
+6
+],
+"Milwaukee Bucks|San Antonio Spurs": [
+5.664,
+6
+],
+"Milwaukee Bucks|Toronto Raptors": [
+-20.056,
+10
+],
+"Milwaukee Bucks|Utah Jazz": [
+-14.928,
+6
+],
+"Milwaukee Bucks|Washington Wizards": [
+-0.374,
+9
+],
+"Minnesota Timberwolves|New Orleans Pelicans": [
+15.671,
+11
+],
+"Minnesota Timberwolves|New York Knicks": [
+-10.732,
+6
+],
+"Minnesota Timberwolves|Oklahoma City Thunder": [
+-15.433,
+12
+],
+"Minnesota Timberwolves|Orlando Magic": [
+-2.389,
+6
+],
+"Minnesota Timberwolves|Philadelphia 76ers": [
+-3.594,
+6
+],
+"Minnesota Timberwolves|Phoenix Suns": [
+-27.78,
+10
+],
+"Minnesota Timberwolves|Portland Trail Blazers": [
+3.899,
+11
+],
+"Minnesota Timberwolves|Sacramento Kings": [
+15.626,
+10
+],
+"Minnesota Timberwolves|San Antonio Spurs": [
+-28.324,
+11
+],
+"Minnesota Timberwolves|Toronto Raptors": [
+-5.714,
+5
+],
+"Minnesota Timberwolves|Utah Jazz": [
+-2.218,
+12
+],
+"Minnesota Timberwolves|Washington Wizards": [
+-3.483,
+6
+],
+"New Orleans Pelicans|New York Knicks": [
+-18.903,
+6
+],
+"New Orleans Pelicans|Oklahoma City Thunder": [
+-12.586,
+10
+],
+"New Orleans Pelicans|Orlando Magic": [
+-14.57,
+6
+],
+"New Orleans Pelicans|Philadelphia 76ers": [
+-14.379,
+6
+],
+"New Orleans Pelicans|Phoenix Suns": [
+-14.453,
+10
+],
+"New Orleans Pelicans|Portland Trail Blazers": [
+-53.688,
+11
+],
+"New Orleans Pelicans|Sacramento Kings": [
+3.439,
+12
+],
+"New Orleans Pelicans|San Antonio Spurs": [
+7.049,
+12
+],
+"New Orleans Pelicans|Toronto Raptors": [
+11.006,
+6
+],
+"New Orleans Pelicans|Utah Jazz": [
+33.512,
+10
+],
+"New Orleans Pelicans|Washington Wizards": [
+10.282,
+6
+],
+"New York Knicks|Oklahoma City Thunder": [
+-12.035,
+6
+],
+"New York Knicks|Orlando Magic": [
+-43.95,
+12
+],
+"New York Knicks|Philadelphia 76ers": [
+-33.244,
+12
+],
+"New York Knicks|Phoenix Suns": [
+-26.636,
+6
+],
+"New York Knicks|Portland Trail Blazers": [
+-9.443,
+6
+],
+"New York Knicks|Sacramento Kings": [
+-5.779,
+6
+],
+"New York Knicks|San Antonio Spurs": [
+-7.247,
+6
+],
+"New York Knicks|Toronto Raptors": [
+-40.522,
+13
+],
+"New York Knicks|Utah Jazz": [
+-1.546,
+6
+],
+"New York Knicks|Washington Wizards": [
+-0.094,
+10
+],
+"Oklahoma City Thunder|Orlando Magic": [
+-4.777,
+6
+],
+"Oklahoma City Thunder|Philadelphia 76ers": [
+-9.395,
+6
+],
+"Oklahoma City Thunder|Phoenix Suns": [
+-20.952,
+11
+],
+"Oklahoma City Thunder|Portland Trail Blazers": [
+-5.934,
+12
+],
+"Oklahoma City Thunder|Sacramento Kings": [
+6.658,
+10
+],
+"Oklahoma City Thunder|San Antonio Spurs": [
+-1.122,
+12
+],
+"Oklahoma City Thunder|Toronto Raptors": [
+4.253,
+6
+],
+"Oklahoma City Thunder|Utah Jazz": [
+27.798,
+12
+],
+"Oklahoma City Thunder|Washington Wizards": [
+10.16,
+6
+],
+"Orlando Magic|Philadelphia 76ers": [
+-30.949,
+10
+],
+"Orlando Magic|Phoenix Suns": [
+10.113,
+6
+],
+"Orlando Magic|Portland Trail Blazers": [
+-26.755,
+6
+],
+"Orlando Magic|Sacramento Kings": [
+-2.157,
+6
+],
+"Orlando Magic|San Antonio Spurs": [
+-4.215,
+6
+],
+"Orlando Magic|Toronto Raptors": [
+-30.399,
+10
+],
+"Orlando Magic|Utah Jazz": [
+16.966,
+6
+],
+"Orlando Magic|Washington Wizards": [
+8.704,
+12
+],
+"Philadelphia 76ers|Phoenix Suns": [
+-10.136,
+6
+],
+"Philadelphia 76ers|Portland Trail Blazers": [
+-3.189,
+6
+],
+"Philadelphia 76ers|Sacramento Kings": [
+-28.239,
+6
+],
+"Philadelphia 76ers|San Antonio Spurs": [
+23.707,
+6
+],
+"Philadelphia 76ers|Toronto Raptors": [
+6.134,
+12
+],
+"Philadelphia 76ers|Utah Jazz": [
+6.026,
+6
+],
+"Philadelphia 76ers|Washington Wizards": [
+24.749,
+11
+],
+"Phoenix Suns|Portland Trail Blazers": [
+-14.116,
+11
+],
+"Phoenix Suns|Sacramento Kings": [
+-16.806,
+12
+],
+"Phoenix Suns|San Antonio Spurs": [
+-13.616,
+11
+],
+"Phoenix Suns|Toronto Raptors": [
+-14.054,
+6
+],
+"Phoenix Suns|Utah Jazz": [
+13.991,
+11
+],
+"Phoenix Suns|Washington Wizards": [
+0.654,
+6
+],
+"Portland Trail Blazers|Sacramento Kings": [
+-4.157,
+11
+],
+"Portland Trail Blazers|San Antonio Spurs": [
+-9.924,
+10
+],
+"Portland Trail Blazers|Toronto Raptors": [
+-3.289,
+6
+],
+"Portland Trail Blazers|Utah Jazz": [
+25.675,
+12
+],
+"Portland Trail Blazers|Washington Wizards": [
+8.483,
+6
+],
+"Sacramento Kings|San Antonio Spurs": [
+0.409,
+10
+],
+"Sacramento Kings|Toronto Raptors": [
+2.697,
+6
+],
+"Sacramento Kings|Utah Jazz": [
+-33.137,
+10
+],
+"Sacramento Kings|Washington Wizards": [
+-5.227,
+6
+],
+"San Antonio Spurs|Toronto Raptors": [
+7.964,
+6
+],
+"San Antonio Spurs|Utah Jazz": [
+19.216,
+10
+],
+"San Antonio Spurs|Washington Wizards": [
+6.985,
+6
+],
+"Toronto Raptors|Utah Jazz": [
+23.404,
+6
+],
+"Toronto Raptors|Washington Wizards": [
+9.856,
+11
+],
+"Utah Jazz|Washington Wizards": [
+4.492,
+6
+]
+}
+}

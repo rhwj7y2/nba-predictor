@@ -86,12 +86,13 @@
     return (1 - w) * shrunk(t.gp, t.net) + w * shrunk(Math.min(10, t.gp), t.net10);
   }
 
-  // adj = 傷病扣分 { a: 客隊缺陣扣分, h: 主隊缺陣扣分 }（點數）；扣在預測分差上：新分差 = 原分差 - 主隊扣分 + 客隊扣分，總分不變
+  // adj = { a: 客隊扣分, h: 主隊扣分, t: 總分調整 }（點數）；扣分（傷病、連兩天）扣在預測分差上：新分差 = 原分差 - 主隊扣分 + 客隊扣分，總分不變；
+  // t 是兩隊歷史對戰節奏調整，只加在預測總分上、不動分差
   function predictSeason(a, h, ha, adj) {
     var w = MODEL.recentWeight;
     var totalSeason = (a.off + h.def) / 2 + (h.off + a.def) / 2;
     var totalRecent = (a.l10off + h.l10def) / 2 + (h.l10off + a.l10def) / 2;
-    var total = (1 - w) * totalSeason + w * totalRecent;
+    var total = (1 - w) * totalSeason + w * totalRecent + (adj && adj.t ? adj.t : 0);  // adj.t = 兩隊歷史對戰節奏調整（只動總分）
     var margin = rating(h) - rating(a) + (ha == null ? MODEL.homeAdv : ha) - (adj ? adj.h - adj.a : 0);
     return { away: total / 2 - margin / 2, home: total / 2 + margin / 2 };
   }
@@ -261,8 +262,8 @@
   function gameAdj(g) {  // 這場比賽的扣分 { a, h }（傷病 + 連兩天）；沒人被扣回傳 null
     if (!g) return null;
     var d = (SCHEDULE && SCHEDULE.b2bDeduct) || 0, b = g.b || "";
-    var a = (g.ja || 0) + (b.indexOf("a") >= 0 ? d : 0), h = (g.jh || 0) + (b.indexOf("h") >= 0 ? d : 0);
-    return a || h ? { a: a, h: h } : null;
+    var a = (g.ja || 0) + (b.indexOf("a") >= 0 ? d : 0), h = (g.jh || 0) + (b.indexOf("h") >= 0 ? d : 0), t = g.pt || 0;
+    return a || h || t ? { a: a, h: h, t: t } : null;
   }
   function b2bNote(a, h, g) {  // 預測頁「連兩天」那行字：哪隊昨天也有比賽；沒有回傳空字串
     var b = (g && g.b) || "", list = [];
@@ -1516,6 +1517,9 @@
   // 三季回測（2023-24 ~ 2025-26，3643 場）的對照數字：現行方法（含傷病扣分，傷病用「事後誰沒上場」代替，偏樂觀）、
   // 信心用上面的門檻（3.5 / 8.0）：低 668/1196、中 786/1190、高 1020/1257、全部 2474/3643
   var BACKTEST = { all: "68.0%", low: "55.2%", mid: "66.6%", high: "81.2%" };
+  // 各個玩法三季回測勝率（2023-24～2025-26，用現在的模型逐場往前推：含傷病、連兩天、對戰節奏調整；盤口只用有開盤的場次，打平盤與預測剛好等於盤口的不算）：
+  // 不讓分 2478 / 3643、讓分 1846 / 3580、單隊大小 3632 / 7196、總分大小 1811 / 3587
+  var BET_BACKTEST = { ml: "68.0%", sp: "51.6%", tt: "50.5%", tot: "50.5%" };
   function accuracyRows() {
     var rows = [];
     if (!MODEL || !SCHEDULE) return rows;
@@ -1583,9 +1587,9 @@
     // 對盤口的勝率：只算有記下開賽前盤口的比賽
     var bs = betStats();
     if (bs.ml[1]) {
-      html += '<div class="card"><h2>各個玩法準確率</h2><table class="acc-table"><thead><tr><th>項目</th><th>猜中</th><th>勝率</th></tr></thead><tbody>' +
+      html += '<div class="card"><h2>各個玩法準確率</h2><table class="acc-table"><thead><tr><th>項目</th><th>猜中</th><th>勝率</th><th>三季回測</th></tr></thead><tbody>' +
         [["ml", "不讓分"], ["sp", "讓分"], ["tt", "單隊大小"], ["tot", "總分大小"]].map(function (x) {
-          return "<tr><td>" + x[1] + "</td><td>" + bs[x[0]][0] + " / " + bs[x[0]][1] + "</td><td>" + pct(bs[x[0]][0], bs[x[0]][1]) + "</td></tr>";
+          return "<tr><td>" + x[1] + "</td><td>" + bs[x[0]][0] + " / " + bs[x[0]][1] + "</td><td>" + pct(bs[x[0]][0], bs[x[0]][1]) + '</td><td class="muted">' + BET_BACKTEST[x[0]] + "</td></tr>";
         }).join("") + '</tbody></table><p class="acc-note">以準確率來看，不讓分值得參考，其他太看運氣啦</p></div>';
     }
 

@@ -41,6 +41,15 @@ INJURY_FILE = "injuries_latest.json"  # 由 fetch_espn_games.py 產生：ESPN �
 INJURY_ADJ_FILE = "injury_adj_2026-27.json"  # 每場比賽凍結的傷病扣分（開賽後不再變動）
 B2B_DEDUCT = 2.0     # 連兩天：這隊的預測分差扣幾分（三季回測：連兩天的球隊平均比預測少約 1.25 分；只動分差、不動總分，因為對手平均反而多拿約 1 分，總分沒偏）
 B2B_FROM = "2026-11-09"  # 台灣日期，這天起的比賽才套用連兩天扣分（以前已打的預測維持當時的樣子）
+# 兩隊歷史對戰節奏（PACE）調整預測總分：這兩隊碰面時，回合數常比「兩隊本季平均」多或少，用過去的碰面來修正（只動總分、不動分差）。
+# 資料檔 raw/h2h_pace_history.json（過去三季每組兩隊的節奏殘差總和，由 make_h2h_pace_history.py 產生）加上本季已打的碰面。
+# 調整量 = 乘數 × 殘差總和 ÷（碰面場數 + K）：K = 收縮（碰面少時不全信）、乘數 = 每多 1 個回合約多幾分（兩隊各約 1.15 分／回合）。
+# 三季回測（驗證 2,550 場）：總分誤差 15.175 -> 15.066，大小分猜對率 48.2% -> 49.5%
+H2H_PACE_FILE = "h2h_pace_history.json"
+H2H_PACE_K = 6
+H2H_PACE_MULT = 2.3
+H2H_PACE_FROM = "2026-11-09"  # 台灣日期，這天起的比賽才套用（以前已打的預測維持當時的樣子）
+H2H_SHRINK_GAMES = 5  # 預估節奏往聯盟平均拉回的場數（和 make_h2h_pace_history.py 同一套算法）
 INJURY_BACKFILL_UNTIL = "2026-11-08"  # 台灣日期，這天以前（不含）已完賽的比賽可以「事後回補」傷病扣分（當時還沒有傷病扣分）
 SCHEDULE_FILE = "schedule_2026-27.json"  # 球季進行中：由 fetch_espn_games.py 產生，網頁的賽程分頁用
 # 賽程分頁最早能看到的台灣日期：這天起的已完賽比賽會顯示「賽前預測比分 + 結果」，
@@ -405,6 +414,51 @@ def backfill_injury_adj(raw_dir, games, schedule):
     return out
 
 
+def apply_h2h_pace_adj(raw_dir, schedule):
+    """兩隊歷史對戰節奏調整：每場「H2H_PACE_FROM 起」的比賽寫 pt = 預測總分要加減幾分（沒調整就不寫）。
+
+    每場實際回合數 = 出手 + 0.44 × 罰球出手 − 進攻籃板 + 失誤（兩隊平均）；殘差 = 實際 − 預估（兩隊「到那場之前」本季平均回合數，
+    往聯盟平均拉回 H2H_SHRINK_GAMES 場）。每組兩隊的殘差先吃過去三季的總和（raw/h2h_pace_history.json），再逐場加上本季更早的碰面，
+    所以每場只看得到「它之前」的碰面，已完賽的比賽也不會被事後的結果改掉。
+    """
+    hist_path, box_path = raw_dir / H2H_PACE_FILE, raw_dir / BOX_FILE
+    if not hist_path.exists() or not box_path.exists():
+        print(f"注意：找不到 {hist_path.name} 或 {box_path.name}，這次沒有對戰節奏調整（請先執行 python make_h2h_pace_history.py）")
+        return
+    hist = json.loads(hist_path.read_text(encoding="utf-8"))["pairs"]
+    box = json.loads(box_path.read_text(encoding="utf-8"))
+    abbr_name = {v[0]: k for k, v in TEAMS.items()}
+    # 本季已完賽的比賽依日期順序，逐場算殘差；cur[組合] = [(日期, 殘差), ...]
+    team_pace, league = defaultdict(list), []
+    cur = defaultdict(list)
+    for gid, g in sorted(box.items(), key=lambda kv: (kv[1]["date"], kv[0])):
+        poss = {t: x["fga"] + 0.44 * x["fta"] - x["orb"] + x["tov"] for t, x in g["stats"].items()}
+        pace = sum(poss.values()) / 2
+        a, h = g["away"], g["home"]
+        if team_pace[a] and team_pace[h]:
+            lg = sum(league) / len(league)
+            shrunk = lambda xs: (sum(xs) + H2H_SHRINK_GAMES * lg) / (len(xs) + H2H_SHRINK_GAMES)
+            cur["|".join(sorted((a, h)))].append((g["date"], pace - (shrunk(team_pace[a]) + shrunk(team_pace[h])) / 2))
+        team_pace[a].append(pace)
+        team_pace[h].append(pace)
+        league.append(pace)
+    n_set = 0
+    for g in schedule["games"]:
+        if not g["a"] or not g["h"] or g["d"] < H2H_PACE_FROM:
+            continue
+        key = "|".join(sorted((abbr_name[g["a"]], abbr_name[g["h"]])))
+        h_sum, h_n = hist.get(key, [0.0, 0])
+        # 這場的美東日期 = 台灣開賽時間 - 14 小時（台灣 = UTC+8、美東 = UTC-6）；只算美東日期比這場早的碰面
+        et_day = (datetime.strptime(g["d"] + " " + g["t"], "%Y-%m-%d %H:%M") - timedelta(hours=14)).strftime("%Y-%m-%d")
+        before = [r for d, r in cur.get(key, []) if d < et_day]
+        x = (h_sum + sum(before)) / (h_n + len(before) + H2H_PACE_K)
+        adj = round(H2H_PACE_MULT * x, 1)
+        if adj:
+            g["pt"] = adj
+            n_set += 1
+    print(f"對戰節奏調整：{n_set} 場有總分調整（{H2H_PACE_FROM} 起），過去三季 {len(hist)} 組對戰 + 本季 {sum(len(v) for v in cur.values())} 場碰面")
+
+
 def apply_injury_adj(raw_dir, schedule, tiers, backfill_games=None):
     """傷病扣分：把每場「還沒開打」的比賽，兩隊缺陣球員的扣分寫進 schedule（直接改 schedule）。
 
@@ -691,6 +745,8 @@ def main(raw_dir, target, complete, backfill_injuries=False):
     tiers = None if complete else build_player_tiers(raw_dir, games)
     if schedule and tiers:
         apply_injury_adj(raw_dir, schedule, tiers, games if backfill_injuries else None)
+    if schedule:
+        apply_h2h_pace_adj(raw_dir, schedule)
 
     # 球季進行中：附上預測模型參數，以及上季交手紀錄（只供顯示，不進預測）
     if not complete:
