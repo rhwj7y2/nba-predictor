@@ -541,26 +541,26 @@
       row(a, qa, qh, g.as) + row(h, qh, qa, g.hs) + "</tbody></table>";
   }
 
-  function betPicksHtml(a, h, p, g) {
+  function betPicksHtml(a, h, p, g) {  // 每行三格：球隊 | 內容 | 對錯，用格線排版，每行一樣寬、對錯符號上下對齊
     if (g.sp == null || g.ou == null) return "";
-    var mark = function (ok) { return ok === null ? "" : ok ? " ✅" : " ❌"; };
+    var mark = function (ok) { return ok === null ? "" : ok ? "✅" : "❌"; };
     var pa = Number(f1(p.away)), ph = Number(f1(p.home));
-    var lines = [];
+    var rows = [];
     var homePick = p.home >= p.away;  // 不讓分：預測勝方（和畫面上的預測勝負一致，平手算主隊）
-    lines.push((homePick ? h.zh : a.zh) + " 勝" + mark((g.hs > g.as) === homePick));
+    rows.push([homePick ? h.zh : a.zh, "勝", mark((g.hs > g.as) === homePick)]);
     var cover = g.hs - g.as + g.sp;   // 實際：> 0 主隊過關，< 0 客隊過關
     var pick = ph - pa + g.sp;        // 預測：> 0 選主隊那邊，< 0 選客隊那邊
     if (pick !== 0) {
-      lines.push((pick > 0 ? h.zh + " " + sgn(g.sp) : a.zh + " " + sgn(-g.sp)) + mark(cover === 0 ? null : (cover > 0) === (pick > 0)));
+      rows.push([pick > 0 ? h.zh : a.zh, pick > 0 ? sgn(g.sp) : sgn(-g.sp), mark(cover === 0 ? null : (cover > 0) === (pick > 0))]);
     }
     var overUnder = function (name, pred, line, actual) {
       if (pred === line) return;
-      lines.push(name + " " + line + " " + (pred > line ? "大" : "小") + mark(actual === line ? null : (actual > line) === (pred > line)));
+      rows.push([name, line + " " + (pred > line ? "大" : "小"), mark(actual === line ? null : (actual > line) === (pred > line))]);
     };
     overUnder(a.zh, pa, Number(half(g.ou / 2 + g.sp / 2)), g.as);
     overUnder(h.zh, ph, Number(half(g.ou / 2 - g.sp / 2)), g.hs);
     overUnder("總分", pa + ph, g.ou, g.as + g.hs);
-    return lines.map(function (t) { return "<div>" + t + "</div>"; }).join("");
+    return rows.map(function (r) { return '<span class="op-n">' + r[0] + '</span><span class="op-v">' + r[1] + '</span><span class="op-m">' + r[2] + "</span>"; }).join("");
   }
 
   function showOdds(a, h, aColor, hColor, o) {  // 即時盤口（ESPN 賽事列表的 odds）
