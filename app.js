@@ -39,7 +39,7 @@
       foot: "整理自 " + D.season + " 例行賽 " + N_GAMES + " 場"
     },
     in_season: {
-      title: "NBA 對戰預測",
+      title: "NBA 勝負預測",
       notice: "",  // 球季進行中不顯示說明框（資料更新到哪天，頁尾會寫）
       statsTitle: D.season + " 本季數據對照",
       recLabel: "本季戰績",
@@ -394,8 +394,7 @@
       // 第二張卡：賽前預測、信心、各選項對錯
       $("pre-board").innerHTML = '<div class="pre-title">賽前預測</div>' +
         '<div class="pre-score">' + a.zh + " " + f1(cmp.p1.away) + " : " + f1(cmp.p1.home) + " " + h.zh + "</div>" +
-        '<div class="pre-conf">' + confHtml(cmp.p1) + "</div>" +
-        (finalGame.sp != null ? '<div class="pre-picks">' + betPicksHtml(a, h, cmp.p1, finalGame) + "</div>" : "");
+        '<div class="pre-conf">' + confHtml(cmp.p1) + "</div>";
     }
 
     // 交手紀錄（以客隊為主視角）；球季進行中除了本季，還附上上季的交手（只供參考，不進預測）
@@ -440,7 +439,7 @@
     if (!pregame) renderPlayers(aKey, hKey, a, h, aColor, hColor);   // 得分前三球員：已完賽的固定頁面不顯示
     if (!pregame) renderInjuries(aKey, hKey, a, h, aColor, hColor);  // 傷病名單：已完賽的固定頁面不顯示
     if (MODEL) {
-      if (pregame) showRecordedOdds(a, h, aColor, hColor);
+      if (pregame) showRecordedOdds(a, h, aColor, hColor, cmp.p1);
       else renderOdds(aKey, hKey, a, h, aColor, hColor);
     }
   }
@@ -534,6 +533,8 @@
     var mark = function (ok) { return ok === null ? "" : ok ? " ✅" : " ❌"; };
     var pa = Number(f1(p.away)), ph = Number(f1(p.home));
     var lines = [];
+    var homePick = p.home >= p.away;  // 不讓分：預測勝方（和畫面上的預測勝負一致，平手算主隊）
+    lines.push((homePick ? h.zh : a.zh) + " 勝" + mark((g.hs > g.as) === homePick));
     var cover = g.hs - g.as + g.sp;   // 實際：> 0 主隊過關，< 0 客隊過關
     var pick = ph - pa + g.sp;        // 預測：> 0 選主隊那邊，< 0 選客隊那邊
     if (pick !== 0) {
@@ -559,16 +560,17 @@
     return drawOdds(a, h, aColor, hColor, homeLine, totalLine, "經 ESPN 取得 DraftKings 的賭盤概況，台灣時間 " + hh + " 更新");
   }
 
-  // 已完賽的比賽：用 update 時存進賽程資料的收盤盤口（sp = 主隊讓分、ou = 總分；原始紀錄在 raw/odds_2026-27.json）
-  function showRecordedOdds(a, h, aColor, hColor) {
+  // 已完賽的比賽（最下面那張卡）：賽前預測拿去對收盤盤口，每個選項選哪邊、對不對（sp = 主隊讓分、ou = 總分；原始紀錄在 raw/odds_2026-27.json）
+  function showRecordedOdds(a, h, aColor, hColor, p1) {
     ++oddsToken;  // 作廢還在路上的即時盤口
     var g = finalGame;
     var card = $("odds-card");
-    if (!g || g.sp == null || !drawOdds(a, h, aColor, hColor, g.sp, g.ou, "經 ESPN 取得 DraftKings 的賭盤概況，開賽前最後的盤口",
-      { as: g.as, hs: g.hs })) {
+    if (!g || g.sp == null || g.ou == null) {
       card.hidden = true;
       return;
     }
+    $("odds-body").innerHTML = '<div class="odds-title">賭盤結果</div><div class="odds-picks">' + betPicksHtml(a, h, p1, g) + "</div>";
+    $("odds-note").innerHTML = "經 ESPN 取得 DraftKings 的賭盤概況，開賽前最後的盤口<br>非投注建議，娛樂參考 !";
     card.hidden = false;
   }
 
