@@ -477,6 +477,11 @@ a.game:hover { border-color: var(--accent); }
 .gm-mid .gm-wc { margin-top: 3px; font-size: .62rem; }
 .gm-row:has(.gm-mid .gm-wp) { align-items: start; padding-top: 7px; padding-bottom: 11px; }  /* 有賭盤勝率條的卡片：兩側隊徽欄和中間欄都從上緣開始排，下面的中間欄用 padding 對齊兩側 */
 .gm-mid:has(.gm-wp) { padding-top: 27.5px; }  /* 開賽時間的中心 = 隊名那一行的中心 */
+@media (max-width: 600px) {  /* 手機：開賽時間放大、往上移一點，離賭盤勝率條遠一些（條仍然對齊戰績那一行） */
+  .game-time { font-size: 2rem; }
+  .gm-mid:has(.gm-wp) { padding-top: 12.4px; }
+  .gm-mid .gm-wp { margin-top: 8.9px; }
+}
 .game-pred .gm-wp { margin-top: 9px; }
 .gm-conf-c { position: absolute; right: 0; bottom: 0; font-size: .85rem; line-height: 1.2; }  /* 信心：卡片右下角 */
 .game-pred .gm-wc { margin-top: 3px; font-size: .62rem; }
