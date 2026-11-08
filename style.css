@@ -452,10 +452,14 @@ a.game:hover { border-color: var(--accent); }
 .game.is-static { opacity: .78; }
 /* 仿 NBA 官網：客隊在左、主隊在右，中間是開賽時間或比分 */
 .gm-tags { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.game { --gm-mid: 11rem; --gm-gap: 8px; }  /* 中間欄寬度和欄距（和下面各個螢幕寬度的 .gm-row 同步）：「出賽成疑」要和球隊欄位對齊，用它們算出球隊欄寬 */
 .gm-row { display: grid; grid-template-columns: minmax(0, 1fr) 11rem minmax(0, 1fr); align-items: center; gap: 8px; }  /* 中間欄固定寬度：不管顯示開賽時間、即時比分或最終比分，兩隊的位置每張卡都對齊 */
-@media (max-width: 420px) { .gm-row { grid-template-columns: minmax(0, 1fr) 9.5rem minmax(0, 1fr); } .gm-score { gap: 10px; } }
+@media (max-width: 420px) { .game { --gm-mid: 9.5rem; } .gm-row { grid-template-columns: minmax(0, 1fr) 9.5rem minmax(0, 1fr); } .gm-score { gap: 10px; } }
 .gm-team { min-width: 0; text-align: center; }
 .gm-name { margin-top: 4px; font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
+.gm-qn { position: absolute; bottom: 16px; width: calc((100% - var(--gm-mid) - 2 * var(--gm-gap)) / 2); box-sizing: border-box; padding: 0 2px; color: #d97706; font-size: .68rem; font-weight: 700; line-height: 1.25; text-align: center; overflow-wrap: break-word; }  /* 超級球星出賽成疑：寬度 = 球隊欄位的寬度，所以文字剛好在球隊（隊徽、隊名、戰績）正下方置中 */
+.gm-qn-a { left: 0; }
+.gm-qn-h { right: 0; }
 .gm-rec { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
 .gm-up { display: block; width: fit-content; margin: 0 auto 5px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 1.4; }  /* 冷門觀察名單選的那隊：隊徽上面的小標籤 */
 .gm-up-gap { visibility: hidden; }  /* 對手：同樣高度的看不見空位，兩隊才會對齊 */
@@ -475,7 +479,7 @@ a.game:hover { border-color: var(--accent); }
 .gm-mid:has(.gm-wp) .game-time { top: 0; }
 .gm-mid .gm-wp { margin-top: 1px; }  /* 勝率條的中心 = 戰績那一行的中心 */
 .gm-mid .gm-wc { margin-top: 3px; font-size: .62rem; }
-.gm-row:has(.gm-mid .gm-wp) { align-items: start; padding-top: 7px; padding-bottom: 11px; }  /* 有賭盤勝率條的卡片：兩側隊徽欄和中間欄都從上緣開始排，下面的中間欄用 padding 對齊兩側 */
+.gm-row:has(.gm-mid .gm-wp) { align-items: start; padding-top: 7px; padding-bottom: 0; }  /* 有賭盤勝率條的卡片：兩側隊徽欄和中間欄都從上緣開始排，下面的中間欄用 padding 對齊兩側 */
 .gm-mid:has(.gm-wp) { padding-top: 27.5px; }  /* 開賽時間的中心 = 隊名那一行的中心 */
 @media (max-width: 600px) {  /* 手機：開賽時間放大、往上移一點，離賭盤勝率條遠一些（條仍然對齊戰績那一行） */
   .game-time { font-size: 2rem; }
@@ -493,6 +497,7 @@ a.game:hover { border-color: var(--accent); }
 .gm-pts { font-size: 1.8rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 @media (max-width: 420px) { .gm-pts { font-size: 1.45rem; } .gm-pts.pred { font-size: 1.15rem; } }  /* 手機：三位數比分（119）才放得進中間欄，不會貼到隊名 */
 @media (max-width: 360px) {  /* 更窄的手機：中間欄、比分、隊名再縮一點，四個字的隊名（塞爾提克）才不會斷成兩行 */
+  .game { --gm-mid: 8.5rem; --gm-gap: 4px; }
   .gm-row { grid-template-columns: minmax(0, 1fr) 8.5rem minmax(0, 1fr); gap: 4px; }
   .gm-score { gap: 6px; }
   .gm-pts { font-size: 1.3rem; }

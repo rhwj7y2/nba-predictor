@@ -726,6 +726,62 @@
     return "";
   }
 
+  // ---------- 超級球星出賽成疑（賽程卡片、首頁賽程：球隊戰績下面寫「誰 出賽成疑」） ----------
+  // 條件：球員狀態不是缺陣、本季場均得分 >= 25（超級球星，和傷病扣分的等級同一個定義）、至少出賽 3 場，
+  // 而且傷病快訊文字（2 天內）寫 questionable（出賽成疑；判斷方式和傷病名單那張卡片一樣，見 injGameStatus）。
+  // 只標在「這隊的下一場比賽」那張卡片上（快訊講的是下一場）。名字是 ESPN 給的英文原文，一律用 textContent 放進畫面
+  var QSTAT = null;      // { 球隊縮寫: [球員名字] }；抓到傷病名單之後才有
+  var qLoading = false;
+  function nextGameOf(abbr) {  // 這隊今天（台灣）起第一場還沒打完的比賽
+    if (!SCHEDULE || !abbr) return null;
+    var today = todayTW();
+    for (var i = 0; i < SCHEDULE.games.length; i++) {
+      var g = withLive(SCHEDULE.games[i]);
+      if ((g.a !== abbr && g.h !== abbr) || (g.s !== "S" && g.s !== "L") || g.d < today || !g.a || !g.h) continue;
+      return g;
+    }
+    return null;
+  }
+  function loadQuestionable() {
+    if (!MODEL || !SCHEDULE || QSTAT || qLoading) return;
+    qLoading = true;
+    fetchInjuries().then(function (res) {
+      var q = {};
+      Object.keys(res.by).forEach(function (teamName) {
+        var abbr = (T[teamName] || {}).abbr;
+        if (!abbr) return;
+        (res.by[teamName] || []).forEach(function (x) {
+          if (x.status === "Out") return;
+          var m = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));
+          var ps = m ? playerStat(m[1]) : null;
+          if (!ps || ps.pts < 25 || ps.gp < 3) return;
+          if (!/出賽成疑$/.test(injGameStatus(x, abbr))) return;
+          (q[abbr] = q[abbr] || []).push((x.athlete && x.athlete.displayName) || "?");
+        });
+      });
+      QSTAT = q;
+      Array.prototype.forEach.call(document.querySelectorAll(".game[data-gk]"), decorateQuestionable);
+    })["catch"](function () { qLoading = false; });
+  }
+  function decorateQuestionable(el) {  // 放在下半部「模型勝率」條的左邊（客隊）或右邊（主隊），不撐高兩側的球隊欄位
+    var key = el.getAttribute("data-gk"), pred = el.querySelector(".game-pred");
+    if (!key || !QSTAT || !pred || pred.querySelector(".gm-qn")) return;
+    var p = key.split("|");
+    [[p[1], "a"], [p[2], "h"]].forEach(function (s) {
+      var names = QSTAT[s[0]], ng = names && nextGameOf(s[0]);
+      if (!ng || ng.d !== p[0] || ng.a !== p[1] || ng.h !== p[2]) return;
+      var d = document.createElement("div");
+      d.className = "gm-qn gm-qn-" + s[1];
+      d.appendChild(document.createTextNode(names.join("、")));  // 名字是 ESPN 的英文原文，用文字節點放進去
+      d.appendChild(document.createElement("br"));
+      var st = document.createElement("span");
+      st.textContent = "出賽成疑";
+      st.style.whiteSpace = "nowrap";  // 這四個字不拆開
+      d.appendChild(st);
+      pred.appendChild(d);
+    });
+  }
+
   var SEASON_END_US = "2027-04-12";  // 2026-27 例行賽結束後的第一天（美國日期）；預計回歸日不早於這天就算整季報銷
 
   // 球員本季場均數據（data/player_tiers.js，ESPN 球員編號 -> {gp, mn, pts, reb, ast, pm}）；傷病名單每位球員名字下面顯示
@@ -1054,6 +1110,11 @@
     el.innerHTML = head +
       '<div class="gm-row">' + teamCell(a, up ? (up.side === "a" ? "show" : "space") : null) + '<div class="gm-mid">' + mid + "</div>" + teamCell(h, up ? (up.side === "h" ? "show" : "space") : null) + "</div>" +
       (line ? '<div class="game-pred">' + line + "</div>" : "");
+    if ((g.s === "S" || g.s === "L") && a && h) {  // 超級球星出賽成疑：球隊戰績下面補一行（資料來自 ESPN 傷病名單，抓回來之後補；已經抓到就直接補）
+      el.setAttribute("data-gk", date + "|" + g.a + "|" + g.h);
+      loadQuestionable();
+      decorateQuestionable(el);
+    }
     var li = document.createElement("li");
     li.appendChild(el);
     return li;
