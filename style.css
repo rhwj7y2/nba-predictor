@@ -457,9 +457,12 @@ a.game:hover { border-color: var(--accent); }
 @media (max-width: 420px) { .game { --gm-mid: 9.5rem; } .gm-row { grid-template-columns: minmax(0, 1fr) 9.5rem minmax(0, 1fr); } .gm-score { gap: 10px; } }
 .gm-team { min-width: 0; text-align: center; }
 .gm-name { margin-top: 4px; font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
-.gm-qn { position: absolute; bottom: 16px; width: calc((100% - var(--gm-mid) - 2 * var(--gm-gap)) / 2); box-sizing: border-box; padding: 0 2px; color: #d97706; font-size: .68rem; font-weight: 700; line-height: 1.25; text-align: center; overflow-wrap: break-word; }  /* 超級球星出賽成疑：寬度 = 球隊欄位的寬度，所以文字剛好在球隊（隊徽、隊名、戰績）正下方置中 */
-.gm-qn-a { left: 0; }
-.gm-qn-h { right: 0; }
+.gm-qn { position: absolute; bottom: 16px; width: calc((100% - var(--gm-mid) - 2 * var(--gm-gap)) / 2 + 20px); box-sizing: border-box; padding: 0 2px; color: #d97706; font-size: .64rem; font-weight: 700; line-height: 1.25; text-align: center; overflow-wrap: break-word; }  /* 超級球星出賽狀態：寬度 = 球隊欄位的寬度（左右各多留 10px 給長名字），中心線和球隊欄位對齊，所以文字在球隊（隊徽、隊名、戰績）正下方置中 */
+.game-pred.gm-pred-q2 { padding-bottom: 24px; }  /* 一隊有兩位球員要標示（四行字）：多留空間 */
+.gm-pred-q2 .gm-conf-c { bottom: 24px; }
+.gm-qn-out { color: var(--bad); }  /* 確定不出賽：紅字（出賽成疑是橘字） */
+.gm-qn-a { left: -10px; }
+.gm-qn-h { right: -10px; }
 .gm-rec { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
 .gm-up { display: block; width: fit-content; margin: 0 auto 5px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 1.4; }  /* 冷門觀察名單選的那隊：隊徽上面的小標籤 */
 .gm-up-gap { visibility: hidden; }  /* 對手：同樣高度的看不見空位，兩隊才會對齊 */

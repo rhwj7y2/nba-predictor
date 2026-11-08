@@ -726,11 +726,14 @@
     return "";
   }
 
-  // ---------- 超級球星出賽成疑（賽程卡片、首頁賽程：球隊戰績下面寫「誰 出賽成疑」） ----------
-  // 條件：球員狀態不是缺陣、本季場均得分 >= 25（超級球星，和傷病扣分的等級同一個定義）、至少出賽 3 場，
-  // 而且傷病快訊文字（2 天內）寫 questionable（出賽成疑；判斷方式和傷病名單那張卡片一樣，見 injGameStatus）。
-  // 只標在「這隊的下一場比賽」那張卡片上（快訊講的是下一場）。名字是 ESPN 給的英文原文，一律用 textContent 放進畫面
-  var QSTAT = null;      // { 球隊縮寫: [球員名字] }；抓到傷病名單之後才有
+  // ---------- 超級球星出賽狀態（賽程卡片、首頁賽程：下半部「模型勝率」條旁邊寫「誰 出賽成疑」或「誰 確定不出賽」） ----------
+  // 條件：本季場均得分 >= 25（超級球星，和傷病扣分的等級同一個定義）、至少出賽 3 場，而且是 ESPN 傷病名單上的人：
+  //   - 狀態「缺陣（Out）」→ 寫「確定不出賽」，但只寫「短期缺陣」：預計回歸日晚於這場比賽、而且不超過這場比賽之後 3 天；
+  //     中長期缺陣（3 天內都不會打）的不寫（那是舊消息，傷病名單看得到）。傷病快訊（2 天內）寫 questionable 的除外，那時候寫「出賽成疑」，因為名單狀態可能還沒更新
+  //   - 其他狀態，傷病快訊（2 天內）寫 questionable → 寫「出賽成疑」（判斷方式和傷病名單那張卡片一樣，見 injGameStatus）
+  // 一隊最多寫 2 位（超過就取場均得分最高的 2 位）。只標在「這隊的下一場比賽」那張卡片上（快訊講的是下一場）；只標示、不扣分（缺陣的扣分另外算在預測分差裡）。
+  // 名字是 ESPN 給的英文原文，一律用文字節點放進畫面
+  var QSTAT = null;      // { 球隊縮寫: [{ n: 名字, k: "q" 出賽成疑 | "o" 缺陣, pts: 場均得分, ret: 預計回歸日（美國日期，缺陣才有） }] }；抓到傷病名單之後才有
   var qLoading = false;
   function nextGameOf(abbr) {  // 這隊今天（台灣）起第一場還沒打完的比賽
     if (!SCHEDULE || !abbr) return null;
@@ -748,37 +751,57 @@
     fetchInjuries().then(function (res) {
       var q = {};
       Object.keys(res.by).forEach(function (teamName) {
-        var abbr = (T[teamName] || {}).abbr;
-        if (!abbr) return;
+        var team = T[teamName];
+        if (!team || !team.gp) return;
         (res.by[teamName] || []).forEach(function (x) {
-          if (x.status === "Out") return;
           var m = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));
           var ps = m ? playerStat(m[1]) : null;
           if (!ps || ps.pts < 25 || ps.gp < 3) return;
-          if (!/出賽成疑$/.test(injGameStatus(x, abbr))) return;
-          (q[abbr] = q[abbr] || []).push((x.athlete && x.athlete.displayName) || "?");
+          var fresh = injGameStatus(x, team.abbr), kind = "";
+          if (/出賽成疑$/.test(fresh)) kind = "q";
+          else if (x.status === "Out") kind = "o";
+          if (!kind) return;
+          (q[team.abbr] = q[team.abbr] || []).push({ n: (x.athlete && x.athlete.displayName) || "?", k: kind, pts: ps.pts, ret: (x.details && x.details.returnDate) || "" });
         });
       });
       QSTAT = q;
       Array.prototype.forEach.call(document.querySelectorAll(".game[data-gk]"), decorateQuestionable);
     })["catch"](function () { qLoading = false; });
   }
-  function decorateQuestionable(el) {  // 放在下半部「模型勝率」條的左邊（客隊）或右邊（主隊），不撐高兩側的球隊欄位
+  function shortName(n) {  // "Giannis Antetokounmpo" -> "G. Antetokounmpo"；12 個字元以內不縮
+    var p = String(n).trim().split(/\s+/);
+    return n.length <= 12 || p.length < 2 ? n : p[0].charAt(0) + ". " + p.slice(1).join(" ");
+  }
+  function decorateQuestionable(el) {  // 放在下半部「模型勝率」條的左邊（客隊）或右邊（主隊），寬度和球隊欄位一樣，不撐高兩側的球隊欄位
     var key = el.getAttribute("data-gk"), pred = el.querySelector(".game-pred");
     if (!key || !QSTAT || !pred || pred.querySelector(".gm-qn")) return;
     var p = key.split("|");
     [[p[1], "a"], [p[2], "h"]].forEach(function (s) {
-      var names = QSTAT[s[0]], ng = names && nextGameOf(s[0]);
+      var list = QSTAT[s[0]], ng = list && nextGameOf(s[0]);
       if (!ng || ng.d !== p[0] || ng.a !== p[1] || ng.h !== p[2]) return;
+      var gameET = addDays(p[0], -1);  // 這場比賽的美國日期（台灣日期 - 1 天）
+      list = list.filter(function (x) {  // 缺陣的只留短期缺陣：預計回歸日晚於這場、而且不超過這場之後 3 天；沒有回歸日的不確定，不寫
+        if (x.k !== "o") return true;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(x.ret)) return false;
+        var days = Math.round((Date.parse(x.ret) - Date.parse(gameET)) / 86400000);
+        return days >= 1 && days <= 3;
+      }).sort(function (x, y) { return y.pts - x.pts; }).slice(0, 2);  // 最多 2 位：場均得分最高的
+      if (!list.length) return;
       var d = document.createElement("div");
       d.className = "gm-qn gm-qn-" + s[1];
-      d.appendChild(document.createTextNode(names.join("、")));  // 名字是 ESPN 的英文原文，用文字節點放進去
-      d.appendChild(document.createElement("br"));
-      var st = document.createElement("span");
-      st.textContent = "出賽成疑";
-      st.style.whiteSpace = "nowrap";  // 這四個字不拆開
-      d.appendChild(st);
+      d.title = list.map(function (x) { return x.n + (x.k === "o" ? " 確定不出賽" : " 出賽成疑"); }).join("、");
+      list.forEach(function (x, i) {
+        if (i) d.appendChild(document.createElement("br"));
+        d.appendChild(document.createTextNode(shortName(x.n)));  // 名字太長（超過 12 個字元）時，名字縮成第一個字母加句點
+        d.appendChild(document.createElement("br"));
+        var st = document.createElement("span");
+        st.textContent = x.k === "o" ? "確定不出賽" : "出賽成疑";
+        st.className = x.k === "o" ? "gm-qn-out" : "";
+        st.style.whiteSpace = "nowrap";  // 這幾個字不拆開
+        d.appendChild(st);
+      });
       pred.appendChild(d);
+      if (list.length > 1) pred.classList.add("gm-pred-q2");  // 兩位球員 = 四行字，下半部多留一點空間，字才不會蓋到上面的預測文字
     });
   }
 
