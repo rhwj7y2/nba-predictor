@@ -1523,12 +1523,12 @@
 
   // ---------- 準確率：已完賽、有賽前數據的比賽，賽前預測（大比分）猜得準不準 ----------
   // 三季回測（2023-24 ~ 2025-26，3643 場）的對照數字：現行方法（含傷病扣分，傷病用「事後誰沒上場」代替，偏樂觀）、
-  // 新球隊評分（SRS＋上季當開季起點）、信心用上面的門檻（3.5 / 8.0）：低 648/1164、中 753/1149、高 1095/1330、全部 2496/3643
+  // 新球隊評分（SRS＋上季當開季起點）、信心用上面的門檻（3.5 / 8.0）：低 657/1171、中 763/1159、高 1083/1313、全部 2503/3643
   // （2023-24 的上季起點用 2022-23 整季）
-  var BACKTEST = { all: "68.5%", low: "55.7%", mid: "65.5%", high: "82.3%" };
+  var BACKTEST = { all: "68.7%", low: "56.1%", mid: "65.8%", high: "82.5%" };
   // 各個玩法三季回測勝率（2023-24～2025-26，用現在的模型逐場往前推：含傷病、連兩天、對戰節奏調整；盤口只用有開盤的場次，打平盤與預測剛好等於盤口的不算）：
-  // 新球隊評分：不讓分 2496 / 3643、讓分 1831 / 3574、單隊大小 3597 / 7200、總分大小 1813 / 3589
-  var BET_BACKTEST = { ml: "68.5%", sp: "51.2%", tt: "50.0%", tot: "50.5%" };
+  // 新球隊評分：不讓分 2503 / 3643、讓分 1838 / 3579、單隊大小 3601 / 7193、總分大小 1817 / 3595
+  var BET_BACKTEST = { ml: "68.7%", sp: "51.4%", tt: "50.1%", tot: "50.5%" };
   function accuracyRows() {
     var rows = [];
     if (!MODEL || !SCHEDULE) return rows;
@@ -1578,7 +1578,7 @@
 
     var html = '<div class="card acc-big"><div class="acc-label">賽前預測猜對勝負</div>' +
       '<div class="acc-num">' + right + " / " + rows.length + "<small>" + pct(right, rows.length) + "</small></div>" +
-      '<p class="acc-note">三季回測 ' + BACKTEST.all + "（2496 / 3643）<br>台灣 " + Number(order[0].slice(5, 7)) + "/" + Number(order[0].slice(8)) + "起，統計 " + rows.length + " 場</p></div>";
+      '<p class="acc-note">三季回測 ' + BACKTEST.all + "（2503 / 3643）<br>台灣 " + Number(order[0].slice(5, 7)) + "/" + Number(order[0].slice(8)) + "起，統計 " + rows.length + " 場</p></div>";
 
     // 每天的明細會越來越長（每個比賽日一列），預設收起來，點開才看
     html += '<details class="card acc-details"><summary>每天（' + order.length + ' 個比賽日）</summary><table class="acc-table"><thead><tr><th>日期（台灣）</th><th>猜對</th><th>準確率</th></tr></thead><tbody>' +

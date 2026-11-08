@@ -81,8 +81,8 @@ PREV_SEASON = {
 # homeAdv：主場優勢（分），三季實測主場平均多贏 +1.6 ~ +2.2。
 # shrinkK：舊版球隊評分（整季、近10場淨勝分往平均拉回）的參數。球隊評分改用 SRS 之後，網頁只在資料檔沒有 rating 欄位時
 #   才退回舊公式，所以還留著。
-# SRS 球隊評分（三季逐場回測，每場只用賽前資料，共 3,643 場）：不讓分 68.02% -> 68.54%，分差平均誤差 11.02 -> 10.90，
-#   三季每一季都進步，開季前 200 場 65.0% -> 68.2%；上季權重 0.3~0.7 之間都有效，取 0.5。
+# SRS 球隊評分（三季逐場回測，每場只用賽前資料，共 3,643 場，含傷病、連兩天扣分）：不讓分 68.02% -> 68.7%，分差平均誤差 11.02 -> 10.90，
+#   三季每一季都進步；本季（2026-27）已打 123 場（不含傷病扣分）65.0% -> 68.3%；上季權重 0.3~0.7 之間都有效，取 0.5。
 #   lam：把每隊評分往起點拉的力道，等於假裝每隊多打 lam 場「表現剛好等於起點」的比賽
 #   halfLife：比賽的權重每過這麼多天減半（越近的比賽越重要）
 #   prevWeight：上季評分當起點時打幾折
@@ -148,6 +148,7 @@ def srs_ratings(games, prior, neutral=frozenset(), lam=None, half_life=None):
 
     games：[(美東日期 datetime, 客隊, 客隊得分, 主隊, 主隊得分)]（只能放預測日以前的比賽）；
     prior：{隊名: 起點評分}；neutral：{(美東日期 date, 客隊, 主隊)} 中立場地（主場優勢用 0）。
+    half_life：None = 用 SRS 的 halfLife（60 天）；0 = 不衰減（每場權重都是 1）。
     回傳 {隊名: 評分}（越高越強，單位是分）。
 
     每場比賽列一個式子：主隊分差 - 主場優勢 ≈ 主隊評分 - 客隊評分。
@@ -185,7 +186,7 @@ def srs_prior(conn):
     if not PREV_SEASON:
         return {}
     prev_games, _, _ = load_prev_season(conn)
-    raw = srs_ratings(prev_games, {}, lam=0.001, half_life=None)
+    raw = srs_ratings(prev_games, {}, lam=0.001, half_life=0)  # 0 = 不衰減（None 會變成預設的 60 天）
     mean = sum(raw.values()) / len(raw)
     return {t: SRS["prevWeight"] * (v - mean) for t, v in raw.items()}
 
