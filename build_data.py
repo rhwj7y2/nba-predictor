@@ -19,15 +19,13 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from collections import defaultdict
 
+import store
+
 ROOT = Path(__file__).parent
 RAW = ROOT / "raw"
 SEASON_LABEL = "2026-27"
 SEASON_COMPLETE = False  # True = 整季已打完；False = 球季進行中
-GAME_FILES = ["games_2026-27.txt"]
 PACE_FILE = "pace_2025-26.txt"  # 只有「整季完成」模式（賽季前預測）用這個檔
-BOX_FILE = "boxscores_2026-27.json"  # 球季進行中：由 fetch_espn_games.py 產生，用來算本季累積 PACE（不用上季的）
-ODDS_FILE = "odds_2026-27.json"  # 已完賽比賽的賭盤紀錄，由 fetch_espn_games.py 產生
-PLAYERS_FILE = "players_2026-27.json"  # 已完賽比賽的逐場球員數據，由 fetch_espn_games.py 產生（算每隊得分前三高的球員）
 TOP_SCORERS = 3  # 每隊列出場均得分最高的幾位
 # 球員等級（依場均得分，由高到低；(最低場均得分, 名稱)）。25+ 超級球星／20~25 球星／15~20 主力／10~15 角色球員／10 以下 板凳
 PLAYER_TIERS = [(25.0, "超級球星"), (20.0, "球星"), (15.0, "主力"), (10.0, "角色球員"), (0.0, "板凳")]
@@ -37,21 +35,17 @@ INJURY_DEDUCT = {1: 3.0, 2: 2.0, 3: 1.5, 4: 1.5}
 INJURY_MIN_GP = 3  # 本季至少出賽幾場才有等級可扣（場數太少的場均得分不可靠）
 INJURY_STALE_HOURS = 48  # 傷病名單抓取超過這麼久就不拿來重算（避免用很舊的名單蓋掉比賽的扣分）
 INJURY_HORIZON_HOURS = 48  # 只對「未來這麼多小時內要開打」的比賽扣分：更遠的比賽，現在的缺陣名單到時候多半已經變了，不扣
-INJURY_FILE = "injuries_latest.json"  # 由 fetch_espn_games.py 產生：ESPN 現在的傷病名單
-INJURY_ADJ_FILE = "injury_adj_2026-27.json"  # 每場比賽凍結的傷病扣分（開賽後不再變動）
 B2B_DEDUCT = 2.0     # 連兩天：這隊的預測分差扣幾分（三季回測：連兩天的球隊平均比預測少約 1.25 分；只動分差、不動總分，因為對手平均反而多拿約 1 分，總分沒偏）
 B2B_FROM = "2026-11-09"  # 台灣日期，這天起的比賽才套用連兩天扣分（以前已打的預測維持當時的樣子）
 # 兩隊歷史對戰節奏（PACE）調整預測總分：這兩隊碰面時，回合數常比「兩隊本季平均」多或少，用過去的碰面來修正（只動總分、不動分差）。
-# 資料檔 raw/h2h_pace_history.json（過去三季每組兩隊的節奏殘差總和，由 make_h2h_pace_history.py 產生）加上本季已打的碰面。
+# 資料表 h2h_pace（過去三季每組兩隊的節奏殘差總和，由 make_h2h_pace_history.py 產生）加上本季已打的碰面。
 # 調整量 = 乘數 × 殘差總和 ÷（碰面場數 + K）：K = 收縮（碰面少時不全信）、乘數 = 每多 1 個回合約多幾分（兩隊各約 1.15 分／回合）。
 # 三季回測（驗證 2,550 場）：總分誤差 15.175 -> 15.066，大小分猜對率 48.2% -> 49.5%
-H2H_PACE_FILE = "h2h_pace_history.json"
 H2H_PACE_K = 6
 H2H_PACE_MULT = 2.3
 H2H_PACE_FROM = "2026-11-09"  # 台灣日期，這天起的比賽才套用（以前已打的預測維持當時的樣子）
 H2H_SHRINK_GAMES = 5  # 預估節奏往聯盟平均拉回的場數（和 make_h2h_pace_history.py 同一套算法）
 INJURY_BACKFILL_UNTIL = "2026-11-08"  # 台灣日期，這天以前（不含）已完賽的比賽可以「事後回補」傷病扣分（當時還沒有傷病扣分）
-SCHEDULE_FILE = "schedule_2026-27.json"  # 球季進行中：由 fetch_espn_games.py 產生，網頁的賽程分頁用
 # 賽程分頁最早能看到的台灣日期：這天起的已完賽比賽會顯示「賽前預測比分 + 結果」，
 # 但只有「最近一個比賽日」的比賽能點進去看完整預測，更早的只能看卡片。
 # 想讓大家往前多看幾天，改這個日期（fetch_espn_games.py 的 SCHEDULE_START 也要跟著提早一天，再重抓）。
@@ -74,7 +68,6 @@ EXCLUDED_GAMES = set()
 # （休賽季球員異動大，上季表現不拿來預測本季）。不想顯示就設成 None。
 PREV_SEASON = {
     "label": "2025-26",
-    "game_files": ["games_2025-26_oct.txt", "games_2025-26_nov_to_june.txt"],
     "end": datetime(2026, 4, 12),
     "excluded": {(datetime(2025, 12, 16), "San Antonio Spurs", "New York Knicks")},
 }
@@ -132,18 +125,15 @@ def next_season_label(label):
     return f"{start}-{(start + 1) % 100:02d}"
 
 
-def cup_final_games(raw_dir):
+def cup_final_games(conn):
     """NBA 盃決賽（不計入例行賽）要排除的比賽：{(日期, 客隊, 主隊)}。
 
     賽程裡備註是「NBA Cup Championship」的那場，決賽打完（進了每場數據的紀錄）就自動排除，
-    不用再手動加進 EXCLUDED_GAMES（每天自動更新時沒人會記得改）。打完之前它不在比分檔裡，所以什麼都不會發生。
+    不用再手動加進 EXCLUDED_GAMES（每天自動更新時沒人會記得改）。打完之前它不在每場數據裡，所以什麼都不會發生。
     """
-    sched, box = raw_dir / SCHEDULE_FILE, raw_dir / BOX_FILE
-    if not sched.exists() or not box.exists():
-        return set()
-    boxes = json.loads(box.read_text(encoding="utf-8"))
+    boxes = store.read_boxes(conn)
     out = set()
-    for g in json.loads(sched.read_text(encoding="utf-8")):
+    for g in store.read_schedule(conn):
         b = boxes.get(g["id"]) if g.get("note") == "NBA Cup Championship" else None
         if b:
             out.add((datetime.fromisoformat(b["date"]), b["away"], b["home"]))
@@ -151,26 +141,22 @@ def cup_final_games(raw_dir):
 
 
 class RawDataError(ValueError):
-    """原始資料某一行解析失敗；訊息格式「檔名:行號: 原文 (原因)」。"""
+    """資料庫裡某一筆比分有問題；訊息格式「來源:第幾筆: 內容 (原因)」。"""
 
 
-def load_games(raw_dir, game_files, season_end, excluded_games):
+def load_games(rows, source, season_end, excluded_games):
+    """rows：[(日期字串, 客隊, 客隊得分, 主隊, 主隊得分)]（來自資料庫，同一天已依 ESPN 順序排好）-> (保留的比賽, 被排除的比賽)"""
     games = []
-    for name in game_files:
-        for lineno, raw_line in enumerate((raw_dir / name).read_text(encoding="utf-8").splitlines(), start=1):
-            line = raw_line.strip()
-            if not line or line.startswith("##"):
-                continue
-            try:
-                date_s, vis, vpts, home, hpts = line.split("|")
-                d = datetime.strptime(date_s.strip(), "%a, %b %d, %Y")
-                game = (d, vis, int(vpts), home, int(hpts))
-                unknown = {vis, home} - set(TEAMS)
-                if unknown:
-                    raise ValueError(f"隊名不在 TEAMS 裡：{sorted(unknown)}")
-            except ValueError as e:
-                raise RawDataError(f"{name}:{lineno}: {raw_line!r} ({e})") from None
-            games.append(game)
+    for i, (date_s, vis, vpts, home, hpts) in enumerate(rows, start=1):
+        try:
+            d = datetime.strptime(date_s, "%Y-%m-%d")
+            game = (d, vis, int(vpts), home, int(hpts))
+            unknown = {vis, home} - set(TEAMS)
+            if unknown:
+                raise ValueError(f"隊名不在 TEAMS 裡：{sorted(unknown)}")
+        except (ValueError, TypeError) as e:
+            raise RawDataError(f"{source}:第 {i} 筆: {(date_s, vis, vpts, home, hpts)!r} ({e})") from None
+        games.append(game)
     games.sort(key=lambda g: g[0])
 
     excluded = [g for g in games if (g[0], g[1], g[3]) in excluded_games]
@@ -198,7 +184,7 @@ def load_pace(raw_dir):
     return pace
 
 
-def season_pace(raw_dir, games):
+def season_pace(conn, games):
     """球季進行中：每隊的「本季累積 PACE」（每 48 分鐘的回合數），由 boxscore 算出。
 
     回合數公式同 Basketball-Reference：
@@ -206,9 +192,8 @@ def season_pace(raw_dir, games):
       PACE = 48 x 總回合 / 總出賽時間（以 5 人同時在場換算，延長賽每節多 5 分鐘）。
     本季 0 場的球隊沒有 PACE，輸出 None。
     """
-    path = raw_dir / BOX_FILE
-    assert path.exists(), f"找不到 {path}，請先執行 python fetch_espn_games.py"
-    cache = json.loads(path.read_text(encoding="utf-8"))
+    cache = store.read_boxes(conn)
+    assert cache, "資料庫裡沒有任何 boxscore，請先執行 python fetch_espn_games.py"
     by_game = {(datetime.fromisoformat(v["date"]), v["away"], v["home"]): v for v in cache.values()}
 
     def est(t, o):
@@ -231,15 +216,14 @@ def season_pace(raw_dir, games):
     return {t: round(48 * poss[t] / mins[t], 1) if mins[t] else None for t in TEAMS}
 
 
-def _player_totals(raw_dir, games):
+def _player_totals(conn, games):
     """逐場球員數據 -> (各隊已打場數, 各隊每位球員的累計)；沒有球員數據檔回傳 None。
 
     累計只算有上場的場次（沒上場的不算進去）。build_players、build_player_tiers 共用。
     """
-    path = raw_dir / PLAYERS_FILE
-    if not path.exists():
+    cache = store.read_players(conn)
+    if not cache:
         return None
-    cache = json.loads(path.read_text(encoding="utf-8"))
     by_game = {(datetime.fromisoformat(v["date"]), v["away"], v["home"]): v for v in cache.values()}
     team_gp = defaultdict(int)
     tot = defaultdict(dict)
@@ -262,13 +246,13 @@ def _player_totals(raw_dir, games):
     return team_gp, tot
 
 
-def build_players(raw_dir, games):
+def build_players(conn, games):
     """每隊場均得分前三高的球員（只算例行賽，盃賽決賽等被排除的比賽不算）。回傳 None = 沒有球員數據檔。
 
     只收「出賽場數 >= 球隊已打場數的一半」的球員，避免只打一兩場的人因為一場爆發衝上榜。
     場均得分、籃板、助攻、正負值都只除以「有上場」的場次（沒上場的不算進去）。
     """
-    totals = _player_totals(raw_dir, games)
+    totals = _player_totals(conn, games)
     if totals is None:
         return None
     team_gp, tot = totals
@@ -289,14 +273,14 @@ def tier_of(pts):
     return len(PLAYER_TIERS)
 
 
-def build_player_tiers(raw_dir, games):
+def build_player_tiers(conn, games):
     """所有出賽過的球員，依「場均得分」分級（給之後的傷病扣分用）。回傳 None = 沒有球員數據檔。
 
     每位球員：id = ESPN 球員編號（和 ESPN 傷病名單的球員編號對得上）、n = 名字、gp = 出賽場數、pts / reb / ast / pm = 場均得分 / 籃板 / 助攻 / 正負值、
     t = 等級（1~5，1 最高，對照 tiers）、small = 1 表示出賽場數不到球隊已打場數的一半（樣本小，場均得分可能不準，
     常見於剛傷癒或剛傷倒的人；用等級做事前要自己決定要不要信它）。球隊內依場均得分高到低排。
     """
-    totals = _player_totals(raw_dir, games)
+    totals = _player_totals(conn, games)
     if totals is None:
         return None
     team_gp, tot = totals
@@ -315,19 +299,17 @@ def build_player_tiers(raw_dir, games):
             "teams": teams}
 
 
-def build_schedule(raw_dir):
+def build_schedule(conn):
     """賽程分頁的資料：每場轉成台灣日期與開賽時間（台灣沒有夏令時間，固定 UTC+8）。沒有賽程檔就回傳 None。
 
     每場：d = 台灣日期、t = 台灣開賽時間、a/h = 客/主隊縮寫（盃賽決賽等還沒決定的是 null）、
     s = F 已完賽 / S 尚未開打 / L 進行中 / X 延期或取消、n = 中立場地（不加主場優勢）、tag = 備註標籤、as/hs = 已完賽的比分、q = 已完賽的各節得分 [客隊各節, 主隊各節]。
     """
-    path = raw_dir / SCHEDULE_FILE
-    if not path.exists():
+    raw_games = [g for g in store.read_schedule(conn) if g["utc"]]  # 沒有開賽時間的（只有比分的舊紀錄）不放進賽程
+    if not raw_games:
         return None
-    odds_path = raw_dir / ODDS_FILE
-    odds = json.loads(odds_path.read_text(encoding="utf-8")) if odds_path.exists() else {}
+    odds = store.read_odds(conn)
     games = []
-    raw_games = json.loads(path.read_text(encoding="utf-8"))
     # 連兩天（back-to-back）：這隊「前一個美東日期」也有比賽。美東日期 = UTC - 6 小時（NBA 開賽時間 12:00~22:30 ET 不管冬令夏令都落在同一天）
     et_day = lambda g: (datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") - timedelta(hours=6)).date()
     played_days = defaultdict(set)  # 隊名 -> 有比賽的美東日期（延期、取消的不算）
@@ -362,19 +344,18 @@ def build_schedule(raw_dir):
     return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "games": games}
 
 
-def backfill_injury_adj(raw_dir, games, schedule):
+def backfill_injury_adj(conn, games, schedule):
     """事後回補：2026-11-08 以前已完賽的比賽（當時還沒有傷病扣分），照現行規則補算一份，標記 bf = 1。
 
     當時沒有留下賽前的傷病名單，所以用「這場誰事後沒上場」代替：逐場往前推，每場用「那天之前」的累計算每位球員的場均得分與等級，
     那隊場均得分有等級的人（本季至少出賽 INJURY_MIN_GP 場）這場沒出現在出賽名單裡，就當缺陣、照 INJURY_DEDUCT 扣分。
     這是事後才知道的資訊，不是真的賽前預測，所以網頁上會標明「事後回補」（回測腳本用的也是這個代替法，結果偏樂觀）。
-    回傳 { "台灣日期|客隊|主隊": {ja, jh, jp, at, bf} }；沒人被扣的比賽不寫。只補一次，之後讀 raw/injury_adj_2026-27.json。
+    回傳 { "台灣日期|客隊|主隊": {ja, jh, jp, at, bf} }；沒人被扣的比賽不寫。只補一次，之後讀資料表 injury_adj。
     執行：python build_data.py --backfill-injuries
     """
-    path = raw_dir / PLAYERS_FILE
-    if not path.exists():
+    cache = store.read_players(conn)
+    if not cache:
         return {}
-    cache = json.loads(path.read_text(encoding="utf-8"))
     by_game = {(datetime.fromisoformat(v["date"]), v["away"], v["home"]): v["p"] for v in cache.values()}
     sched = {(g["a"], g["h"], g["as"], g["hs"]): g for g in schedule["games"]
              if g["s"] == "F" and g["a"] and g["h"] and g["d"] < INJURY_BACKFILL_UNTIL}
@@ -414,19 +395,18 @@ def backfill_injury_adj(raw_dir, games, schedule):
     return out
 
 
-def apply_h2h_pace_adj(raw_dir, schedule):
+def apply_h2h_pace_adj(conn, schedule):
     """兩隊歷史對戰節奏調整：每場「H2H_PACE_FROM 起」的比賽寫 pt = 預測總分要加減幾分（沒調整就不寫）。
 
     每場實際回合數 = 出手 + 0.44 × 罰球出手 − 進攻籃板 + 失誤（兩隊平均）；殘差 = 實際 − 預估（兩隊「到那場之前」本季平均回合數，
-    往聯盟平均拉回 H2H_SHRINK_GAMES 場）。每組兩隊的殘差先吃過去三季的總和（raw/h2h_pace_history.json），再逐場加上本季更早的碰面，
+    往聯盟平均拉回 H2H_SHRINK_GAMES 場）。每組兩隊的殘差先吃過去三季的總和（資料表 h2h_pace），再逐場加上本季更早的碰面，
     所以每場只看得到「它之前」的碰面，已完賽的比賽也不會被事後的結果改掉。
     """
-    hist_path, box_path = raw_dir / H2H_PACE_FILE, raw_dir / BOX_FILE
-    if not hist_path.exists() or not box_path.exists():
-        print(f"注意：找不到 {hist_path.name} 或 {box_path.name}，這次沒有對戰節奏調整（請先執行 python make_h2h_pace_history.py）")
+    hist = store.read_h2h_pace(conn)
+    box = store.read_boxes(conn)
+    if not hist or not box:
+        print("注意：資料庫裡沒有 h2h_pace 或 boxscore，這次沒有對戰節奏調整（請先執行 python make_h2h_pace_history.py）")
         return
-    hist = json.loads(hist_path.read_text(encoding="utf-8"))["pairs"]
-    box = json.loads(box_path.read_text(encoding="utf-8"))
     abbr_name = {v[0]: k for k, v in TEAMS.items()}
     # 本季已完賽的比賽依日期順序，逐場算殘差；cur[組合] = [(日期, 殘差), ...]
     team_pace, league = defaultdict(list), []
@@ -459,7 +439,7 @@ def apply_h2h_pace_adj(raw_dir, schedule):
     print(f"對戰節奏調整：{n_set} 場有總分調整（{H2H_PACE_FROM} 起），過去三季 {len(hist)} 組對戰 + 本季 {sum(len(v) for v in cur.values())} 場碰面")
 
 
-def apply_injury_adj(raw_dir, schedule, tiers, backfill_games=None):
+def apply_injury_adj(conn, schedule, tiers, backfill_games=None):
     """傷病扣分：把每場「還沒開打」的比賽，兩隊缺陣球員的扣分寫進 schedule（直接改 schedule）。
 
     backfill_games 有給（--backfill-injuries）：先把 2026-11-08 以前已完賽的比賽照現行規則回補（見 backfill_injury_adj），標記 bf。
@@ -471,17 +451,15 @@ def apply_injury_adj(raw_dir, schedule, tiers, backfill_games=None):
     schedule["inj"] / ["injn"]：每隊「現在」的扣分合計與名單（自選對戰用，沒有對應賽程的組合）；schedule["injAsOf"] = 名單抓取時間。
 
     只扣「未來 INJURY_HORIZON_HOURS 小時內要開打」的比賽（更遠的比賽等逼近了、下次更新才會有）。
-    凍結：這些比賽每次更新都用最新名單重算；開賽後那場的扣分就存在 raw/injury_adj_2026-27.json 不再更新，
+    凍結：這些比賽每次更新都用最新名單重算；開賽後那場的扣分就存在資料表 injury_adj 不再更新，
     所以已完賽比賽的賽前預測永遠是當時（最後一次更新時）的樣子，準確率統計才不會被事後的名單改掉。
-    沒抓過傷病名單（沒有 raw/injuries_latest.json）的比賽就是沒有扣分，也就是「沒有納入傷病」。
+    沒抓過傷病名單（資料庫裡沒有 injury_snapshots）的比賽就是沒有扣分，也就是「沒有納入傷病」。
     """
-    inj_path = raw_dir / INJURY_FILE
-    mem_path = raw_dir / INJURY_ADJ_FILE
-    mem = json.loads(mem_path.read_text(encoding="utf-8")) if mem_path.exists() else {}
-    snap = json.loads(inj_path.read_text(encoding="utf-8")) if inj_path.exists() else None
+    mem = store.read_injury_adj(conn)
+    snap = store.read_injuries_latest(conn)
     now = datetime.now(timezone.utc).replace(tzinfo=None)  # 現在的 UTC 時間（和名單抓取時間同一種）
     if backfill_games is not None:
-        filled = backfill_injury_adj(raw_dir, backfill_games, schedule)
+        filled = backfill_injury_adj(conn, backfill_games, schedule)
         for k in [k for k, v in mem.items() if v.get("bf")]:  # 舊的回補整批重算
             del mem[k]
         mem.update(filled)
@@ -528,10 +506,10 @@ def apply_injury_adj(raw_dir, schedule, tiers, backfill_games=None):
             g["ja"], g["jh"], g["jp"] = rec["ja"], rec["jh"], rec["jp"]
             if rec.get("bf"):
                 g["jb"] = 1  # 事後回補（不是賽前實際的名單），網頁會標明
-    mem_path.write_text("{\n" + ",\n".join(f"{json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}" for k, v in sorted(mem.items())) + "\n}\n",
-                        encoding="utf-8")
+    store.write_injury_adj(conn, mem)
+    conn.commit()
     print(f"傷病扣分：還沒開打的 {n_new} 場用最新名單重算（名單抓取時間 {snap['fetched'] if snap else '無'}），"
-          f"已開打/已完賽且凍結的 {n_frozen} 場 -> {mem_path}")
+          f"已開打/已完賽且凍結的 {n_frozen} 場 -> 資料表 injury_adj")
 
 
 def check_no_duplicates_or_future(games, today):
@@ -580,9 +558,9 @@ def build_h2h(games):
     return h2h
 
 
-def load_prev_season(raw_dir):
+def load_prev_season(conn):
     """讀上一季整季資料（用和「整季完成」模式一樣的嚴格檢查），回傳 (比賽, 逐隊紀錄, 交手比分)。"""
-    games, _ = load_games(raw_dir, PREV_SEASON["game_files"], PREV_SEASON["end"], PREV_SEASON["excluded"])
+    games, _ = load_games(store.read_season_games(conn, PREV_SEASON["label"]), f"season_games({PREV_SEASON['label']})", PREV_SEASON["end"], PREV_SEASON["excluded"])
     check_no_duplicates_or_future(games, date.today())
     assert len(games) == REGULAR_SEASON_GAMES, f"上季（{PREV_SEASON['label']}）賽程筆數不對：{len(games)}"
     log = build_log(games)
@@ -635,7 +613,7 @@ def team_rows(games, pace, with_model):
     return out
 
 
-def build_pregame(raw_dir, games, schedule):
+def build_pregame(conn, games, schedule):
     """「最近一個打過比賽的台灣日期」開打之前的球隊數據，給網頁看那天已完賽比賽的賽前預測用。
 
     為什麼要另外存一份：網頁上的球隊數據已經包含那天打完的比賽，直接拿來預測等於看過結果才預測。
@@ -660,7 +638,7 @@ def build_pregame(raw_dir, games, schedule):
         "date": pre_date,
         "asOf": pre_games[-1][0].strftime("%Y-%m-%d"),
         "h2h": build_h2h(pre_games),
-        "teams": team_rows(pre_games, season_pace(raw_dir, pre_games), with_model=True),
+        "teams": team_rows(pre_games, season_pace(conn, pre_games), with_model=True),
     }
 
 
@@ -685,7 +663,7 @@ def games_before_tw_day(games, schedule, day):
     return out
 
 
-def build_pre_days(raw_dir, games, schedule, latest):
+def build_pre_days(conn, games, schedule, latest):
     """賽程分頁裡「比最近一個比賽日更早」的每個比賽日，各存一份開打前的球隊數據，
     讓那些日子的卡片也能顯示賽前預測比分。只留預測公式要用的欄位，檔案才不會太大。
     （最近一個比賽日另外存在 pre，裡面還有交手紀錄，因為那天的比賽可以點進去看完整預測。）
@@ -699,21 +677,22 @@ def build_pre_days(raw_dir, games, schedule, latest):
         pre_games = games_before_tw_day(games, schedule, date.fromisoformat(d))
         if not pre_games:
             continue
-        rows = team_rows(pre_games, season_pace(raw_dir, pre_games), with_model=True)
+        rows = team_rows(pre_games, season_pace(conn, pre_games), with_model=True)
         out[d] = {k: {f: r[f] for f in keep} for k, r in rows.items()}
     return out
 
 
-def main(raw_dir, target, complete, backfill_injuries=False):
-    games, excluded = load_games(raw_dir, GAME_FILES, REGULAR_SEASON_END, EXCLUDED_GAMES | cup_final_games(raw_dir))
+def main(db_path, target, complete, backfill_injuries=False):
+    conn = store.connect(db_path)
+    games, excluded = load_games(store.read_final_games(conn, SEASON_LABEL), f"games({SEASON_LABEL})", REGULAR_SEASON_END, EXCLUDED_GAMES | cup_final_games(conn))
     assert games, "沒有任何比賽資料"
     check_no_duplicates_or_future(games, date.today())
     if complete:
-        pace = load_pace(raw_dir)
+        pace = load_pace(RAW)
         assert set(pace) == set(TEAMS), f"PACE隊名對不上：{set(pace) ^ set(TEAMS)}"
         assert len(games) == REGULAR_SEASON_GAMES, f"賽程筆數不對：{len(games)}"
     else:
-        pace = season_pace(raw_dir, games)
+        pace = season_pace(conn, games)
         check_in_progress_limits(games)
 
     log = build_log(games)
@@ -739,26 +718,26 @@ def main(raw_dir, target, complete, backfill_injuries=False):
     }
 
     # 賽程分頁（只有球季進行中才有；沒有賽程時寫 null，網頁就不會顯示賽程分頁）
-    schedule = None if complete else build_schedule(raw_dir)
+    schedule = None if complete else build_schedule(conn)
 
     # 球員分級（依場均得分分五級）；傷病扣分要用，所以在寫賽程之前先算
-    tiers = None if complete else build_player_tiers(raw_dir, games)
+    tiers = None if complete else build_player_tiers(conn, games)
     if schedule and tiers:
-        apply_injury_adj(raw_dir, schedule, tiers, games if backfill_injuries else None)
+        apply_injury_adj(conn, schedule, tiers, games if backfill_injuries else None)
     if schedule:
-        apply_h2h_pace_adj(raw_dir, schedule)
+        apply_h2h_pace_adj(conn, schedule)
 
     # 球季進行中：附上預測模型參數，以及上季交手紀錄（只供顯示，不進預測）
     if not complete:
         payload["model"] = MODEL
         if PREV_SEASON:
-            _, _, prev_h2h = load_prev_season(raw_dir)
+            _, _, prev_h2h = load_prev_season(conn)
             payload["prevSeason"] = PREV_SEASON["label"]
             payload["h2hPrev"] = prev_h2h
-        pre = build_pregame(raw_dir, games, schedule)
+        pre = build_pregame(conn, games, schedule)
         if pre:
             payload["pre"] = pre
-            payload["preDays"] = build_pre_days(raw_dir, games, schedule, pre["date"])
+            payload["preDays"] = build_pre_days(conn, games, schedule, pre["date"])
 
     payload["teams"] = out
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -771,7 +750,7 @@ def main(raw_dir, target, complete, backfill_injuries=False):
           f"最後一場 {payload['asOf']}，排除 {len(excluded)} 場 -> {target}")
 
     if not complete and schedule is None:
-        print(f"注意：找不到 {raw_dir / SCHEDULE_FILE}，網頁不會有賽程分頁（請執行 python fetch_espn_games.py）")
+        print("注意：資料庫裡沒有賽程，網頁不會有賽程分頁（請執行 python fetch_espn_games.py）")
     schedule_target = target.parent / "schedule.js"
     schedule_target.write_text(
         "// 由 build_data.py 自動產生，請勿手改\nwindow.NBA_SCHEDULE = "
@@ -782,7 +761,7 @@ def main(raw_dir, target, complete, backfill_injuries=False):
         print(f"賽程：{len(schedule['games'])} 場（台灣時間）-> {schedule_target}")
 
     # 每隊得分前三高的球員（只有球季進行中才有；沒有球員數據檔就寫 null，網頁就不會顯示這張卡片）
-    players = None if complete else build_players(raw_dir, games)
+    players = None if complete else build_players(conn, games)
     players_target = target.parent / "players.js"
     players_target.write_text(
         "// 由 build_data.py 自動產生，請勿手改\nwindow.NBA_PLAYERS = "
@@ -792,7 +771,7 @@ def main(raw_dir, target, complete, backfill_injuries=False):
     if players:
         print(f"得分前三球員：{len(players['teams'])} 隊 -> {players_target}")
     elif not complete:
-        print(f"注意：找不到 {raw_dir / PLAYERS_FILE}，網頁不會有得分前三球員卡片（請執行 python fetch_espn_games.py）")
+        print("注意：資料庫裡沒有球員數據，網頁不會有得分前三球員卡片（請執行 python fetch_espn_games.py）")
 
     # 所有球員的等級與場均數據（上面已算好；傷病扣分用等級，網頁的傷病名單用場均得分/籃板/助攻/正負值；沒有球員數據檔就寫 null）
     tiers_target = target.parent / "player_tiers.js"
@@ -807,7 +786,7 @@ def main(raw_dir, target, complete, backfill_injuries=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="把 raw/ 的原始比分整理成 data/teams.js")
+    parser = argparse.ArgumentParser(description="把資料庫（db/nba.db）的資料整理成網頁用的 data/*.js")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--complete", dest="complete", action="store_true", default=None,
                       help="當作整季已打完（嚴格檢查 1230 / 82 / 435）")
@@ -815,10 +794,10 @@ if __name__ == "__main__":
                       help="當作球季進行中（只檢查上限、重複、未來日期）")
     parser.add_argument("--backfill-injuries", action="store_true",
                         help="事後回補：2026-11-08 以前已完賽的比賽，照現行傷病扣分規則補算（用「事後誰沒上場」代替，網頁會標明）")
-    parser.add_argument("--raw-dir", type=Path, default=RAW, help="原始資料資料夾（預設 raw/）")
+    parser.add_argument("--db", type=Path, default=store.DB_PATH, help="資料庫檔（預設 db/nba.db）")
     parser.add_argument("--out", type=Path, default=ROOT / "data" / "teams.js", help="輸出檔（預設 data/teams.js）")
     args = parser.parse_args()
     try:
-        main(args.raw_dir, args.out, SEASON_COMPLETE if args.complete is None else args.complete, args.backfill_injuries)
+        main(args.db, args.out, SEASON_COMPLETE if args.complete is None else args.complete, args.backfill_injuries)
     except RawDataError as e:
         sys.exit(f"原始資料格式錯誤 {e}")

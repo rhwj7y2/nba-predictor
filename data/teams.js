@@ -779,10 +779,16 @@ window.NBA_DATA = {
     99,
     102
    ]
+  ],
+  "POR-SAS": [
+   [
+    103,
+    125
+   ]
   ]
  },
  "asOf": "2026-11-07",
- "games": 138,
+ "games": 139,
  "homeAdvantage": 1,
  "model": {
   "shrinkK": 5,
@@ -11184,21 +11190,21 @@ window.NBA_DATA = {
    "zh": "拓荒者",
    "conf": "W",
    "color": "#E03A3E",
-   "gp": 8,
+   "gp": 9,
    "w": 6,
-   "l": 2,
+   "l": 3,
    "streak": 0,
-   "lstreak": 1,
-   "home": "1-1",
+   "lstreak": 2,
+   "home": "1-2",
    "road": "5-1",
-   "pace": 99.5,
-   "off": 121.4,
-   "def": 112.4,
-   "l10off": 121.4,
-   "l10def": 112.4,
-   "l10rec": "6-2",
-   "net": 9.0,
-   "net10": 9.0
+   "pace": 99.9,
+   "off": 119.3,
+   "def": 113.8,
+   "l10off": 119.3,
+   "l10def": 113.8,
+   "l10rec": "6-3",
+   "net": 5.56,
+   "net10": 5.56
   },
   "Sacramento Kings": {
    "abbr": "SAC",
@@ -11226,21 +11232,21 @@ window.NBA_DATA = {
    "zh": "馬刺",
    "conf": "W",
    "color": "#8A8D8F",
-   "gp": 9,
-   "w": 7,
+   "gp": 10,
+   "w": 8,
    "l": 2,
-   "streak": 7,
+   "streak": 8,
    "lstreak": 0,
    "home": "4-2",
-   "road": "3-0",
-   "pace": 98.9,
-   "off": 117.7,
-   "def": 108.7,
-   "l10off": 117.7,
-   "l10def": 108.7,
-   "l10rec": "7-2",
-   "net": 9.0,
-   "net10": 9.0
+   "road": "4-0",
+   "pace": 99.3,
+   "off": 118.4,
+   "def": 108.1,
+   "l10off": 118.4,
+   "l10def": 108.1,
+   "l10rec": "8-2",
+   "net": 10.3,
+   "net10": 10.3
   },
   "Toronto Raptors": {
    "abbr": "TOR",
