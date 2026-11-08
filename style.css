@@ -212,7 +212,7 @@ select:focus-visible, .swap:focus-visible {
 
 /* 首頁：三個大項目，賽程最大 */
 .home { display: grid; gap: 14px; }
-.home-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.home-row { display: grid; grid-template-columns: 1fr; gap: 14px; }
 .home-row .home-card { text-align: center; display: flex; flex-direction: column; justify-content: center; }  /* 下面兩張小卡（自選對戰、準確率）：標題、說明、猜對場數都置中；兩張並排時高度一樣高，文字組在卡片裡上下也置中（自選對戰只有兩行，會往下移） */
 .home-card {
   display: block;
@@ -256,7 +256,6 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .home-title { display: block; font-size: 1.1rem; font-weight: 800; }
 .home-main .home-title { font-size: 1.8rem; font-weight: 900; }
 .home-desc { display: block; margin-top: 6px; color: var(--muted); font-size: .88rem; }
-.home-desc.home-desc-low { margin-top: 14px; }  /* 自選對戰那句說明：離標題再遠一點 */
 .home-main .home-desc { color: var(--accent); font-weight: 700; font-size: .95rem; }
 .home-sub { display: block; margin-top: 10px; font-size: .9rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .home-games { margin-top: 14px; }
@@ -601,6 +600,7 @@ td:first-child, th:first-child { text-align: left; }
 #odds-body td[colspan] { text-align: center; }
 
 .foot { text-align: center; color: var(--muted); font-size: .78rem; margin-top: 24px; }
+.foot p { margin: 0; }  /* 小標題和內文同色同字級、中間不空行 */
 
 [hidden] { display: none !important; }
 

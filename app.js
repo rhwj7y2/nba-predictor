@@ -45,9 +45,8 @@
       recLabel: "本季戰績",
       l10note: "",
       h2hTitle: D.season + " 例行賽兩隊對戰 ",
-      sources: ["ESPN（" + D.season + " 比分與 PACE、DraftKings 盤口）"]
-        .concat(D.h2hPrev ? ["Basketball-Reference.com（" + D.prevSeason + " 交手紀錄）"] : []),
-      foot: "整理自 " + D.season + " 例行賽已完成的 " + N_GAMES + " 場（更新至 " + D.asOf + "）"
+      sources: ["ESPN"].concat(D.h2hPrev ? ["Basketball-Reference.com"] : []),
+      foot: "整理自 " + D.season + " 例行賽已完成的 " + N_GAMES + " 場"
     }
   }[MODE];
   COPY.recLabel = COPY.recLabel || "整季戰績";
@@ -860,6 +859,17 @@
     return null;
   }
 
+  // 這場比賽現在能顯示預測嗎：「下一個比賽日」的每一場都可以；隔天的比賽，只要兩隊在那之前都沒有「還沒打完」的比賽
+  // （隊伍沒再打球，賽季數據和近 10 場就不會變，預測現在算和之後算一樣），也可以先顯示。更後面的日子先不顯示
+  function canPredict(g, date) {
+    if (date === nextUpcomingDate()) return true;
+    var t = todayTW();
+    if (date !== addDays(t, 1) || !g.a || !g.h) return false;
+    return !dates.some(function (d) {
+      return d >= t && d < date && gamesByDate[d].some(function (x) { return (x.s === "S" || x.s === "L") && (x.a === g.a || x.h === g.a || x.a === g.h || x.h === g.h); });
+    });
+  }
+
   function hasUpcoming() { return !!lastDate && lastDate >= todayTW(); }
 
   // 最早能選的日期：賽程資料的第一天（build_data.py 的 SCHEDULE_SHOW_FROM，過去這幾天看賽前預測和結果）；
@@ -981,7 +991,7 @@
       line = "兩隊要等前一輪打完才決定";
     } else if (homePred) {
       line = confHtml(homePred.p1);
-    } else if (MODEL && date === nextUpcomingDate()) {  // 只有「下一個比賽日」顯示預測和信心，更後面的日子先不顯示
+    } else if (MODEL && canPredict(g, date)) {  // 下一個比賽日、或兩隊都已沒有未打完比賽的隔天，才顯示預測和信心；更後面的日子先不顯示
       var c = compareModels(a, h, g.n, gameAdj(g));
       var wn = c.w1 === "home" ? h.zh : a.zh;  // 預測會贏的那隊
       line = "賽前預測比分：" + a.zh + " " + f1(c.p1.away) + " : " + f1(c.p1.home) + " " + h.zh + "<br>預測 <b>" + wn + "</b> 勝";
@@ -1412,12 +1422,13 @@
       res.textContent = lastFinal === t ? "今日賽果" : "最新賽果";
       res.href = hashOf({ tab: "schedule", date: lastFinal });
     }
-    // 右上角第二顆按鈕：直接去下一個比賽日的賽程（明天有比賽就寫「明日賽程」，今天還沒打完寫「今日賽程」，其他寫「下個賽程」）
-    var nx = $("home-next");
-    nx.hidden = !nd;
-    if (nd) {
-      nx.textContent = nd === addDays(t, 1) ? "明日賽程" : nd === t ? "今日賽程" : "下個賽程";
-      nx.href = hashOf({ tab: "schedule", date: nd });
+    // 右上角第二顆按鈕：永遠是「隔天」的賽程（明天有比賽就寫「明日賽程」；明天沒比賽就找今天之後的下一個比賽日，寫「下個賽程」）
+    var nx = $("home-next"), tomorrowDate = null;
+    for (var di = 0; di < dates.length; di++) { if (dates[di] > t) { tomorrowDate = dates[di]; break; } }
+    nx.hidden = !tomorrowDate;
+    if (tomorrowDate) {
+      nx.textContent = tomorrowDate === addDays(t, 1) ? "明日賽程" : "下個賽程";
+      nx.href = hashOf({ tab: "schedule", date: tomorrowDate });
     }
     // 下拉：點開就看到下一個比賽日的每一場（隊伍、我們預測的比分、信心），點哪一場就直接進那場
     var box = $("home-games-box");
@@ -1703,8 +1714,7 @@
     });
     $("tab-home").addEventListener("click", function () { location.hash = hashOf({ tab: "home" }); });
     if (VOTE_ON) {
-      $("tab-vote").hidden = false;
-      $("tab-vote").addEventListener("click", function () { location.hash = hashOf({ tab: "vote", date: voteDate }); });
+      // 分頁列不放「投票」按鈕：只有首頁的「投票專區」卡片進得去
       $("vote-prev").addEventListener("click", function () { goVoteDate(prevMatchDay(voteDate)); });
       $("vote-next").addEventListener("click", function () { goVoteDate(nextMatchDay(voteDate)); });
       var onVoteClick = function (e) {

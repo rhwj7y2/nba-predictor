@@ -50,12 +50,12 @@
     <nav class="tabs" id="tabs" aria-label="頁面切換" hidden>
       <button type="button" class="tab" id="tab-home">首頁</button>
       <button type="button" class="tab" id="tab-schedule">賽程</button>
-      <button type="button" class="tab" id="tab-vote" hidden>投票</button>
+      <button type="button" class="tab" id="tab-vote" hidden>投票</button>  <!-- 永遠隱藏：showTab 要用它標記目前分頁；投票從首頁的「投票專區」進入 -->
       <button type="button" class="tab" id="tab-matchup">自選對戰</button>
       <button type="button" class="tab" id="tab-stats">準確率</button>
     </nav>
 
-    <!-- 首頁：三個大項目，賽程放最主要 -->
+    <!-- 首頁：賽程放最主要（自選對戰不放首頁，從其他頁的分頁列進入） -->
     <section id="view-home" class="home" aria-label="首頁" hidden>
       <div class="home-card home-main">
         <div class="home-btns">
@@ -72,10 +72,6 @@
         </details>
       </div>
       <div class="home-row">
-        <a class="home-card" href="#tab=matchup">
-          <span class="home-title">⚔️ 自選對戰</span>
-          <span class="home-desc home-desc-low">任選兩支球隊，看預測資訊</span>
-        </a>
         <a class="home-card" href="#tab=stats">
           <span class="home-title">🎯 準確率</span>
           <span class="home-desc">📊 統計數據</span>
@@ -241,6 +237,7 @@
     </div><!-- /view-matchup -->
 
     <footer class="foot">
+      <p class="foot-title">數據來源與說明</p>
       <p id="foot-text"></p>
     </footer>
 
