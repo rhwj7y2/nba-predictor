@@ -295,9 +295,6 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .vote-nums span:last-child { color: var(--cold); text-align: right; }
 .home-vote { text-align: center; }
 
-/* 依預測選擇：一行一個選項，置中 */
-.pick-list { text-align: center; font-size: 1.05rem; font-weight: 700; line-height: 1.9; font-variant-numeric: tabular-nums; }
-.pick-tip { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); text-align: center; color: var(--accent); font-size: .85rem; font-weight: 600; }
 
 /* 得分前三球員：左客隊、右主隊，同一排是同名次；每人四個數字（得分、籃板、助攻、+/-） */
 .pl-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 2px 0 6px; font-weight: 800; text-align: center; }
@@ -480,10 +477,14 @@ a.game:hover { border-color: var(--accent); }
 .gm-final b { display: block; color: var(--text); font-size: .9rem; }
 .gm-final.live { color: var(--accent); font-weight: 700; }  /* 即時比分：第幾節、剩餘時間用主色 */
 .gm-final.live b { color: var(--accent); }
-/* 預測正確/失敗：脫離排版（absolute），不然會把「箭頭 + 已完賽」往上擠；箭頭、已完賽才能跟兩側比分在同一條水平線上。top 讓它落在兩側戰績那一行 */
+/* 已完賽卡片最上面一列：有標籤 = 左邊標籤、右邊預測正確/失敗；沒標籤 = 預測正確/失敗置中 */
 .game { position: relative; }
-.game:has(.gm-res):not(:has(.gm-tags)) { padding-top: 36px; }  /* 沒有標籤列（如「NBA 盃小組賽」）的已完賽卡片，上面留一排空間給右上角的預測正確/失敗，不然會貼到隊徽 */
-.gm-res { display: block; position: absolute; top: 10px; right: 14px; font-size: .85rem; white-space: nowrap; }  /* 預測正確/失敗：放在整張卡片的右上角，不佔中間的位置，箭頭和已完賽才能和比分對齊 */
+.gm-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.gm-head-l { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.gm-res { margin-left: auto; font-size: .85rem; white-space: nowrap; }
+.gm-head.solo { justify-content: center; }  /* 沒有標籤：預測正確/失敗置中 */
+.gm-head.solo .gm-head-l { display: none; }
+.gm-head.solo .gm-res { margin-left: 0; }
 .mini-badge {
   display: inline-block;
   min-width: 42px; padding: 1px 8px;

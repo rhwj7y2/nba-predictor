@@ -39,6 +39,8 @@ INJURY_STALE_HOURS = 48  # 傷病名單抓取超過這麼久就不拿來重算�
 INJURY_HORIZON_HOURS = 48  # 只對「未來這麼多小時內要開打」的比賽扣分：更遠的比賽，現在的缺陣名單到時候多半已經變了，不扣
 INJURY_FILE = "injuries_latest.json"  # 由 fetch_espn_games.py 產生：ESPN 現在的傷病名單
 INJURY_ADJ_FILE = "injury_adj_2026-27.json"  # 每場比賽凍結的傷病扣分（開賽後不再變動）
+B2B_DEDUCT = 2.0     # 連兩天：這隊的預測分差扣幾分（三季回測：連兩天的球隊平均比預測少約 1.25 分；只動分差、不動總分，因為對手平均反而多拿約 1 分，總分沒偏）
+B2B_FROM = "2026-11-09"  # 台灣日期，這天起的比賽才套用連兩天扣分（以前已打的預測維持當時的樣子）
 INJURY_BACKFILL_UNTIL = "2026-11-08"  # 台灣日期，這天以前（不含）已完賽的比賽可以「事後回補」傷病扣分（當時還沒有傷病扣分）
 SCHEDULE_FILE = "schedule_2026-27.json"  # 球季進行中：由 fetch_espn_games.py 產生，網頁的賽程分頁用
 # 賽程分頁最早能看到的台灣日期：這天起的已完賽比賽會顯示「賽前預測比分 + 結果」，
@@ -316,7 +318,14 @@ def build_schedule(raw_dir):
     odds_path = raw_dir / ODDS_FILE
     odds = json.loads(odds_path.read_text(encoding="utf-8")) if odds_path.exists() else {}
     games = []
-    for g in json.loads(path.read_text(encoding="utf-8")):
+    raw_games = json.loads(path.read_text(encoding="utf-8"))
+    # 連兩天（back-to-back）：這隊「前一個美東日期」也有比賽。美東日期 = UTC - 6 小時（NBA 開賽時間 12:00~22:30 ET 不管冬令夏令都落在同一天）
+    et_day = lambda g: (datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") - timedelta(hours=6)).date()
+    played_days = defaultdict(set)  # 隊名 -> 有比賽的美東日期（延期、取消的不算）
+    for g in raw_games:
+        if g["away"] and g["home"] and not ("POSTPONED" in g["status"] or "CANCELED" in g["status"]):
+            played_days[g["away"]].add(et_day(g)); played_days[g["home"]].add(et_day(g))
+    for g in raw_games:
         tw = datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") + timedelta(hours=8)
         if tw.strftime("%Y-%m-%d") < SCHEDULE_SHOW_FROM:
             continue
@@ -331,12 +340,17 @@ def build_schedule(raw_dir):
         }
         if g.get("away_q") and g.get("home_q"):  # 各節得分 [客隊各節, 主隊各節]（第 5 個以後是延長賽）
             item["q"] = [g["away_q"], g["home_q"]]
+        if g["away"] and g["home"] and tw.strftime("%Y-%m-%d") >= B2B_FROM:  # 連兩天：b = "a"（客隊）/ "h"（主隊）/ "ah"（兩隊都是）
+            yday = et_day(g) - timedelta(days=1)
+            b = ("a" if yday in played_days[g["away"]] else "") + ("h" if yday in played_days[g["home"]] else "")
+            if b:
+                item["b"] = b
         rec = odds.get(g["id"]) if s in ("F", "S", "L") else None
         if rec:  # 記下來的盤口：sp = 主隊讓分、ou = 總分（已完賽預測頁、已開賽的比賽顯示用，ESPN 開賽後就不給盤口了；開盤和賠率留在 raw/ 的紀錄檔）
             item["sp"], item["ou"] = rec["spread_home"][1], rec["total"][1]
         games.append(item)
     games.sort(key=lambda x: (x["d"], x["t"], x["a"] or "", x["h"] or ""))
-    return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "games": games}
+    return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "games": games}
 
 
 def backfill_injury_adj(raw_dir, games, schedule):
