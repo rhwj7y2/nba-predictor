@@ -73,6 +73,15 @@ PREV_SEASON = {
     "end": datetime(2026, 4, 12),
     "excluded": {(datetime(2025, 12, 16), "San Antonio Spurs", "New York Knicks")},
 }
+# 網頁「交手紀錄」下拉選單用的歷史球季（新到舊）：每季的整季比分在資料庫的 season_games（2025-26 由遷移時放進去，
+# 更早的由 load_old_seasons.py 抓；沒有資料的球季就不放進選單）。excluded = NBA 盃決賽（不計入例行賽；日期、客隊、主隊要和資料一致）
+HISTORY_SEASONS = [
+    PREV_SEASON,
+    {"label": "2024-25", "end": datetime(2025, 4, 13),
+     "excluded": {(datetime(2024, 12, 17), "Milwaukee Bucks", "Oklahoma City Thunder")}},
+    {"label": "2023-24", "end": datetime(2024, 4, 14),
+     "excluded": {(datetime(2023, 12, 9), "Indiana Pacers", "Los Angeles Lakers")}},
+]
 # 球季進行中的預測模型 ①「實力評分法」：
 #   球隊評分 = SRS（考慮對手強弱的評分，單位是分）＋ 上季評分當開季起點，算法見下面 srs_ratings()
 #   預測分差 = 主隊評分 - 客隊評分 + homeAdv（中立場地 0），再減傷病、連兩天扣分差
@@ -407,6 +416,7 @@ def build_schedule(conn):
     if not raw_games:
         return None
     odds = store.read_odds(conn)
+    box_players = store.read_players(conn)  # 逐場球員數據：已完賽的比賽附上「本場得分前三球員」
     games = []
     # 連兩天（back-to-back）：這隊「前一個美東日期」也有比賽。美東日期 = UTC - 6 小時（NBA 開賽時間 12:00~22:30 ET 不管冬令夏令都落在同一天）
     et_day = lambda g: (datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") - timedelta(hours=6)).date()
@@ -427,6 +437,10 @@ def build_schedule(conn):
             "s": s, "n": g["neutral"], "tag": SCHEDULE_TAGS.get(g["note"], g["note"]),
             "as": g["away_pts"], "hs": g["home_pts"],
         }
+        bp = box_players.get(g["id"]) if s == "F" and g["away"] and g["home"] else None
+        if bp:  # 本場兩隊得分前三高的球員（上場分鐘 > 0；得分相同的上場時間長的在前）：tp = [客隊的, 主隊的]，每位 [名字, 得分, 籃板, 助攻, 正負值]
+            top = lambda team: [[p[1], p[3], p[4], p[5], p[6]] for p in sorted((p for p in bp["p"][team] if p[2] and p[3] is not None), key=lambda p: (-p[3], -p[2]))[:3]]
+            item["tp"] = [top(g["away"]), top(g["home"])]
         if g.get("away_q") and g.get("home_q"):  # 各節得分 [客隊各節, 主隊各節]（第 5 個以後是延長賽）
             item["q"] = [g["away_q"], g["home_q"]]
         if g["away"] and g["home"] and tw.strftime("%Y-%m-%d") >= B2B_FROM:  # 連兩天：b = "a"（客隊）/ "h"（主隊）/ "ah"（兩隊都是）
@@ -789,6 +803,23 @@ def load_prev_season(conn):
     return games, log, h2h
 
 
+def build_h2h_history(conn):
+    """每個歷史球季（HISTORY_SEASONS，新到舊）兩隊對戰的比分，格式同 build_h2h：{ "ATL-BOS": [[先列隊得分, 後列隊得分], ...] }。
+    資料庫裡沒有那一季的比分就跳過（網頁選單裡就沒有那一季）；有資料就用嚴格檢查（1230 場、每隊 82 場、435 組對戰）。"""
+    out = {}
+    for cfg in HISTORY_SEASONS:
+        if not store.read_season_games(conn, cfg["label"]):
+            continue
+        games, _ = load_games(store.read_season_games(conn, cfg["label"]), f"season_games({cfg['label']})", cfg["end"], cfg["excluded"])
+        assert len(games) == REGULAR_SEASON_GAMES, f"{cfg['label']} 賽程筆數不對：{len(games)}"
+        bad = {k: len(v) for k, v in build_log(games).items() if len(v) != 82}
+        assert not bad, f"{cfg['label']} 有球隊場次不是82場：{bad}"
+        h2h = build_h2h(games)
+        assert len(h2h) == 435, f"{cfg['label']} 對戰組合數不對：{len(h2h)}"
+        out[cfg["label"]] = h2h
+    return out
+
+
 def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=None, pace5=None, rtg=None):
     """每隊的場數、戰績、場均得失分、近10場、PACE（球季進行中另外加預測模型用的淨勝分 net / net10，
     有給 prior 時再加 SRS 球隊評分 rating）。"""
@@ -965,7 +996,8 @@ def main(db_path, target, complete, backfill_injuries=False):
         if PREV_SEASON:
             _, _, prev_h2h = load_prev_season(conn)
             payload["prevSeason"] = PREV_SEASON["label"]
-            payload["h2hPrev"] = prev_h2h
+            payload["h2hPrev"] = prev_h2h  # 舊版網頁用（上季交手）；新版網頁讀下面的 h2hHist
+            payload["h2hHist"] = build_h2h_history(conn)  # {球季: 兩隊交手比分}，交手紀錄的下拉選單用（新到舊）
         pre = build_pregame(conn, games, schedule, prior, neutral)
         if pre:
             payload["pre"] = pre

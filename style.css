@@ -306,6 +306,11 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .pl-st span { display: block; color: var(--muted); font-size: .62rem; }
 .pl-st b.pos { color: var(--win); }
 .pl-st b.neg { color: var(--bad); }
+.pl-st b.hot { color: var(--bad); }
+.pl-nm { position: relative; display: inline-block; }  /* 球員名字：文字固定置中；大三元皇冠浮在名字旁邊（左邊那隊在左、右邊那隊在右），不推擠名字 */
+.pl-crown { position: absolute; top: 50%; transform: translateY(-50%); font-size: .9em; line-height: 1; }
+.pl-crown-l { right: 100%; margin-right: 4px; }
+.pl-crown-r { left: 100%; margin-left: 4px; }  /* 單場得分 30 以上、籃板 / 助攻 10 以上：紅字 */
 .pl-empty { color: var(--muted); text-align: center; }
 
 /* 傷病名單：先寫「沒參考傷病」，再一隊一段，缺陣紅色、每日觀察橘色 */
@@ -603,6 +608,11 @@ a.game:hover { border-color: var(--accent); }
 .conf-low { color: var(--bad); }
 .alt-line .conf { font-size: 1.1rem; }
 .h2h-block + .h2h-block { margin-top: 10px; }
+.h2h-pick { margin-bottom: 8px; }
+.h2h-pick select { width: auto; min-width: 11rem; font-size: .9rem; padding: 6px 10px; }  /* 交手紀錄的球季下拉選單 */
+.h2h-none { color: var(--muted); padding: 6px 0; }
+.h2h-total .nw { white-space: nowrap; }
+.h2h-total { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-weight: 600; font-size: .85rem; }  /* 交手紀錄最下面一行：統計三季幾勝幾敗 */
 .h2h-title { font-weight: 600; margin-bottom: 4px; }
 .h2h-game { color: var(--muted); font-variant-numeric: tabular-nums; }
 .h2h-win { color: var(--text); font-weight: 700; }

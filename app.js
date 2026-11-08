@@ -38,7 +38,7 @@
         "（66.5% 是賽季中、用本季累積數據的回測數字，不適用於賽季前預測。）新球季開打後，數據會更新。",
       statsTitle: "上季數據對照",
       l10note: "上季季末",
-      h2hTitle: D.season + " 例行賽兩隊對戰 ",
+      h2hTitle: D.season + " 例行賽對戰 ",
       sources: ["Basketball-Reference.com"],
       foot: "整理自 " + D.season + " 例行賽 " + N_GAMES + " 場"
     },
@@ -48,8 +48,8 @@
       statsTitle: D.season + " 本季數據對照",
       recLabel: "本季戰績",
       l10note: "",
-      h2hTitle: D.season + " 例行賽兩隊對戰 ",
-      sources: ["ESPN"].concat(D.h2hPrev ? ["Basketball-Reference.com"] : []),
+      h2hTitle: D.season + " 例行賽對戰 ",
+      sources: ["ESPN"].concat(D.h2hPrev || D.h2hHist ? ["Basketball-Reference.com"] : []),
       foot: "整理自 " + D.season + " 例行賽已完成的 " + N_GAMES + " 場"
     }
   }[MODE];
@@ -245,6 +245,57 @@
       awayWins + " 勝 " + (meetings.length - awayWins) + " 敗</div>" + lines.join("") + "</div>";
   }
 
+  // 交手紀錄的球季來源（新到舊）：本季，加上球季進行中才有的歷史球季（新版資料 h2hHist；舊版資料只有上季 h2hPrev）
+  var H2H_NAMES = ["本季", "上季", "上上季", "上上上季"];
+  var h2hSel = null;  // 下拉選單目前選的球季；換球隊、換比賽時維持同一個選擇
+  function h2hSources() {
+    var list = [{ label: D.season, data: D.h2h }];
+    if (MODEL) {
+      var hist = D.h2hHist || (D.h2hPrev ? (function () { var o = {}; o[D.prevSeason] = D.h2hPrev; return o; })() : null);
+      Object.keys(hist || {}).forEach(function (s) { list.push({ label: s, data: hist[s] }); });
+    }
+    return list;
+  }
+  // 最下面一行：統計三季（最近三個完整球季，不含進行中的本季）兩隊交手，客隊 a 幾勝幾敗；沒有歷史資料就不顯示
+  function h2hTotalLine(src, a, h) {
+    var past = src.slice(1, 4);
+    if (!past.length) return "";
+    var pair = [a.abbr, h.abbr].sort(), awayFirst = a.abbr === pair[0], w = 0, l = 0, sa = 0, sh = 0;
+    past.forEach(function (s) {
+      (s.data[pair[0] + "-" + pair[1]] || []).forEach(function (m) {
+        var ap = awayFirst ? m[0] : m[1], hp = awayFirst ? m[1] : m[0];
+        if (ap > hp) w++; else l++;
+        sa += ap; sh += hp;
+      });
+    });
+    var range = past.length > 1 ? past[past.length - 1].label + "～" + past[0].label : past[0].label;
+    return '<div class="h2h-total">統計三季（' + range + '）<br><span class="nw">' + (w + l ? a.zh + " " + w + " 勝 " + l + " 敗" : "沒有交手") + "</span>" +
+      (w + l ? '<br><span class="nw">平均比分 ' + a.zh + " " + f1(sa / (w + l)) + " : " + f1(sh / (w + l)) + " " + h.zh + "</span>" : "") + "</div>";
+  }
+  function drawH2h(a, h) {
+    var box = $("h2h"), src = h2hSources();
+    var body = function (s) {
+      return h2hBlock(s.data, s.label + " 例行賽對戰 ", a, h) || '<div class="h2h-none">' + s.label + " 例行賽沒有交手</div>";
+    };
+    if (src.length < 2) {  // 賽季前（只有一個球季）：沒有選單，沒有交手就整塊不顯示
+      var only = h2hBlock(src[0].data, src[0].label + " 例行賽對戰 ", a, h);
+      box.innerHTML = only;
+      box.hidden = !only;
+      return;
+    }
+    var pick = src.filter(function (s) { return s.label === h2hSel; })[0] ||
+      src.filter(function (s) { return h2hBlock(s.data, "", a, h); })[0] || src[0];  // 預設：本季（沒有交手就退到最近一季有交手的）
+    h2hSel = pick.label;
+    box.innerHTML = '<div class="h2h-pick"><select id="h2h-season" aria-label="交手紀錄的球季">' + src.map(function (s, i) {
+      return '<option value="' + s.label + '"' + (s.label === pick.label ? " selected" : "") + ">" + s.label + "（" + (H2H_NAMES[i] || "") + "）</option>";
+    }).join("") + '</select></div><div id="h2h-body">' + body(pick) + "</div>" + h2hTotalLine(src, a, h);
+    box.hidden = false;
+    $("h2h-season").onchange = function () {
+      h2hSel = this.value;
+      $("h2h-body").innerHTML = body(src.filter(function (s) { return s.label === h2hSel; })[0]);
+    };
+  }
+
   function winnerOf(p) { return p.home >= p.away ? "home" : "away"; }
 
   // 預測信心：看大比分（①實力評分法）兩隊比分各四捨五入到 0.1 之後的分差（取絕對值），門檻讓三個等級的場數大約各占三分之一
@@ -404,12 +455,8 @@
         '<div class="pre-conf">' + confHtml(cmp.p1) + "</div>";
     }
 
-    // 交手紀錄（以客隊為主視角）；球季進行中除了本季，還附上上季的交手（只供參考，不進預測）
-    var blocks = [h2hBlock(D.h2h, COPY.h2hTitle, a, h)];
-    if (MODEL && D.h2hPrev) blocks.push(h2hBlock(D.h2hPrev, D.prevSeason + " 例行賽兩隊對戰 ", a, h));
-    blocks = blocks.filter(Boolean);
-    $("h2h").innerHTML = blocks.join("");
-    $("h2h").hidden = !blocks.length;
+    // 交手紀錄（以客隊為主視角）；球季進行中用下拉選單選球季：本季、上季、上上季、上上上季的交手比分（只供參考，不進預測）
+    drawH2h(a, h);
 
     // 數據對照
     var bg = cardBackground();
@@ -449,7 +496,8 @@
 
     result.hidden = false;
     showMatchVote(dayIdx >= 0 ? dayList[dayIdx] : null, fromDate);  // 從賽程點進來的比賽才有投票
-    if (!pregame) renderPlayers(aKey, hKey, a, h, aColor, hColor);   // 得分前三球員：已完賽的固定頁面不顯示
+    if (!pregame) renderPlayers(aKey, hKey, a, h, aColor, hColor);   // 得分前三球員（本季場均）
+    else renderGameTop(a, h, aColor, hColor, finalGame);              // 已完賽的固定頁面：改顯示本場得分前三球員
     if (!pregame) renderInjuries(aKey, hKey, a, h, aColor, hColor);  // 傷病名單：已完賽的固定頁面不顯示
     if (MODEL) {
       if (pregame) showRecordedOdds(a, h, aColor, hColor, cmp.p1);
@@ -650,12 +698,33 @@
     return '<div class="pl-st"><b' + (cls ? ' class="' + cls + '"' : "") + ">" + val + "</b><span>" + label + "</span></div>";
   }
 
-  function playerCell(p, color) {
+  function playerCell(p, color, whole, left) {  // whole = true：單場數據（整數，不補小數點）；left = true：左邊那隊（大三元皇冠掛在名字左邊，右邊那隊掛在右邊）
     if (!p) return '<div class="pl-cell pl-empty">—</div>';
-    var pm = p.pm > 0 ? "+" + f1(p.pm) : f1(p.pm);
-    return '<div class="pl-cell"><div class="pl-name" style="color:' + color + '">' + p.n + "</div>" +
-      '<div class="pl-stats">' + plStat("得分", f1(p.pts)) + plStat("籃板", f1(p.reb)) + plStat("助攻", f1(p.ast)) +
+    var fx = whole ? String : f1;
+    var pm = p.pm > 0 ? "+" + fx(p.pm) : fx(p.pm);
+    // 單場數據：得分 >= 30、籃板 / 助攻 >= 10 用紅字；得分、籃板、助攻都 >= 10 = 大三元，名字旁邊加皇冠（只有這三項數據，抄截、阻攻不算）
+    var hot = function (v, min) { return whole && v >= min ? "hot" : ""; };
+    var triple = whole && p.pts >= 10 && p.reb >= 10 && p.ast >= 10;
+    return '<div class="pl-cell"><div class="pl-name" style="color:' + color + '"><span class="pl-nm">' + p.n +
+      (triple ? '<span class="pl-crown ' + (left ? "pl-crown-l" : "pl-crown-r") + '" title="大三元（得分、籃板、助攻都 10 以上）">👑</span>' : "") + "</span></div>" +
+      '<div class="pl-stats">' + plStat("得分", fx(p.pts), hot(p.pts, 30)) + plStat("籃板", fx(p.reb), hot(p.reb, 10)) + plStat("助攻", fx(p.ast), hot(p.ast, 10)) +
       plStat("+/-", pm, p.pm > 0 ? "pos" : p.pm < 0 ? "neg" : "") + "</div></div>";
+  }
+
+  // 已完賽的固定頁面：本場兩隊得分前三高的球員（資料在賽程的 tp 欄位：[客隊, 主隊]，每位 [名字, 得分, 籃板, 助攻, 正負值]；放在本季數據對照上面）
+  function renderGameTop(a, h, aColor, hColor, g) {
+    var card = $("players-card");
+    var tp = g && g.tp;
+    if (!tp || (!tp[0].length && !tp[1].length)) { card.hidden = true; return; }
+    var obj = function (r) { return r ? { n: r[0], pts: r[1], reb: r[2], ast: r[3], pm: r[4] } : null; };
+    var rows = "";
+    for (var i = 0; i < 3; i++) {
+      if (!tp[0][i] && !tp[1][i]) break;
+      rows += '<div class="pl-row">' + playerCell(obj(tp[0][i]), aColor, true, true) + playerCell(obj(tp[1][i]), hColor, true, false) + "</div>";
+    }
+    card.innerHTML = '<div class="odds-title">本場得分前三球員</div>' +
+      '<div class="pl-head"><span style="color:' + aColor + '">' + a.zh + '</span><span style="color:' + hColor + '">' + h.zh + "</span></div>" + rows;
+    card.hidden = false;
   }
 
   function renderPlayers(aKey, hKey, a, h, aColor, hColor) {
@@ -936,6 +1005,9 @@
   var curDate = null;
 
   function todayTW() { return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10); }  // 台灣的今天
+  // 首頁「今天 / 明天」的換日時間：台灣中午 12:00（不是午夜 0 點）。NBA 比賽在台灣是早上 04:30 ~ 12:30 打，半夜 0 點過後、比賽還沒打的時候，
+  // 大家還是覺得「今天」是前一天晚上，所以「明日賽程」要指到即將開打的那天，不是再隔一天
+  function gameDayTW() { return new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10); }
 
   function addDays(d, n) {
     var p = d.split("-").map(Number);
@@ -1554,18 +1626,18 @@
   var stConf = "E";  // 排名現在看哪一區：E 東區、W 西區
 
   function renderHome() {
-    var nd = nextUpcomingDate(), t = todayTW();
+    var nd = nextUpcomingDate(), t = gameDayTW(), tr = todayTW();  // t = 首頁換日用的「今天」（台灣中午換日）；tr = 台灣真正的今天（賽果有打完就馬上算今日賽果）
     // 賽程卡片的小字：下一個比賽日是今天 / 明天就直接這樣說，不然寫日期
     $("home-schedule-desc").textContent = nd
       ? (nd === t ? "今天" : nd === addDays(t, 1) ? "明天" : fmtDate(nd)) + "的比賽預測"
       : "賽程與預測";
     // 右上角按鈕：最近一個有打完比賽的日子的賽果（就是今天的話寫「今日賽果」，不然寫「最新賽果」）
     var lastFinal = null;
-    SCHEDULE.games.forEach(function (g) { if (g.s === "F" && g.d <= t && (!lastFinal || g.d > lastFinal)) lastFinal = g.d; });
+    SCHEDULE.games.forEach(function (g) { if (g.s === "F" && g.d <= tr && (!lastFinal || g.d > lastFinal)) lastFinal = g.d; });
     var res = $("home-result");
     res.hidden = !lastFinal;
     if (lastFinal) {
-      res.textContent = lastFinal === t ? "今日賽果" : "最新賽果";
+      res.textContent = lastFinal === tr ? "今日賽果" : "最新賽果";
       res.href = hashOf({ tab: "schedule", date: lastFinal });
     }
     // 右上角第二顆按鈕：永遠是「隔天」的賽程（明天有比賽就寫「明日賽程」；明天沒比賽就找今天之後的下一個比賽日，寫「下個賽程」）
