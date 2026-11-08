@@ -51,6 +51,10 @@ CREATE TABLE IF NOT EXISTS injury_snapshots (
 CREATE TABLE IF NOT EXISTS injury_adj (
     key TEXT PRIMARY KEY, ja, jh, jp TEXT, at TEXT, bf INTEGER DEFAULT 0  -- ja / jh 不宣告型別：整數維持整數（0）、小數維持小數（2.0），輸出的 JSON 才和以前一樣
 );
+CREATE TABLE IF NOT EXISTS upset_log (
+    game_id TEXT PRIMARY KEY, version TEXT, picked_at TEXT, side TEXT, team TEXT,
+    margin REAL, model_prob REAL, odds_pick REAL, fair_pick REAL, odds_open REAL, fair_open REAL, provider TEXT
+);
 CREATE TABLE IF NOT EXISTS h2h_pace (pair TEXT PRIMARY KEY, resid_sum REAL NOT NULL, n INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS season_games (
     season TEXT NOT NULL, date TEXT NOT NULL, away TEXT NOT NULL, away_pts INTEGER, home TEXT NOT NULL, home_pts INTEGER, seq INTEGER DEFAULT 0
@@ -121,6 +125,19 @@ def write_injury_adj(conn, mem):
                      [(k, v["ja"], v["jh"], json.dumps(v["jp"], ensure_ascii=False), v.get("at"), 1 if v.get("bf") else 0) for k, v in mem.items()])
 
 
+def insert_upset(conn, row):
+    """開盤反打觀察名單：某場第一次符合規則時寫入一筆（INSERT OR IGNORE，之後不修改、不刪除）。
+    row：{game_id, version, picked_at, side, team, margin, model_prob, odds_pick, fair_pick, odds_open, fair_open, provider}。
+    回傳這次有沒有真的新增。"""
+    cur = conn.execute("INSERT OR IGNORE INTO upset_log VALUES (:game_id, :version, :picked_at, :side, :team, :margin, :model_prob, :odds_pick, :fair_pick, :odds_open, :fair_open, :provider)", row)
+    return cur.rowcount > 0
+
+
+def read_upsets(conn):
+    """[{game_id, version, picked_at, side, team, margin, model_prob, odds_pick, fair_pick, odds_open, fair_open, provider}]，依選的時間排序"""
+    return [dict(r) for r in conn.execute("SELECT * FROM upset_log ORDER BY picked_at, game_id")]
+
+
 def set_meta(conn, key, value):
     conn.execute("INSERT OR REPLACE INTO meta VALUES (?, ?)", (key, value))
 
@@ -172,6 +189,11 @@ def read_season_games(conn, season):
 
 def read_odds(conn):
     return {r["game_id"]: json.loads(r["detail"]) for r in conn.execute("SELECT game_id, detail FROM odds")}
+
+
+def read_odds_status(conn):
+    """{事件編號: 盤口紀錄的狀態 pre / live / final}（舊的 final 紀錄 detail 裡沒有 st 欄位，要看資料表的 st 欄）"""
+    return {r["game_id"]: r["st"] for r in conn.execute("SELECT game_id, st FROM odds")}
 
 
 def read_injuries_latest(conn):

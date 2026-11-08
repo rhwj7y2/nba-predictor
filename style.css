@@ -457,6 +457,7 @@ a.game:hover { border-color: var(--accent); }
 .gm-team { min-width: 0; text-align: center; }
 .gm-name { margin-top: 4px; font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
 .gm-rec { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.gm-up { display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 1.4; }  /* 反打觀察名單選的那隊 */
 .gm-mid { min-width: 4.5em; text-align: center; }
 .game-time { font-size: 1.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .gm-conf { margin-top: 5px; font-size: .95rem; position: relative; top: 11px; }  /* 賽程卡片：開賽時間下面的信心程度（置中靠 .gm-mid 的 text-align；top 只視覺下移，對齊兩側戰績那一行） */

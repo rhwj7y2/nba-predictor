@@ -12,6 +12,11 @@
   // 球季進行中：資料帶有模型參數時，預測只用本季已打的比賽（不用上季表現；參數見 build_data.py 的 MODEL）
   var MODEL = D.mode === "in_season" && D.model ? D.model : null;
 
+  // 開盤反打觀察名單（實驗功能，build_data.py 規則 v1 往後記錄；檔案不存在就是空的，網頁照常）：每筆 { d 台灣日期, t, a, h, side "a"/"h" 被選那隊, od 賠率, mp 模型勝率, qp 市場勝率, w 勝負, qc 收盤市場勝率, clv }
+  var UPSETS = window.NBA_UPSETS && window.NBA_UPSETS.picks ? window.NBA_UPSETS.picks : [];
+  var UPSET_RULE = window.NBA_UPSETS && window.NBA_UPSETS.rule ? window.NBA_UPSETS.rule : null;
+  var UPSET_BY = {};
+  UPSETS.forEach(function (u) { UPSET_BY[u.d + "|" + u.a + "|" + u.h] = u; });
   var SCHEDULE = window.NBA_SCHEDULE || null;  // 賽程（球季進行中才有，build_data.py 產生；日期與時間都是台灣時間）
   var ABBR = {};  // 縮寫 -> 球隊 key；網址和賽程都用縮寫
   Object.keys(T).forEach(function (k) { ABBR[T[k].abbr] = k; });
@@ -940,10 +945,10 @@
   }
 
   // 一邊的球隊：隊徽、隊名、戰績（沒決定的隊伍顯示「待定」）
-  function teamCell(t) {
+  function teamCell(t, upset) {  // upset：這隊是「反打觀察」名單選的那隊，戰績下面加小標籤
     if (!t) return '<div class="gm-team"><span class="mini-badge tbd">?</span><div class="gm-name">待定</div></div>';
     return '<div class="gm-team">' + miniBadge(t) + '<div class="gm-name">' + t.zh + '</div><div class="gm-rec">' +
-      t.w + "-" + t.l + "</div></div>";
+      t.w + "-" + t.l + "</div>" + (upset ? '<div class="gm-up">反打觀察</div>' : "") + "</div>";
   }
 
   // 賽程列表的一場比賽，版型仿 NBA 官網：客隊在左、主隊在右，中間是開賽時間（已完賽改顯示比分）。
@@ -953,6 +958,7 @@
     var a = g.a ? T[ABBR[g.a]] : null;
     var h = g.h ? T[ABBR[g.h]] : null;
     var pi = MODEL ? preGameInfo(g) : null;
+    var up = a && h ? UPSET_BY[date + "|" + g.a + "|" + g.h] : null;  // 這場有沒有反打觀察
     // 首頁簡版：還沒開打的顯示預測比分；開打後已經抓到即時比分的，就跟賽程一樣顯示即時比分
     var homePred = mode === "home" && MODEL && a && h && (g.s === "S" || g.s === "L") && !liveMidCache[date + "|" + g.a + "|" + g.h] ? compareModels(a, h, g.n, gameAdj(g)) : null;
     var past = date < todayTW();
@@ -1019,7 +1025,7 @@
       ? '<div class="gm-head' + (tags ? "" : " solo") + '"><div class="gm-head-l">' + tags + '</div><span class="gm-res ' + (pi.ok1 ? "ok" : "bad") + '">' + (pi.ok1 ? "預測正確" : "預測失敗") + '</span></div>'
       : tags ? '<div class="gm-tags">' + tags + "</div>" : "";
     el.innerHTML = head +
-      '<div class="gm-row">' + teamCell(a) + '<div class="gm-mid">' + mid + "</div>" + teamCell(h) + "</div>" +
+      '<div class="gm-row">' + teamCell(a, up && up.side === "a") + '<div class="gm-mid">' + mid + "</div>" + teamCell(h, up && up.side === "h") + "</div>" +
       (line ? '<div class="game-pred">' + line + "</div>" : "");
     var li = document.createElement("li");
     li.appendChild(el);
@@ -1602,7 +1608,34 @@
         }).join("") + '</tbody></table><p class="acc-note">以準確率來看，不讓分值得參考，其他太看運氣啦</p></div>';
     }
 
+    html += upsetCardHtml();
     box.innerHTML = html;
+  }
+
+  // 開盤反打觀察（實驗中，規則 v1）：往後記錄，用 CLV（收盤價值：選的當下的市場勝率 vs 收盤的市場勝率，收盤往我們這邊移 = 正）判斷有沒有優勢
+  function upsetCardHtml() {
+    var title = "開盤反打觀察（實驗中，v1）";
+    var note = "用 CLV 判斷有沒有優勢，約 150 注才能下結論；報酬率樣本少時誤差很大；非投注建議";
+    if (!UPSETS.length) return '<div class="card"><h2>' + title + '</h2><p class="odds-msg">尚無紀錄</p><p class="acc-note">' + note + "</p></div>";
+    var done = UPSETS.filter(function (u) { return u.w === 0 || u.w === 1; });
+    var clv = UPSETS.filter(function (u) { return typeof u.clv === "number"; }).map(function (u) { return u.clv; });
+    var n = clv.length, mean = 0, sd = 0;
+    if (n) { mean = clv.reduce(function (s, x) { return s + x; }, 0) / n; }
+    if (n > 1) { sd = Math.sqrt(clv.reduce(function (s, x) { return s + (x - mean) * (x - mean); }, 0) / (n - 1)); }
+    var moved = clv.filter(function (x) { return x > 0; }).length;
+    var wins = done.filter(function (u) { return u.w === 1; }).length;
+    var profit = done.reduce(function (s, u) { return s + (u.w === 1 ? u.od - 1 : -1); }, 0);
+    var sgnN = function (x, d) { return (x > 0 ? "+" : "") + x.toFixed(d); };
+    var rows = [
+      ["累計注數", UPSETS.length + "（已打完 " + done.length + "，有收盤 " + n + "）"],
+      ["平均 CLV", n ? sgnN(mean, 1) + " 個百分點" + (n > 1 ? " ± " + (1.96 * sd / Math.sqrt(n)).toFixed(1) : "") : "—"],
+      ["收盤往我們這邊移", n ? moved + " / " + n + "（" + pct(moved, n) + "）" : "—"],
+      ["勝-負", done.length ? wins + "-" + (done.length - wins) : "—"],
+      ["報酬率（1 注 1 單位）", done.length ? sgnN(profit / done.length * 100, 1) + "%" : "—"]
+    ];
+    return '<div class="card"><h2>' + title + '</h2><table class="acc-table"><tbody>' +
+      rows.map(function (r) { return "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>"; }).join("") +
+      '</tbody></table><p class="acc-note">' + note + "</p></div>";
   }
 
   function updateBack() {
