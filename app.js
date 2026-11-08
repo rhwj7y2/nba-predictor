@@ -213,10 +213,11 @@
     return '<span class="rate">' + (total ? (w / total * 100).toFixed(1) + "%" : "—") + "</span>";
   }
 
-  // 一格數據：數字（隊色）+ 較優的加皇冠 + 小字
-  function statCell(main, sub, crown, color) {
-    return '<td style="color:' + color + '">' + main +
-      (crown ? ' <span class="crown" role="img" aria-label="較優" title="較優">👑</span>' : "") + (sub || "") + "</td>";
+  // 一格數據：數字（隊色）+ 較優的加一顆星 + 小字；較優的一邊也用粗體，另一邊維持原樣；平手兩邊都一樣
+  // left = true：左邊那隊的格子，星星掛在數字左邊；右邊那隊掛在右邊。星星是浮在數字旁邊（不佔位置），所以每一格的數字都固定置中、上下對齊
+  function statCell(main, sub, better, color, left) {
+    var star = better ? '<span class="best ' + (left ? "best-l" : "best-r") + '" role="img" aria-label="較優" title="較優">⭐</span>' : "";
+    return '<td class="' + (better ? "adv" : "") + '" style="color:' + color + '"><span class="sv">' + main + star + "</span>" + (sub || "") + "</td>";
   }
 
   // 實力評分格："+8.4" 加一行小字「已打 8 場」
@@ -429,14 +430,20 @@
     rows.push(rec(COPY.recLabel, a.w + "-" + a.l, h.w + "-" + h.l));
     rows.push(rec("主場戰績", a.home, h.home));
     rows.push(rec("客場戰績", a.road, h.road));
+    if (MODEL && a.ortg != null && h.ortg != null) {  // 每百回合得分 / 失分（也就是 ORTG / DRTG，把節奏拿掉的進攻 / 防守效率）；沒有這兩個欄位的舊資料檔就不顯示
+      rows.push(["每百回合得分", f1(a.ortg), "", f1(h.ortg), "", betterHigh(a.ortg, h.ortg)]);
+      rows.push(["每百回合失分", f1(a.drtg), "", f1(h.drtg), "", betterLow(a.drtg, h.drtg)]);  // 失分越少越好
+    }
     rows.push(["場均得分", f1(a.off), "", f1(h.off), "", betterHigh(a.off, h.off)]);
     rows.push(["場均失分", f1(a.def), "", f1(h.def), "", betterLow(a.def, h.def)]);  // 失分越少越好
-    rows.push([MODEL ? "PACE（本季）" : "PACE", f1(a.pace), "", f1(h.pace), "", null]);  // 節奏快慢沒有好壞
     rows.push(rec("近 10 場戰績" + l10note, a.l10rec, h.l10rec));
     rows.push(["近 10 場得分" + l10note, f1(a.l10off), "", f1(h.l10off), "", betterHigh(a.l10off, h.l10off)]);
     rows.push(["近 10 場失分" + l10note, f1(a.l10def), "", f1(h.l10def), "", betterLow(a.l10def, h.l10def)]);
+    if (MODEL && a.l10pace != null && h.l10pace != null) rows.push(["近 10 場 PACE" + l10note, f1(a.l10pace), "", f1(h.l10pace), "", null]);  // 近 10 場的節奏（沒有這個欄位的舊資料檔就不顯示）；節奏快慢沒有好壞
+    if (MODEL && a.l5pace != null && h.l5pace != null) rows.push(["近 5 場 PACE", f1(a.l5pace), "", f1(h.l5pace), "", null]);  // 近 5 場的節奏（不滿 5 場就是已打的場數）
+    rows.push([MODEL ? "PACE（本季）" : "PACE", f1(a.pace), "", f1(h.pace), "", null]);  // 整季的 PACE 放在最下面一列；節奏快慢沒有好壞
     $("stats-body").innerHTML = rows.map(function (r) {
-      return "<tr>" + statCell(r[1], r[2], r[5] === "a", aColor) + "<td>" + r[0] + "</td>" +
+      return "<tr>" + statCell(r[1], r[2], r[5] === "a", aColor, true) + "<td>" + r[0] + "</td>" +
         statCell(r[3], r[4], r[5] === "h", hColor) + "</tr>";
     }).join("");
 

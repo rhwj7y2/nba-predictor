@@ -615,7 +615,11 @@ tbody tr:last-child td { border-bottom: 0; }
 td:first-child, th:first-child { text-align: left; }
 .stats td:nth-child(2), .stats th:nth-child(2) { color: var(--muted); font-size: .8rem; white-space: nowrap; }
 .rate { display: block; font-size: .78rem; color: var(--muted); }
-.crown { font-size: .85em; }
+.stats .sv { position: relative; display: inline-block; width: 2.9rem; text-align: center; }  /* 數字固定置中、每一格一樣寬；星星浮在這個框的左邊 / 右邊，所以每一列的星星也在同一個位置 */
+.best { position: absolute; top: 50%; transform: translateY(-50%); font-size: .85em; line-height: 1; }
+.best-l { right: 100%; margin-right: 4px; }
+.best-r { left: 100%; margin-left: 4px; }
+.stats td.adv { font-weight: 700; }  /* 數據對照：較優的一邊用粗體 */
 .row-note { display: block; font-size: .72rem; }
 .stats td:first-child, .stats th:first-child, .stats td:last-child, .stats th:last-child { text-align: center; }
 

@@ -268,13 +268,13 @@ def load_pace(raw_dir):
     return pace
 
 
-def season_pace(conn, games):
-    """球季進行中：每隊的「本季累積 PACE」（每 48 分鐘的回合數），由 boxscore 算出。
+def team_paces(conn, games):
+    """球季進行中：每隊的 PACE（每 48 分鐘的回合數），由 boxscore 算出。回傳 (本季累積, 近 10 場, 近 5 場, 效率值)，前三個是 {隊名: PACE}，效率值是 {隊名: (ORTG, DRTG)}。
 
     回合數公式同 Basketball-Reference：
       估算回合 = 出手 + 0.4 x 罰球出手 - 1.07 x 進攻籃板率 x 投失次數 + 失誤，雙方各估一次取平均；
       PACE = 48 x 總回合 / 總出賽時間（以 5 人同時在場換算，延長賽每節多 5 分鐘）。
-    本季 0 場的球隊沒有 PACE，輸出 None。
+    近 10 場、近 5 場 = 這隊最近打的 10 / 5 場（不滿就用目前所有已打的比賽）。本季 0 場的球隊沒有 PACE，輸出 None。
     """
     cache = store.read_boxes(conn)
     assert cache, "資料庫裡沒有任何 boxscore，請先執行 python fetch_espn_games.py"
@@ -283,9 +283,9 @@ def season_pace(conn, games):
     def est(t, o):
         return t["fga"] + 0.4 * t["fta"] - 1.07 * t["orb"] / (t["orb"] + o["drb"]) * (t["fga"] - t["fgm"]) + t["tov"]
 
-    poss, mins = defaultdict(float), defaultdict(float)
+    per = defaultdict(list)  # 隊名 -> [(這場回合數, 這場分鐘數, 這隊得分, 對手得分)]，依比賽順序
     missing = []
-    for d, vis, _, home, _ in games:
+    for d, vis, vpts, home, hpts in games:
         box = by_game.get((d, vis, home))
         if box is None:
             missing.append(f"{d:%Y-%m-%d} {vis} @ {home}")
@@ -293,11 +293,24 @@ def season_pace(conn, games):
         a, h = box["stats"][vis], box["stats"][home]
         game_poss = 0.5 * (est(a, h) + est(h, a))
         minutes5 = 48 + 5 * (box["periods"] - 4)
-        for t in (vis, home):
-            poss[t] += game_poss
-            mins[t] += minutes5
+        per[vis].append((game_poss, minutes5, vpts, hpts))
+        per[home].append((game_poss, minutes5, hpts, vpts))
     assert not missing, f"有 {len(missing)} 場比賽沒有 boxscore，請先執行 python fetch_espn_games.py：{missing[:3]}..."
-    return {t: round(48 * poss[t] / mins[t], 1) if mins[t] else None for t in TEAMS}
+
+    def pace_of(rows):
+        mins = sum(r[1] for r in rows)
+        return round(48 * sum(r[0] for r in rows) / mins, 1) if mins else None
+
+    def rtg_of(rows):  # ORTG / DRTG = 每 100 個回合得幾分 / 失幾分（進攻 / 防守效率，把節奏拿掉）
+        poss = sum(r[0] for r in rows)
+        return (round(100 * sum(r[2] for r in rows) / poss, 1), round(100 * sum(r[3] for r in rows) / poss, 1)) if poss else (None, None)
+
+    return ({t: pace_of(per[t]) for t in TEAMS}, {t: pace_of(per[t][-10:]) for t in TEAMS}, {t: pace_of(per[t][-5:]) for t in TEAMS}, {t: rtg_of(per[t]) for t in TEAMS})
+
+
+def season_pace(conn, games):
+    """本季累積 PACE（{隊名: PACE}）；算法見 team_paces。"""
+    return team_paces(conn, games)[0]
 
 
 def _player_totals(conn, games):
@@ -776,7 +789,7 @@ def load_prev_season(conn):
     return games, log, h2h
 
 
-def team_rows(games, pace, with_model, prior=None, neutral=frozenset()):
+def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=None, pace5=None, rtg=None):
     """每隊的場數、戰績、場均得失分、近10場、PACE（球季進行中另外加預測模型用的淨勝分 net / net10，
     有給 prior 時再加 SRS 球隊評分 rating）。"""
     log = build_log(games)
@@ -817,6 +830,9 @@ def team_rows(games, pace, with_model, prior=None, neutral=frozenset()):
         if with_model:  # 預測模型要用的淨勝分（整季至今、近10場），多留一位小數（0 場的球隊是 null）
             out[en]["net"] = round(sum(p - o for p, o, _ in g) / n, 2) if n else None
             out[en]["net10"] = round(sum(p - o for p, o, _ in last10) / n10, 2) if n10 else None
+            out[en]["l10pace"] = pace10.get(en) if pace10 else None  # 近 10 場 PACE（沒有就是 null，網頁就不顯示這一列）
+            out[en]["l5pace"] = pace5.get(en) if pace5 else None     # 近 5 場 PACE
+            out[en]["ortg"], out[en]["drtg"] = rtg[en] if rtg else (None, None)  # 進攻 / 防守效率（每 100 回合得失分）
             if ratings is not None:  # SRS 球隊評分（預測分差用）；0 場的球隊是 null
                 out[en]["rating"] = round(ratings[en], 2) if n else None
     return out
@@ -843,11 +859,12 @@ def build_pregame(conn, games, schedule, prior, neutral):
                  if not ((g[1], g[3]) in today_finals and g[0].date() in (pre_day, pre_day - timedelta(days=1)))]
     if not pre_games:
         return None
+    pace_all, pace_10, pace_5, rtgs = team_paces(conn, pre_games)
     return {
         "date": pre_date,
         "asOf": pre_games[-1][0].strftime("%Y-%m-%d"),
         "h2h": build_h2h(pre_games),
-        "teams": team_rows(pre_games, season_pace(conn, pre_games), with_model=True, prior=prior, neutral=neutral),
+        "teams": team_rows(pre_games, pace_all, with_model=True, prior=prior, neutral=neutral, pace10=pace_10, pace5=pace_5, rtg=rtgs),
     }
 
 
@@ -880,13 +897,14 @@ def build_pre_days(conn, games, schedule, latest, prior, neutral):
     days = sorted({g["d"] for g in schedule["games"]
                    if g["s"] == "F" and g["a"] and g["h"] and SCHEDULE_SHOW_FROM <= g["d"] < latest})
     # 預測公式要用的欄位，加上對戰頁「本季數據對照」表要用的戰績欄位（已完賽的固定頁面顯示那天賽前的數據）
-    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "net", "net10", "rating")
+    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "net", "net10", "rating", "l10pace", "l5pace", "ortg", "drtg")
     out = {}
     for d in days:
         pre_games = games_before_tw_day(games, schedule, date.fromisoformat(d))
         if not pre_games:
             continue
-        rows = team_rows(pre_games, season_pace(conn, pre_games), with_model=True, prior=prior, neutral=neutral)
+        pace_all, pace_10, pace_5, rtgs = team_paces(conn, pre_games)
+        rows = team_rows(pre_games, pace_all, with_model=True, prior=prior, neutral=neutral, pace10=pace_10, pace5=pace_5, rtg=rtgs)
         out[d] = {k: {f: r[f] for f in keep} for k, r in rows.items()}
     return out
 
@@ -901,7 +919,7 @@ def main(db_path, target, complete, backfill_injuries=False):
         assert set(pace) == set(TEAMS), f"PACE隊名對不上：{set(pace) ^ set(TEAMS)}"
         assert len(games) == REGULAR_SEASON_GAMES, f"賽程筆數不對：{len(games)}"
     else:
-        pace = season_pace(conn, games)
+        pace, pace10, pace5, rtgs_now = team_paces(conn, games)
         check_in_progress_limits(games)
 
     log = build_log(games)
@@ -913,7 +931,7 @@ def main(db_path, target, complete, backfill_injuries=False):
     # SRS 球隊評分要用的開季起點（上季評分）和中立場地清單（只有球季進行中才用）
     prior = None if complete else srs_prior(conn)
     neutral = frozenset() if complete else neutral_games(conn)
-    out = team_rows(games, pace, with_model=not complete, prior=prior, neutral=neutral)
+    out = team_rows(games, pace, with_model=not complete, prior=prior, neutral=neutral, pace10=None if complete else pace10, pace5=None if complete else pace5, rtg=None if complete else rtgs_now)
 
     h2h = build_h2h(games)
     if complete:
