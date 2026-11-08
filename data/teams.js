@@ -793,7 +793,12 @@ window.NBA_DATA = {
  "model": {
   "shrinkK": 5,
   "homeAdv": 2,
-  "recentWeight": 0.5
+  "recentWeight": 0.5,
+  "srs": {
+   "lam": 5,
+   "halfLife": 60,
+   "prevWeight": 0.5
+  }
  },
  "prevSeason": "2025-26",
  "h2hPrev": {
@@ -7353,7 +7358,8 @@ window.NBA_DATA = {
     "l10def": 114.9,
     "l10rec": "6-4",
     "net": 3.2,
-    "net10": 3.2
+    "net10": 3.2,
+    "rating": 1.98
    },
    "Boston Celtics": {
     "abbr": "BOS",
@@ -7374,7 +7380,8 @@ window.NBA_DATA = {
     "l10def": 105.1,
     "l10rec": "7-2",
     "net": 9.67,
-    "net10": 9.67
+    "net10": 9.67,
+    "rating": 5.24
    },
    "Brooklyn Nets": {
     "abbr": "BKN",
@@ -7395,7 +7402,8 @@ window.NBA_DATA = {
     "l10def": 112.9,
     "l10rec": "2-6",
     "net": -6.25,
-    "net10": -6.25
+    "net10": -6.25,
+    "rating": -6.16
    },
    "Charlotte Hornets": {
     "abbr": "CHA",
@@ -7416,7 +7424,8 @@ window.NBA_DATA = {
     "l10def": 110.2,
     "l10rec": "3-7",
     "net": -13.9,
-    "net10": -13.9
+    "net10": -13.9,
+    "rating": -8.86
    },
    "Chicago Bulls": {
     "abbr": "CHI",
@@ -7437,7 +7446,8 @@ window.NBA_DATA = {
     "l10def": 129.6,
     "l10rec": "1-7",
     "net": -18.0,
-    "net10": -18.0
+    "net10": -18.0,
+    "rating": -10.49
    },
    "Cleveland Cavaliers": {
     "abbr": "CLE",
@@ -7458,7 +7468,8 @@ window.NBA_DATA = {
     "l10def": 114.7,
     "l10rec": "5-4",
     "net": 4.56,
-    "net10": 4.56
+    "net10": 4.56,
+    "rating": 4.06
    },
    "Dallas Mavericks": {
     "abbr": "DAL",
@@ -7479,7 +7490,8 @@ window.NBA_DATA = {
     "l10def": 110.9,
     "l10rec": "5-4",
     "net": 1.22,
-    "net10": 1.22
+    "net10": 1.22,
+    "rating": 0.49
    },
    "Denver Nuggets": {
     "abbr": "DEN",
@@ -7500,7 +7512,8 @@ window.NBA_DATA = {
     "l10def": 114.7,
     "l10rec": "4-3",
     "net": 0.71,
-    "net10": 0.71
+    "net10": 0.71,
+    "rating": 2.65
    },
    "Detroit Pistons": {
     "abbr": "DET",
@@ -7521,7 +7534,8 @@ window.NBA_DATA = {
     "l10def": 101.8,
     "l10rec": "6-2",
     "net": 9.38,
-    "net10": 9.38
+    "net10": 9.38,
+    "rating": 6.09
    },
    "Golden State Warriors": {
     "abbr": "GSW",
@@ -7542,7 +7556,8 @@ window.NBA_DATA = {
     "l10def": 113.0,
     "l10rec": "6-3",
     "net": 4.78,
-    "net10": 4.78
+    "net10": 4.78,
+    "rating": 3.78
    },
    "Houston Rockets": {
     "abbr": "HOU",
@@ -7563,7 +7578,8 @@ window.NBA_DATA = {
     "l10def": 107.6,
     "l10rec": "7-2",
     "net": 10.33,
-    "net10": 10.33
+    "net10": 10.33,
+    "rating": 8.66
    },
    "Indiana Pacers": {
     "abbr": "IND",
@@ -7584,7 +7600,8 @@ window.NBA_DATA = {
     "l10def": 114.2,
     "l10rec": "3-6",
     "net": -3.0,
-    "net10": -3.0
+    "net10": -3.0,
+    "rating": -4.58
    },
    "Los Angeles Clippers": {
     "abbr": "LAC",
@@ -7605,7 +7622,8 @@ window.NBA_DATA = {
     "l10def": 115.6,
     "l10rec": "1-7",
     "net": -6.5,
-    "net10": -6.5
+    "net10": -6.5,
+    "rating": -2.39
    },
    "Los Angeles Lakers": {
     "abbr": "LAL",
@@ -7626,7 +7644,8 @@ window.NBA_DATA = {
     "l10def": 114.3,
     "l10rec": "8-2",
     "net": 7.7,
-    "net10": 7.7
+    "net10": 7.7,
+    "rating": 4.78
    },
    "Memphis Grizzlies": {
     "abbr": "MEM",
@@ -7647,7 +7666,8 @@ window.NBA_DATA = {
     "l10def": 111.8,
     "l10rec": "6-3",
     "net": 6.11,
-    "net10": 6.11
+    "net10": 6.11,
+    "rating": 0.7
    },
    "Miami Heat": {
     "abbr": "MIA",
@@ -7668,7 +7688,8 @@ window.NBA_DATA = {
     "l10def": 122.6,
     "l10rec": "3-6",
     "net": -6.56,
-    "net10": -6.56
+    "net10": -6.56,
+    "rating": -2.73
    },
    "Milwaukee Bucks": {
     "abbr": "MIL",
@@ -7689,7 +7710,8 @@ window.NBA_DATA = {
     "l10def": 122.1,
     "l10rec": "1-8",
     "net": -12.44,
-    "net10": -12.44
+    "net10": -12.44,
+    "rating": -8.22
    },
    "Minnesota Timberwolves": {
     "abbr": "MIN",
@@ -7710,7 +7732,8 @@ window.NBA_DATA = {
     "l10def": 107.7,
     "l10rec": "7-3",
     "net": 10.7,
-    "net10": 10.7
+    "net10": 10.7,
+    "rating": 7.99
    },
    "New Orleans Pelicans": {
     "abbr": "NOP",
@@ -7731,7 +7754,8 @@ window.NBA_DATA = {
     "l10def": 118.8,
     "l10rec": "4-5",
     "net": 1.44,
-    "net10": 1.44
+    "net10": 1.44,
+    "rating": -1.0
    },
    "New York Knicks": {
     "abbr": "NYK",
@@ -7752,7 +7776,8 @@ window.NBA_DATA = {
     "l10def": 105.1,
     "l10rec": "4-4",
     "net": 4.88,
-    "net10": 4.88
+    "net10": 4.88,
+    "rating": 2.72
    },
    "Oklahoma City Thunder": {
     "abbr": "OKC",
@@ -7773,7 +7798,8 @@ window.NBA_DATA = {
     "l10def": 107.4,
     "l10rec": "7-2",
     "net": 4.56,
-    "net10": 4.56
+    "net10": 4.56,
+    "rating": 6.69
    },
    "Orlando Magic": {
     "abbr": "ORL",
@@ -7794,7 +7820,8 @@ window.NBA_DATA = {
     "l10def": 115.0,
     "l10rec": "2-6",
     "net": -9.5,
-    "net10": -9.5
+    "net10": -9.5,
+    "rating": -4.26
    },
    "Philadelphia 76ers": {
     "abbr": "PHI",
@@ -7815,7 +7842,8 @@ window.NBA_DATA = {
     "l10def": 106.6,
     "l10rec": "8-2",
     "net": 2.8,
-    "net10": 2.8
+    "net10": 2.8,
+    "rating": 1.22
    },
    "Phoenix Suns": {
     "abbr": "PHX",
@@ -7836,7 +7864,8 @@ window.NBA_DATA = {
     "l10def": 121.4,
     "l10rec": "2-5",
     "net": -7.57,
-    "net10": -7.57
+    "net10": -7.57,
+    "rating": -1.97
    },
    "Portland Trail Blazers": {
     "abbr": "POR",
@@ -7857,7 +7886,8 @@ window.NBA_DATA = {
     "l10def": 112.4,
     "l10rec": "6-2",
     "net": 9.0,
-    "net10": 9.0
+    "net10": 9.0,
+    "rating": 5.18
    },
    "Sacramento Kings": {
     "abbr": "SAC",
@@ -7878,7 +7908,8 @@ window.NBA_DATA = {
     "l10def": 123.3,
     "l10rec": "1-8",
     "net": -14.11,
-    "net10": -14.11
+    "net10": -14.11,
+    "rating": -8.83
    },
    "San Antonio Spurs": {
     "abbr": "SAS",
@@ -7899,7 +7930,8 @@ window.NBA_DATA = {
     "l10def": 108.7,
     "l10rec": "7-2",
     "net": 9.0,
-    "net10": 9.0
+    "net10": 9.0,
+    "rating": 6.28
    },
    "Toronto Raptors": {
     "abbr": "TOR",
@@ -7920,7 +7952,8 @@ window.NBA_DATA = {
     "l10def": 112.8,
     "l10rec": "5-4",
     "net": 5.44,
-    "net10": 5.44
+    "net10": 5.44,
+    "rating": 2.8
    },
    "Utah Jazz": {
     "abbr": "UTA",
@@ -7941,7 +7974,8 @@ window.NBA_DATA = {
     "l10def": 118.2,
     "l10rec": "1-8",
     "net": -11.33,
-    "net10": -11.33
+    "net10": -11.33,
+    "rating": -7.16
    },
    "Washington Wizards": {
     "abbr": "WAS",
@@ -7962,7 +7996,8 @@ window.NBA_DATA = {
     "l10def": 112.3,
     "l10rec": "4-5",
     "net": -0.89,
-    "net10": -0.89
+    "net10": -0.89,
+    "rating": -4.67
    }
   }
  },
@@ -7981,7 +8016,8 @@ window.NBA_DATA = {
     "l10off": 119.2,
     "l10def": 114.5,
     "net": 4.67,
-    "net10": 4.67
+    "net10": 4.67,
+    "rating": 3.94
    },
    "Boston Celtics": {
     "gp": 5,
@@ -7996,7 +8032,8 @@ window.NBA_DATA = {
     "l10off": 120.8,
     "l10def": 111.6,
     "net": 9.2,
-    "net10": 9.2
+    "net10": 9.2,
+    "rating": 4.0
    },
    "Brooklyn Nets": {
     "gp": 5,
@@ -8011,7 +8048,8 @@ window.NBA_DATA = {
     "l10off": 110.2,
     "l10def": 121.2,
     "net": -11.0,
-    "net10": -11.0
+    "net10": -11.0,
+    "rating": -7.73
    },
    "Charlotte Hornets": {
     "gp": 6,
@@ -8026,7 +8064,8 @@ window.NBA_DATA = {
     "l10off": 97.3,
     "l10def": 106.0,
     "net": -8.67,
-    "net10": -8.67
+    "net10": -8.67,
+    "rating": -4.04
    },
    "Chicago Bulls": {
     "gp": 6,
@@ -8041,7 +8080,8 @@ window.NBA_DATA = {
     "l10off": 113.5,
     "l10def": 129.3,
     "net": -15.83,
-    "net10": -15.83
+    "net10": -15.83,
+    "rating": -8.91
    },
    "Cleveland Cavaliers": {
     "gp": 5,
@@ -8056,7 +8096,8 @@ window.NBA_DATA = {
     "l10off": 118.0,
     "l10def": 117.0,
     "net": 1.0,
-    "net10": 1.0
+    "net10": 1.0,
+    "rating": 1.56
    },
    "Dallas Mavericks": {
     "gp": 6,
@@ -8071,7 +8112,8 @@ window.NBA_DATA = {
     "l10off": 114.3,
     "l10def": 111.8,
     "net": 2.5,
-    "net10": 2.5
+    "net10": 2.5,
+    "rating": 2.07
    },
    "Denver Nuggets": {
     "gp": 5,
@@ -8086,7 +8128,8 @@ window.NBA_DATA = {
     "l10off": 114.0,
     "l10def": 115.2,
     "net": -1.2,
-    "net10": -1.2
+    "net10": -1.2,
+    "rating": 0.47
    },
    "Detroit Pistons": {
     "gp": 6,
@@ -8101,7 +8144,8 @@ window.NBA_DATA = {
     "l10off": 109.8,
     "l10def": 101.8,
     "net": 8.0,
-    "net10": 8.0
+    "net10": 8.0,
+    "rating": 5.81
    },
    "Golden State Warriors": {
     "gp": 6,
@@ -8116,7 +8160,8 @@ window.NBA_DATA = {
     "l10off": 116.7,
     "l10def": 115.3,
     "net": 1.33,
-    "net10": 1.33
+    "net10": 1.33,
+    "rating": 2.53
    },
    "Houston Rockets": {
     "gp": 6,
@@ -8131,7 +8176,8 @@ window.NBA_DATA = {
     "l10off": 121.0,
     "l10def": 110.0,
     "net": 11.0,
-    "net10": 11.0
+    "net10": 11.0,
+    "rating": 8.1
    },
    "Indiana Pacers": {
     "gp": 6,
@@ -8146,7 +8192,8 @@ window.NBA_DATA = {
     "l10off": 116.7,
     "l10def": 119.8,
     "net": -3.17,
-    "net10": -3.17
+    "net10": -3.17,
+    "rating": -4.66
    },
    "Los Angeles Clippers": {
     "gp": 5,
@@ -8161,7 +8208,8 @@ window.NBA_DATA = {
     "l10off": 105.4,
     "l10def": 111.8,
     "net": -6.4,
-    "net10": -6.4
+    "net10": -6.4,
+    "rating": -1.93
    },
    "Los Angeles Lakers": {
     "gp": 6,
@@ -8176,7 +8224,8 @@ window.NBA_DATA = {
     "l10off": 118.5,
     "l10def": 113.3,
     "net": 5.17,
-    "net10": 5.17
+    "net10": 5.17,
+    "rating": 2.86
    },
    "Memphis Grizzlies": {
     "gp": 5,
@@ -8191,7 +8240,8 @@ window.NBA_DATA = {
     "l10off": 118.2,
     "l10def": 106.2,
     "net": 12.0,
-    "net10": 12.0
+    "net10": 12.0,
+    "rating": 3.44
    },
    "Miami Heat": {
     "gp": 6,
@@ -8206,7 +8256,8 @@ window.NBA_DATA = {
     "l10off": 118.3,
     "l10def": 121.5,
     "net": -3.17,
-    "net10": -3.17
+    "net10": -3.17,
+    "rating": -0.18
    },
    "Milwaukee Bucks": {
     "gp": 5,
@@ -8221,7 +8272,8 @@ window.NBA_DATA = {
     "l10off": 113.4,
     "l10def": 124.2,
     "net": -10.8,
-    "net10": -10.8
+    "net10": -10.8,
+    "rating": -7.77
    },
    "Minnesota Timberwolves": {
     "gp": 6,
@@ -8236,7 +8288,8 @@ window.NBA_DATA = {
     "l10off": 121.5,
     "l10def": 106.7,
     "net": 14.83,
-    "net10": 14.83
+    "net10": 14.83,
+    "rating": 8.96
    },
    "New Orleans Pelicans": {
     "gp": 5,
@@ -8251,7 +8304,8 @@ window.NBA_DATA = {
     "l10off": 119.4,
     "l10def": 121.6,
     "net": -2.2,
-    "net10": -2.2
+    "net10": -2.2,
+    "rating": -4.17
    },
    "New York Knicks": {
     "gp": 6,
@@ -8266,7 +8320,8 @@ window.NBA_DATA = {
     "l10off": 107.0,
     "l10def": 107.7,
     "net": -0.67,
-    "net10": -0.67
+    "net10": -0.67,
+    "rating": 1.31
    },
    "Oklahoma City Thunder": {
     "gp": 5,
@@ -8281,7 +8336,8 @@ window.NBA_DATA = {
     "l10off": 108.2,
     "l10def": 104.6,
     "net": 3.6,
-    "net10": 3.6
+    "net10": 3.6,
+    "rating": 4.41
    },
    "Orlando Magic": {
     "gp": 5,
@@ -8296,7 +8352,8 @@ window.NBA_DATA = {
     "l10off": 109.8,
     "l10def": 118.4,
     "net": -8.6,
-    "net10": -8.6
+    "net10": -8.6,
+    "rating": -1.39
    },
    "Philadelphia 76ers": {
     "gp": 6,
@@ -8311,7 +8368,8 @@ window.NBA_DATA = {
     "l10off": 108.7,
     "l10def": 105.0,
     "net": 3.67,
-    "net10": 3.67
+    "net10": 3.67,
+    "rating": 1.27
    },
    "Phoenix Suns": {
     "gp": 4,
@@ -8326,7 +8384,8 @@ window.NBA_DATA = {
     "l10off": 112.0,
     "l10def": 124.5,
     "net": -12.5,
-    "net10": -12.5
+    "net10": -12.5,
+    "rating": -3.66
    },
    "Portland Trail Blazers": {
     "gp": 4,
@@ -8341,7 +8400,8 @@ window.NBA_DATA = {
     "l10off": 122.8,
     "l10def": 114.0,
     "net": 8.75,
-    "net10": 8.75
+    "net10": 8.75,
+    "rating": 2.65
    },
    "Sacramento Kings": {
     "gp": 5,
@@ -8356,7 +8416,8 @@ window.NBA_DATA = {
     "l10off": 110.2,
     "l10def": 126.8,
     "net": -16.6,
-    "net10": -16.6
+    "net10": -16.6,
+    "rating": -9.78
    },
    "San Antonio Spurs": {
     "gp": 5,
@@ -8371,7 +8432,8 @@ window.NBA_DATA = {
     "l10off": 116.6,
     "l10def": 110.0,
     "net": 6.6,
-    "net10": 6.6
+    "net10": 6.6,
+    "rating": 5.18
    },
    "Toronto Raptors": {
     "gp": 5,
@@ -8386,7 +8448,8 @@ window.NBA_DATA = {
     "l10off": 116.8,
     "l10def": 106.2,
     "net": 10.6,
-    "net10": 10.6
+    "net10": 10.6,
+    "rating": 4.86
    },
    "Utah Jazz": {
     "gp": 5,
@@ -8401,7 +8464,8 @@ window.NBA_DATA = {
     "l10off": 112.4,
     "l10def": 120.2,
     "net": -7.8,
-    "net10": -7.8
+    "net10": -7.8,
+    "rating": -5.34
    },
    "Washington Wizards": {
     "gp": 6,
@@ -8416,7 +8480,8 @@ window.NBA_DATA = {
     "l10off": 110.5,
     "l10def": 109.7,
     "net": 0.83,
-    "net10": 0.83
+    "net10": 0.83,
+    "rating": -3.87
    }
   },
   "2026-11-02": {
@@ -8433,7 +8498,8 @@ window.NBA_DATA = {
     "l10off": 116.3,
     "l10def": 115.4,
     "net": 0.86,
-    "net10": 0.86
+    "net10": 0.86,
+    "rating": 1.88
    },
    "Boston Celtics": {
     "gp": 5,
@@ -8448,7 +8514,8 @@ window.NBA_DATA = {
     "l10off": 120.8,
     "l10def": 111.6,
     "net": 9.2,
-    "net10": 9.2
+    "net10": 9.2,
+    "rating": 3.98
    },
    "Brooklyn Nets": {
     "gp": 5,
@@ -8463,7 +8530,8 @@ window.NBA_DATA = {
     "l10off": 110.2,
     "l10def": 121.2,
     "net": -11.0,
-    "net10": -11.0
+    "net10": -11.0,
+    "rating": -7.63
    },
    "Charlotte Hornets": {
     "gp": 7,
@@ -8478,7 +8546,8 @@ window.NBA_DATA = {
     "l10off": 98.3,
     "l10def": 106.4,
     "net": -8.14,
-    "net10": -8.14
+    "net10": -8.14,
+    "rating": -4.34
    },
    "Chicago Bulls": {
     "gp": 6,
@@ -8493,7 +8562,8 @@ window.NBA_DATA = {
     "l10off": 113.5,
     "l10def": 129.3,
     "net": -15.83,
-    "net10": -15.83
+    "net10": -15.83,
+    "rating": -9.03
    },
    "Cleveland Cavaliers": {
     "gp": 6,
@@ -8508,7 +8578,8 @@ window.NBA_DATA = {
     "l10off": 121.0,
     "l10def": 116.0,
     "net": 5.0,
-    "net10": 5.0
+    "net10": 5.0,
+    "rating": 2.81
    },
    "Dallas Mavericks": {
     "gp": 6,
@@ -8523,7 +8594,8 @@ window.NBA_DATA = {
     "l10off": 114.3,
     "l10def": 111.8,
     "net": 2.5,
-    "net10": 2.5
+    "net10": 2.5,
+    "rating": 2.12
    },
    "Denver Nuggets": {
     "gp": 5,
@@ -8538,7 +8610,8 @@ window.NBA_DATA = {
     "l10off": 114.0,
     "l10def": 115.2,
     "net": -1.2,
-    "net10": -1.2
+    "net10": -1.2,
+    "rating": 0.84
    },
    "Detroit Pistons": {
     "gp": 6,
@@ -8553,7 +8626,8 @@ window.NBA_DATA = {
     "l10off": 109.8,
     "l10def": 101.8,
     "net": 8.0,
-    "net10": 8.0
+    "net10": 8.0,
+    "rating": 5.76
    },
    "Golden State Warriors": {
     "gp": 6,
@@ -8568,7 +8642,8 @@ window.NBA_DATA = {
     "l10off": 116.7,
     "l10def": 115.3,
     "net": 1.33,
-    "net10": 1.33
+    "net10": 1.33,
+    "rating": 2.59
    },
    "Houston Rockets": {
     "gp": 7,
@@ -8583,7 +8658,8 @@ window.NBA_DATA = {
     "l10off": 120.7,
     "l10def": 108.3,
     "net": 12.43,
-    "net10": 12.43
+    "net10": 12.43,
+    "rating": 8.9
    },
    "Indiana Pacers": {
     "gp": 6,
@@ -8598,7 +8674,8 @@ window.NBA_DATA = {
     "l10off": 116.7,
     "l10def": 119.8,
     "net": -3.17,
-    "net10": -3.17
+    "net10": -3.17,
+    "rating": -4.59
    },
    "Los Angeles Clippers": {
     "gp": 5,
@@ -8613,7 +8690,8 @@ window.NBA_DATA = {
     "l10off": 105.4,
     "l10def": 111.8,
     "net": -6.4,
-    "net10": -6.4
+    "net10": -6.4,
+    "rating": -2.21
    },
    "Los Angeles Lakers": {
     "gp": 6,
@@ -8628,7 +8706,8 @@ window.NBA_DATA = {
     "l10off": 118.5,
     "l10def": 113.3,
     "net": 5.17,
-    "net10": 5.17
+    "net10": 5.17,
+    "rating": 2.88
    },
    "Memphis Grizzlies": {
     "gp": 6,
@@ -8643,7 +8722,8 @@ window.NBA_DATA = {
     "l10off": 121.2,
     "l10def": 106.0,
     "net": 15.17,
-    "net10": 15.17
+    "net10": 15.17,
+    "rating": 4.74
    },
    "Miami Heat": {
     "gp": 6,
@@ -8658,7 +8738,8 @@ window.NBA_DATA = {
     "l10off": 118.3,
     "l10def": 121.5,
     "net": -3.17,
-    "net10": -3.17
+    "net10": -3.17,
+    "rating": -0.46
    },
    "Milwaukee Bucks": {
     "gp": 6,
@@ -8673,7 +8754,8 @@ window.NBA_DATA = {
     "l10off": 113.0,
     "l10def": 126.2,
     "net": -13.17,
-    "net10": -13.17
+    "net10": -13.17,
+    "rating": -9.21
    },
    "Minnesota Timberwolves": {
     "gp": 7,
@@ -8688,7 +8770,8 @@ window.NBA_DATA = {
     "l10off": 120.0,
     "l10def": 108.7,
     "net": 11.29,
-    "net10": 11.29
+    "net10": 11.29,
+    "rating": 8.01
    },
    "New Orleans Pelicans": {
     "gp": 6,
@@ -8703,7 +8786,8 @@ window.NBA_DATA = {
     "l10off": 119.7,
     "l10def": 117.8,
     "net": 1.83,
-    "net10": 1.83
+    "net10": 1.83,
+    "rating": -1.8
    },
    "New York Knicks": {
     "gp": 6,
@@ -8718,7 +8802,8 @@ window.NBA_DATA = {
     "l10off": 107.0,
     "l10def": 107.7,
     "net": -0.67,
-    "net10": -0.67
+    "net10": -0.67,
+    "rating": 1.3
    },
    "Oklahoma City Thunder": {
     "gp": 6,
@@ -8733,7 +8818,8 @@ window.NBA_DATA = {
     "l10off": 106.5,
     "l10def": 107.0,
     "net": -0.5,
-    "net10": -0.5
+    "net10": -0.5,
+    "rating": 3.15
    },
    "Orlando Magic": {
     "gp": 5,
@@ -8748,7 +8834,8 @@ window.NBA_DATA = {
     "l10off": 109.8,
     "l10def": 118.4,
     "net": -8.6,
-    "net10": -8.6
+    "net10": -8.6,
+    "rating": -1.7
    },
    "Philadelphia 76ers": {
     "gp": 7,
@@ -8763,7 +8850,8 @@ window.NBA_DATA = {
     "l10off": 108.7,
     "l10def": 104.9,
     "net": 3.86,
-    "net10": 3.86
+    "net10": 3.86,
+    "rating": 1.36
    },
    "Phoenix Suns": {
     "gp": 4,
@@ -8778,7 +8866,8 @@ window.NBA_DATA = {
     "l10off": 112.0,
     "l10def": 124.5,
     "net": -12.5,
-    "net10": -12.5
+    "net10": -12.5,
+    "rating": -3.55
    },
    "Portland Trail Blazers": {
     "gp": 5,
@@ -8793,7 +8882,8 @@ window.NBA_DATA = {
     "l10off": 120.6,
     "l10def": 109.2,
     "net": 11.4,
-    "net10": 11.4
+    "net10": 11.4,
+    "rating": 4.25
    },
    "Sacramento Kings": {
     "gp": 6,
@@ -8808,7 +8898,8 @@ window.NBA_DATA = {
     "l10off": 109.3,
     "l10def": 128.3,
     "net": -19.0,
-    "net10": -19.0
+    "net10": -19.0,
+    "rating": -10.59
    },
    "San Antonio Spurs": {
     "gp": 6,
@@ -8823,7 +8914,8 @@ window.NBA_DATA = {
     "l10off": 117.3,
     "l10def": 110.2,
     "net": 7.17,
-    "net10": 7.17
+    "net10": 7.17,
+    "rating": 6.01
    },
    "Toronto Raptors": {
     "gp": 5,
@@ -8838,7 +8930,8 @@ window.NBA_DATA = {
     "l10off": 116.8,
     "l10def": 106.2,
     "net": 10.6,
-    "net10": 10.6
+    "net10": 10.6,
+    "rating": 4.67
    },
    "Utah Jazz": {
     "gp": 6,
@@ -8853,7 +8946,8 @@ window.NBA_DATA = {
     "l10off": 108.7,
     "l10def": 118.8,
     "net": -10.17,
-    "net10": -10.17
+    "net10": -10.17,
+    "rating": -6.18
    },
    "Washington Wizards": {
     "gp": 6,
@@ -8868,7 +8962,8 @@ window.NBA_DATA = {
     "l10off": 110.5,
     "l10def": 109.7,
     "net": 0.83,
-    "net10": 0.83
+    "net10": 0.83,
+    "rating": -3.97
    }
   },
   "2026-11-03": {
@@ -8885,7 +8980,8 @@ window.NBA_DATA = {
     "l10off": 116.3,
     "l10def": 115.4,
     "net": 0.86,
-    "net10": 0.86
+    "net10": 0.86,
+    "rating": 1.81
    },
    "Boston Celtics": {
     "gp": 6,
@@ -8900,7 +8996,8 @@ window.NBA_DATA = {
     "l10off": 118.7,
     "l10def": 109.2,
     "net": 9.5,
-    "net10": 9.5
+    "net10": 9.5,
+    "rating": 4.73
    },
    "Brooklyn Nets": {
     "gp": 6,
@@ -8915,7 +9012,8 @@ window.NBA_DATA = {
     "l10off": 108.2,
     "l10def": 116.0,
     "net": -7.83,
-    "net10": -7.83
+    "net10": -7.83,
+    "rating": -6.47
    },
    "Charlotte Hornets": {
     "gp": 7,
@@ -8930,7 +9028,8 @@ window.NBA_DATA = {
     "l10off": 98.3,
     "l10def": 106.4,
     "net": -8.14,
-    "net10": -8.14
+    "net10": -8.14,
+    "rating": -4.23
    },
    "Chicago Bulls": {
     "gp": 6,
@@ -8945,7 +9044,8 @@ window.NBA_DATA = {
     "l10off": 113.5,
     "l10def": 129.3,
     "net": -15.83,
-    "net10": -15.83
+    "net10": -15.83,
+    "rating": -8.92
    },
    "Cleveland Cavaliers": {
     "gp": 6,
@@ -8960,7 +9060,8 @@ window.NBA_DATA = {
     "l10off": 121.0,
     "l10def": 116.0,
     "net": 5.0,
-    "net10": 5.0
+    "net10": 5.0,
+    "rating": 2.87
    },
    "Dallas Mavericks": {
     "gp": 6,
@@ -8975,7 +9076,8 @@ window.NBA_DATA = {
     "l10off": 114.3,
     "l10def": 111.8,
     "net": 2.5,
-    "net10": 2.5
+    "net10": 2.5,
+    "rating": 1.99
    },
    "Denver Nuggets": {
     "gp": 5,
@@ -8990,7 +9092,8 @@ window.NBA_DATA = {
     "l10off": 114.0,
     "l10def": 115.2,
     "net": -1.2,
-    "net10": -1.2
+    "net10": -1.2,
+    "rating": 0.89
    },
    "Detroit Pistons": {
     "gp": 6,
@@ -9005,7 +9108,8 @@ window.NBA_DATA = {
     "l10off": 109.8,
     "l10def": 101.8,
     "net": 8.0,
-    "net10": 8.0
+    "net10": 8.0,
+    "rating": 5.92
    },
    "Golden State Warriors": {
     "gp": 7,
@@ -9020,7 +9124,8 @@ window.NBA_DATA = {
     "l10off": 117.7,
     "l10def": 114.9,
     "net": 2.86,
-    "net10": 2.86
+    "net10": 2.86,
+    "rating": 3.06
    },
    "Houston Rockets": {
     "gp": 7,
@@ -9035,7 +9140,8 @@ window.NBA_DATA = {
     "l10off": 120.7,
     "l10def": 108.3,
     "net": 12.43,
-    "net10": 12.43
+    "net10": 12.43,
+    "rating": 8.83
    },
    "Indiana Pacers": {
     "gp": 7,
@@ -9050,7 +9156,8 @@ window.NBA_DATA = {
     "l10off": 112.9,
     "l10def": 116.7,
     "net": -3.86,
-    "net10": -3.86
+    "net10": -3.86,
+    "rating": -5.55
    },
    "Los Angeles Clippers": {
     "gp": 6,
@@ -9065,7 +9172,8 @@ window.NBA_DATA = {
     "l10off": 106.5,
     "l10def": 113.8,
     "net": -7.33,
-    "net10": -7.33
+    "net10": -7.33,
+    "rating": -2.57
    },
    "Los Angeles Lakers": {
     "gp": 7,
@@ -9080,7 +9188,8 @@ window.NBA_DATA = {
     "l10off": 120.3,
     "l10def": 115.0,
     "net": 5.29,
-    "net10": 5.29
+    "net10": 5.29,
+    "rating": 3.33
    },
    "Memphis Grizzlies": {
     "gp": 6,
@@ -9095,7 +9204,8 @@ window.NBA_DATA = {
     "l10off": 121.2,
     "l10def": 106.0,
     "net": 15.17,
-    "net10": 15.17
+    "net10": 15.17,
+    "rating": 4.75
    },
    "Miami Heat": {
     "gp": 6,
@@ -9110,7 +9220,8 @@ window.NBA_DATA = {
     "l10off": 118.3,
     "l10def": 121.5,
     "net": -3.17,
-    "net10": -3.17
+    "net10": -3.17,
+    "rating": -0.54
    },
    "Milwaukee Bucks": {
     "gp": 6,
@@ -9125,7 +9236,8 @@ window.NBA_DATA = {
     "l10off": 113.0,
     "l10def": 126.2,
     "net": -13.17,
-    "net10": -13.17
+    "net10": -13.17,
+    "rating": -9.26
    },
    "Minnesota Timberwolves": {
     "gp": 7,
@@ -9140,7 +9252,8 @@ window.NBA_DATA = {
     "l10off": 120.0,
     "l10def": 108.7,
     "net": 11.29,
-    "net10": 11.29
+    "net10": 11.29,
+    "rating": 7.87
    },
    "New Orleans Pelicans": {
     "gp": 6,
@@ -9155,7 +9268,8 @@ window.NBA_DATA = {
     "l10off": 119.7,
     "l10def": 117.8,
     "net": 1.83,
-    "net10": 1.83
+    "net10": 1.83,
+    "rating": -1.88
    },
    "New York Knicks": {
     "gp": 6,
@@ -9170,7 +9284,8 @@ window.NBA_DATA = {
     "l10off": 107.0,
     "l10def": 107.7,
     "net": -0.67,
-    "net10": -0.67
+    "net10": -0.67,
+    "rating": 1.32
    },
    "Oklahoma City Thunder": {
     "gp": 6,
@@ -9185,7 +9300,8 @@ window.NBA_DATA = {
     "l10off": 106.5,
     "l10def": 107.0,
     "net": -0.5,
-    "net10": -0.5
+    "net10": -0.5,
+    "rating": 3.12
    },
    "Orlando Magic": {
     "gp": 6,
@@ -9200,7 +9316,8 @@ window.NBA_DATA = {
     "l10off": 107.7,
     "l10def": 116.7,
     "net": -9.0,
-    "net10": -9.0
+    "net10": -9.0,
+    "rating": -2.44
    },
    "Philadelphia 76ers": {
     "gp": 7,
@@ -9215,7 +9332,8 @@ window.NBA_DATA = {
     "l10off": 108.7,
     "l10def": 104.9,
     "net": 3.86,
-    "net10": 3.86
+    "net10": 3.86,
+    "rating": 1.3
    },
    "Phoenix Suns": {
     "gp": 4,
@@ -9230,7 +9348,8 @@ window.NBA_DATA = {
     "l10off": 112.0,
     "l10def": 124.5,
     "net": -12.5,
-    "net10": -12.5
+    "net10": -12.5,
+    "rating": -3.47
    },
    "Portland Trail Blazers": {
     "gp": 5,
@@ -9245,7 +9364,8 @@ window.NBA_DATA = {
     "l10off": 120.6,
     "l10def": 109.2,
     "net": 11.4,
-    "net10": 11.4
+    "net10": 11.4,
+    "rating": 4.28
    },
    "Sacramento Kings": {
     "gp": 6,
@@ -9260,7 +9380,8 @@ window.NBA_DATA = {
     "l10off": 109.3,
     "l10def": 128.3,
     "net": -19.0,
-    "net10": -19.0
+    "net10": -19.0,
+    "rating": -10.59
    },
    "San Antonio Spurs": {
     "gp": 6,
@@ -9275,7 +9396,8 @@ window.NBA_DATA = {
     "l10off": 117.3,
     "l10def": 110.2,
     "net": 7.17,
-    "net10": 7.17
+    "net10": 7.17,
+    "rating": 5.97
    },
    "Toronto Raptors": {
     "gp": 6,
@@ -9290,7 +9412,8 @@ window.NBA_DATA = {
     "l10off": 118.2,
     "l10def": 110.3,
     "net": 7.83,
-    "net10": 7.83
+    "net10": 7.83,
+    "rating": 4.01
    },
    "Utah Jazz": {
     "gp": 6,
@@ -9305,7 +9428,8 @@ window.NBA_DATA = {
     "l10off": 108.7,
     "l10def": 118.8,
     "net": -10.17,
-    "net10": -10.17
+    "net10": -10.17,
+    "rating": -6.13
    },
    "Washington Wizards": {
     "gp": 6,
@@ -9320,7 +9444,8 @@ window.NBA_DATA = {
     "l10off": 110.5,
     "l10def": 109.7,
     "net": 0.83,
-    "net10": 0.83
+    "net10": 0.83,
+    "rating": -4.01
    }
   },
   "2026-11-05": {
@@ -9337,7 +9462,8 @@ window.NBA_DATA = {
     "l10off": 115.2,
     "l10def": 114.0,
     "net": 1.25,
-    "net10": 1.25
+    "net10": 1.25,
+    "rating": 1.47
    },
    "Boston Celtics": {
     "gp": 7,
@@ -9352,7 +9478,8 @@ window.NBA_DATA = {
     "l10off": 115.0,
     "l10def": 109.1,
     "net": 5.86,
-    "net10": 5.86
+    "net10": 5.86,
+    "rating": 3.85
    },
    "Brooklyn Nets": {
     "gp": 7,
@@ -9367,7 +9494,8 @@ window.NBA_DATA = {
     "l10off": 105.6,
     "l10def": 114.1,
     "net": -8.57,
-    "net10": -8.57
+    "net10": -8.57,
+    "rating": -6.83
    },
    "Charlotte Hornets": {
     "gp": 8,
@@ -9382,7 +9510,8 @@ window.NBA_DATA = {
     "l10off": 97.4,
     "l10def": 108.6,
     "net": -11.25,
-    "net10": -11.25
+    "net10": -11.25,
+    "rating": -5.93
    },
    "Chicago Bulls": {
     "gp": 7,
@@ -9397,7 +9526,8 @@ window.NBA_DATA = {
     "l10off": 112.6,
     "l10def": 128.9,
     "net": -16.29,
-    "net10": -16.29
+    "net10": -16.29,
+    "rating": -9.44
    },
    "Cleveland Cavaliers": {
     "gp": 7,
@@ -9412,7 +9542,8 @@ window.NBA_DATA = {
     "l10off": 119.7,
     "l10def": 116.1,
     "net": 3.57,
-    "net10": 3.57
+    "net10": 3.57,
+    "rating": 2.36
    },
    "Dallas Mavericks": {
     "gp": 7,
@@ -9427,7 +9558,8 @@ window.NBA_DATA = {
     "l10off": 112.3,
     "l10def": 112.3,
     "net": 0.0,
-    "net10": 0.0
+    "net10": 0.0,
+    "rating": -0.35
    },
    "Denver Nuggets": {
     "gp": 6,
@@ -9442,7 +9574,8 @@ window.NBA_DATA = {
     "l10off": 113.3,
     "l10def": 115.7,
     "net": -2.33,
-    "net10": -2.33
+    "net10": -2.33,
+    "rating": 0.58
    },
    "Detroit Pistons": {
     "gp": 7,
@@ -9457,7 +9590,8 @@ window.NBA_DATA = {
     "l10off": 111.9,
     "l10def": 100.3,
     "net": 11.57,
-    "net10": 11.57
+    "net10": 11.57,
+    "rating": 7.63
    },
    "Golden State Warriors": {
     "gp": 8,
@@ -9472,7 +9606,8 @@ window.NBA_DATA = {
     "l10off": 117.5,
     "l10def": 114.6,
     "net": 2.88,
-    "net10": 2.88
+    "net10": 2.88,
+    "rating": 2.77
    },
    "Houston Rockets": {
     "gp": 8,
@@ -9487,7 +9622,8 @@ window.NBA_DATA = {
     "l10off": 119.2,
     "l10def": 106.4,
     "net": 12.88,
-    "net10": 12.88
+    "net10": 12.88,
+    "rating": 9.25
    },
    "Indiana Pacers": {
     "gp": 8,
@@ -9502,7 +9638,8 @@ window.NBA_DATA = {
     "l10off": 111.8,
     "l10def": 115.6,
     "net": -3.88,
-    "net10": -3.88
+    "net10": -3.88,
+    "rating": -5.64
    },
    "Los Angeles Clippers": {
     "gp": 7,
@@ -9517,7 +9654,8 @@ window.NBA_DATA = {
     "l10off": 108.1,
     "l10def": 115.4,
     "net": -7.29,
-    "net10": -7.29
+    "net10": -7.29,
+    "rating": -2.45
    },
    "Los Angeles Lakers": {
     "gp": 8,
@@ -9532,7 +9670,8 @@ window.NBA_DATA = {
     "l10off": 122.5,
     "l10def": 115.2,
     "net": 7.25,
-    "net10": 7.25
+    "net10": 7.25,
+    "rating": 4.42
    },
    "Memphis Grizzlies": {
     "gp": 7,
@@ -9547,7 +9686,8 @@ window.NBA_DATA = {
     "l10off": 123.0,
     "l10def": 110.1,
     "net": 12.86,
-    "net10": 12.86
+    "net10": 12.86,
+    "rating": 4.35
    },
    "Miami Heat": {
     "gp": 7,
@@ -9562,7 +9702,8 @@ window.NBA_DATA = {
     "l10off": 118.1,
     "l10def": 123.9,
     "net": -5.71,
-    "net10": -5.71
+    "net10": -5.71,
+    "rating": -2.03
    },
    "Milwaukee Bucks": {
     "gp": 7,
@@ -9577,7 +9718,8 @@ window.NBA_DATA = {
     "l10off": 111.1,
     "l10def": 124.1,
     "net": -13.0,
-    "net10": -13.0
+    "net10": -13.0,
+    "rating": -8.64
    },
    "Minnesota Timberwolves": {
     "gp": 8,
@@ -9592,7 +9734,8 @@ window.NBA_DATA = {
     "l10off": 119.0,
     "l10def": 107.6,
     "net": 11.38,
-    "net10": 11.38
+    "net10": 11.38,
+    "rating": 7.14
    },
    "New Orleans Pelicans": {
     "gp": 7,
@@ -9607,7 +9750,8 @@ window.NBA_DATA = {
     "l10off": 121.9,
     "l10def": 120.1,
     "net": 1.71,
-    "net10": 1.71
+    "net10": 1.71,
+    "rating": -0.99
    },
    "New York Knicks": {
     "gp": 7,
@@ -9622,7 +9766,8 @@ window.NBA_DATA = {
     "l10off": 106.4,
     "l10def": 105.1,
     "net": 1.29,
-    "net10": 1.29
+    "net10": 1.29,
+    "rating": 1.6
    },
    "Oklahoma City Thunder": {
     "gp": 7,
@@ -9637,7 +9782,8 @@ window.NBA_DATA = {
     "l10off": 108.0,
     "l10def": 107.7,
     "net": 0.29,
-    "net10": 0.29
+    "net10": 0.29,
+    "rating": 3.6
    },
    "Orlando Magic": {
     "gp": 7,
@@ -9652,7 +9798,8 @@ window.NBA_DATA = {
     "l10off": 105.7,
     "l10def": 114.7,
     "net": -9.0,
-    "net10": -9.0
+    "net10": -9.0,
+    "rating": -3.57
    },
    "Philadelphia 76ers": {
     "gp": 8,
@@ -9667,7 +9814,8 @@ window.NBA_DATA = {
     "l10off": 110.9,
     "l10def": 105.1,
     "net": 5.75,
-    "net10": 5.75
+    "net10": 5.75,
+    "rating": 1.83
    },
    "Phoenix Suns": {
     "gp": 5,
@@ -9682,7 +9830,8 @@ window.NBA_DATA = {
     "l10off": 112.2,
     "l10def": 122.8,
     "net": -10.6,
-    "net10": -10.6
+    "net10": -10.6,
+    "rating": -2.84
    },
    "Portland Trail Blazers": {
     "gp": 6,
@@ -9697,7 +9846,8 @@ window.NBA_DATA = {
     "l10off": 120.2,
     "l10def": 109.3,
     "net": 10.83,
-    "net10": 10.83
+    "net10": 10.83,
+    "rating": 5.13
    },
    "Sacramento Kings": {
     "gp": 7,
@@ -9712,7 +9862,8 @@ window.NBA_DATA = {
     "l10off": 110.1,
     "l10def": 124.3,
     "net": -14.14,
-    "net10": -14.14
+    "net10": -14.14,
+    "rating": -8.08
    },
    "San Antonio Spurs": {
     "gp": 7,
@@ -9727,7 +9878,8 @@ window.NBA_DATA = {
     "l10off": 117.6,
     "l10def": 108.3,
     "net": 9.29,
-    "net10": 9.29
+    "net10": 9.29,
+    "rating": 6.6
    },
    "Toronto Raptors": {
     "gp": 7,
@@ -9742,7 +9894,8 @@ window.NBA_DATA = {
     "l10off": 119.1,
     "l10def": 111.4,
     "net": 7.71,
-    "net10": 7.71
+    "net10": 7.71,
+    "rating": 4.08
    },
    "Utah Jazz": {
     "gp": 7,
@@ -9757,7 +9910,8 @@ window.NBA_DATA = {
     "l10off": 107.0,
     "l10def": 118.9,
     "net": -11.86,
-    "net10": -11.86
+    "net10": -11.86,
+    "rating": -6.53
    },
    "Washington Wizards": {
     "gp": 7,
@@ -9772,7 +9926,8 @@ window.NBA_DATA = {
     "l10off": 109.4,
     "l10def": 107.4,
     "net": 2.0,
-    "net10": 2.0
+    "net10": 2.0,
+    "rating": -3.34
    }
   },
   "2026-11-06": {
@@ -9789,7 +9944,8 @@ window.NBA_DATA = {
     "l10off": 115.8,
     "l10def": 113.0,
     "net": 2.78,
-    "net10": 2.78
+    "net10": 2.78,
+    "rating": 2.26
    },
    "Boston Celtics": {
     "gp": 8,
@@ -9804,7 +9960,8 @@ window.NBA_DATA = {
     "l10off": 114.2,
     "l10def": 108.2,
     "net": 6.0,
-    "net10": 6.0
+    "net10": 6.0,
+    "rating": 3.1
    },
    "Brooklyn Nets": {
     "gp": 8,
@@ -9819,7 +9976,8 @@ window.NBA_DATA = {
     "l10off": 106.6,
     "l10def": 112.9,
     "net": -6.25,
-    "net10": -6.25
+    "net10": -6.25,
+    "rating": -6.01
    },
    "Charlotte Hornets": {
     "gp": 9,
@@ -9834,7 +9992,8 @@ window.NBA_DATA = {
     "l10off": 98.1,
     "l10def": 109.2,
     "net": -11.11,
-    "net10": -11.11
+    "net10": -11.11,
+    "rating": -6.57
    },
    "Chicago Bulls": {
     "gp": 8,
@@ -9849,7 +10008,8 @@ window.NBA_DATA = {
     "l10off": 111.6,
     "l10def": 129.6,
     "net": -18.0,
-    "net10": -18.0
+    "net10": -18.0,
+    "rating": -10.74
    },
    "Cleveland Cavaliers": {
     "gp": 8,
@@ -9864,7 +10024,8 @@ window.NBA_DATA = {
     "l10off": 119.2,
     "l10def": 117.1,
     "net": 2.12,
-    "net10": 2.12
+    "net10": 2.12,
+    "rating": 2.24
    },
    "Dallas Mavericks": {
     "gp": 8,
@@ -9879,7 +10040,8 @@ window.NBA_DATA = {
     "l10off": 112.1,
     "l10def": 112.2,
     "net": -0.12,
-    "net10": -0.12
+    "net10": -0.12,
+    "rating": 0.18
    },
    "Denver Nuggets": {
     "gp": 7,
@@ -9894,7 +10056,8 @@ window.NBA_DATA = {
     "l10off": 115.4,
     "l10def": 114.7,
     "net": 0.71,
-    "net10": 0.71
+    "net10": 0.71,
+    "rating": 2.31
    },
    "Detroit Pistons": {
     "gp": 8,
@@ -9909,7 +10072,8 @@ window.NBA_DATA = {
     "l10off": 111.1,
     "l10def": 101.8,
     "net": 9.38,
-    "net10": 9.38
+    "net10": 9.38,
+    "rating": 6.67
    },
    "Golden State Warriors": {
     "gp": 8,
@@ -9924,7 +10088,8 @@ window.NBA_DATA = {
     "l10off": 117.5,
     "l10def": 114.6,
     "net": 2.88,
-    "net10": 2.88
+    "net10": 2.88,
+    "rating": 2.78
    },
    "Houston Rockets": {
     "gp": 9,
@@ -9939,7 +10104,8 @@ window.NBA_DATA = {
     "l10off": 117.9,
     "l10def": 107.6,
     "net": 10.33,
-    "net10": 10.33
+    "net10": 10.33,
+    "rating": 8.35
    },
    "Indiana Pacers": {
     "gp": 9,
@@ -9954,7 +10120,8 @@ window.NBA_DATA = {
     "l10off": 111.2,
     "l10def": 114.2,
     "net": -3.0,
-    "net10": -3.0
+    "net10": -3.0,
+    "rating": -4.17
    },
    "Los Angeles Clippers": {
     "gp": 8,
@@ -9969,7 +10136,8 @@ window.NBA_DATA = {
     "l10off": 109.1,
     "l10def": 115.6,
     "net": -6.5,
-    "net10": -6.5
+    "net10": -6.5,
+    "rating": -2.65
    },
    "Los Angeles Lakers": {
     "gp": 9,
@@ -9984,7 +10152,8 @@ window.NBA_DATA = {
     "l10off": 121.8,
     "l10def": 113.9,
     "net": 7.89,
-    "net10": 7.89
+    "net10": 7.89,
+    "rating": 4.46
    },
    "Memphis Grizzlies": {
     "gp": 8,
@@ -9999,7 +10168,8 @@ window.NBA_DATA = {
     "l10off": 120.5,
     "l10def": 109.8,
     "net": 10.75,
-    "net10": 10.75
+    "net10": 10.75,
+    "rating": 3.11
    },
    "Miami Heat": {
     "gp": 8,
@@ -10014,7 +10184,8 @@ window.NBA_DATA = {
     "l10off": 118.0,
     "l10def": 122.9,
     "net": -4.88,
-    "net10": -4.88
+    "net10": -4.88,
+    "rating": -1.65
    },
    "Milwaukee Bucks": {
     "gp": 8,
@@ -10029,7 +10200,8 @@ window.NBA_DATA = {
     "l10off": 110.0,
     "l10def": 122.2,
     "net": -12.25,
-    "net10": -12.25
+    "net10": -12.25,
+    "rating": -8.05
    },
    "Minnesota Timberwolves": {
     "gp": 9,
@@ -10044,7 +10216,8 @@ window.NBA_DATA = {
     "l10off": 118.8,
     "l10def": 107.6,
     "net": 11.22,
-    "net10": 11.22
+    "net10": 11.22,
+    "rating": 7.96
    },
    "New Orleans Pelicans": {
     "gp": 8,
@@ -10059,7 +10232,8 @@ window.NBA_DATA = {
     "l10off": 121.6,
     "l10def": 119.2,
     "net": 2.38,
-    "net10": 2.38
+    "net10": 2.38,
+    "rating": -0.77
    },
    "New York Knicks": {
     "gp": 8,
@@ -10074,7 +10248,8 @@ window.NBA_DATA = {
     "l10off": 110.0,
     "l10def": 105.1,
     "net": 4.88,
-    "net10": 4.88
+    "net10": 4.88,
+    "rating": 2.85
    },
    "Oklahoma City Thunder": {
     "gp": 8,
@@ -10089,7 +10264,8 @@ window.NBA_DATA = {
     "l10off": 110.0,
     "l10def": 108.8,
     "net": 1.25,
-    "net10": 1.25
+    "net10": 1.25,
+    "rating": 3.99
    },
    "Orlando Magic": {
     "gp": 7,
@@ -10104,7 +10280,8 @@ window.NBA_DATA = {
     "l10off": 105.7,
     "l10def": 114.7,
     "net": -9.0,
-    "net10": -9.0
+    "net10": -9.0,
+    "rating": -3.75
    },
    "Philadelphia 76ers": {
     "gp": 9,
@@ -10119,7 +10296,8 @@ window.NBA_DATA = {
     "l10off": 111.0,
     "l10def": 105.2,
     "net": 5.78,
-    "net10": 5.78
+    "net10": 5.78,
+    "rating": 2.87
    },
    "Phoenix Suns": {
     "gp": 6,
@@ -10134,7 +10312,8 @@ window.NBA_DATA = {
     "l10off": 113.3,
     "l10def": 124.3,
     "net": -11.0,
-    "net10": -11.0
+    "net10": -11.0,
+    "rating": -3.19
    },
    "Portland Trail Blazers": {
     "gp": 7,
@@ -10149,7 +10328,8 @@ window.NBA_DATA = {
     "l10off": 121.9,
     "l10def": 110.7,
     "net": 11.14,
-    "net10": 11.14
+    "net10": 11.14,
+    "rating": 5.65
    },
    "Sacramento Kings": {
     "gp": 8,
@@ -10164,7 +10344,8 @@ window.NBA_DATA = {
     "l10off": 109.2,
     "l10def": 123.2,
     "net": -14.0,
-    "net10": -14.0
+    "net10": -14.0,
+    "rating": -8.4
    },
    "San Antonio Spurs": {
     "gp": 8,
@@ -10179,7 +10360,8 @@ window.NBA_DATA = {
     "l10off": 116.9,
     "l10def": 108.6,
     "net": 8.25,
-    "net10": 8.25
+    "net10": 8.25,
+    "rating": 6.0
    },
    "Toronto Raptors": {
     "gp": 8,
@@ -10194,7 +10376,8 @@ window.NBA_DATA = {
     "l10off": 117.9,
     "l10def": 113.5,
     "net": 4.38,
-    "net10": 4.38
+    "net10": 4.38,
+    "rating": 2.39
    },
    "Utah Jazz": {
     "gp": 8,
@@ -10209,7 +10392,8 @@ window.NBA_DATA = {
     "l10off": 107.8,
     "l10def": 119.0,
     "net": -11.25,
-    "net10": -11.25
+    "net10": -11.25,
+    "rating": -6.66
    },
    "Washington Wizards": {
     "gp": 8,
@@ -10224,7 +10408,8 @@ window.NBA_DATA = {
     "l10off": 108.9,
     "l10def": 109.0,
     "net": -0.12,
-    "net10": -0.12
+    "net10": -0.12,
+    "rating": -4.57
    }
   },
   "2026-11-07": {
@@ -10241,7 +10426,8 @@ window.NBA_DATA = {
     "l10off": 115.8,
     "l10def": 113.0,
     "net": 2.78,
-    "net10": 2.78
+    "net10": 2.78,
+    "rating": 2.11
    },
    "Boston Celtics": {
     "gp": 8,
@@ -10256,7 +10442,8 @@ window.NBA_DATA = {
     "l10off": 114.2,
     "l10def": 108.2,
     "net": 6.0,
-    "net10": 6.0
+    "net10": 6.0,
+    "rating": 3.02
    },
    "Brooklyn Nets": {
     "gp": 8,
@@ -10271,7 +10458,8 @@ window.NBA_DATA = {
     "l10off": 106.6,
     "l10def": 112.9,
     "net": -6.25,
-    "net10": -6.25
+    "net10": -6.25,
+    "rating": -6.05
    },
    "Charlotte Hornets": {
     "gp": 9,
@@ -10286,7 +10474,8 @@ window.NBA_DATA = {
     "l10off": 98.1,
     "l10def": 109.2,
     "net": -11.11,
-    "net10": -11.11
+    "net10": -11.11,
+    "rating": -6.64
    },
    "Chicago Bulls": {
     "gp": 8,
@@ -10301,7 +10490,8 @@ window.NBA_DATA = {
     "l10off": 111.6,
     "l10def": 129.6,
     "net": -18.0,
-    "net10": -18.0
+    "net10": -18.0,
+    "rating": -10.75
    },
    "Cleveland Cavaliers": {
     "gp": 8,
@@ -10316,7 +10506,8 @@ window.NBA_DATA = {
     "l10off": 119.2,
     "l10def": 117.1,
     "net": 2.12,
-    "net10": 2.12
+    "net10": 2.12,
+    "rating": 2.22
    },
    "Dallas Mavericks": {
     "gp": 8,
@@ -10331,7 +10522,8 @@ window.NBA_DATA = {
     "l10off": 112.1,
     "l10def": 112.2,
     "net": -0.12,
-    "net10": -0.12
+    "net10": -0.12,
+    "rating": 0.09
    },
    "Denver Nuggets": {
     "gp": 7,
@@ -10346,7 +10538,8 @@ window.NBA_DATA = {
     "l10off": 115.4,
     "l10def": 114.7,
     "net": 0.71,
-    "net10": 0.71
+    "net10": 0.71,
+    "rating": 2.5
    },
    "Detroit Pistons": {
     "gp": 8,
@@ -10361,7 +10554,8 @@ window.NBA_DATA = {
     "l10off": 111.1,
     "l10def": 101.8,
     "net": 9.38,
-    "net10": 9.38
+    "net10": 9.38,
+    "rating": 6.56
    },
    "Golden State Warriors": {
     "gp": 9,
@@ -10376,7 +10570,8 @@ window.NBA_DATA = {
     "l10off": 117.8,
     "l10def": 113.0,
     "net": 4.78,
-    "net10": 4.78
+    "net10": 4.78,
+    "rating": 3.89
    },
    "Houston Rockets": {
     "gp": 9,
@@ -10391,7 +10586,8 @@ window.NBA_DATA = {
     "l10off": 117.9,
     "l10def": 107.6,
     "net": 10.33,
-    "net10": 10.33
+    "net10": 10.33,
+    "rating": 8.29
    },
    "Indiana Pacers": {
     "gp": 9,
@@ -10406,7 +10602,8 @@ window.NBA_DATA = {
     "l10off": 111.2,
     "l10def": 114.2,
     "net": -3.0,
-    "net10": -3.0
+    "net10": -3.0,
+    "rating": -4.25
    },
    "Los Angeles Clippers": {
     "gp": 8,
@@ -10421,7 +10618,8 @@ window.NBA_DATA = {
     "l10off": 109.1,
     "l10def": 115.6,
     "net": -6.5,
-    "net10": -6.5
+    "net10": -6.5,
+    "rating": -2.62
    },
    "Los Angeles Lakers": {
     "gp": 9,
@@ -10436,7 +10634,8 @@ window.NBA_DATA = {
     "l10off": 121.8,
     "l10def": 113.9,
     "net": 7.89,
-    "net10": 7.89
+    "net10": 7.89,
+    "rating": 4.54
    },
    "Memphis Grizzlies": {
     "gp": 8,
@@ -10451,7 +10650,8 @@ window.NBA_DATA = {
     "l10off": 120.5,
     "l10def": 109.8,
     "net": 10.75,
-    "net10": 10.75
+    "net10": 10.75,
+    "rating": 3.18
    },
    "Miami Heat": {
     "gp": 9,
@@ -10466,7 +10666,8 @@ window.NBA_DATA = {
     "l10off": 116.0,
     "l10def": 122.6,
     "net": -6.56,
-    "net10": -6.56
+    "net10": -6.56,
+    "rating": -2.6
    },
    "Milwaukee Bucks": {
     "gp": 8,
@@ -10481,7 +10682,8 @@ window.NBA_DATA = {
     "l10off": 110.0,
     "l10def": 122.2,
     "net": -12.25,
-    "net10": -12.25
+    "net10": -12.25,
+    "rating": -8.07
    },
    "Minnesota Timberwolves": {
     "gp": 9,
@@ -10496,7 +10698,8 @@ window.NBA_DATA = {
     "l10off": 118.8,
     "l10def": 107.6,
     "net": 11.22,
-    "net10": 11.22
+    "net10": 11.22,
+    "rating": 7.88
    },
    "New Orleans Pelicans": {
     "gp": 8,
@@ -10511,7 +10714,8 @@ window.NBA_DATA = {
     "l10off": 121.6,
     "l10def": 119.2,
     "net": 2.38,
-    "net10": 2.38
+    "net10": 2.38,
+    "rating": -0.75
    },
    "New York Knicks": {
     "gp": 8,
@@ -10526,7 +10730,8 @@ window.NBA_DATA = {
     "l10off": 110.0,
     "l10def": 105.1,
     "net": 4.88,
-    "net10": 4.88
+    "net10": 4.88,
+    "rating": 2.77
    },
    "Oklahoma City Thunder": {
     "gp": 8,
@@ -10541,7 +10746,8 @@ window.NBA_DATA = {
     "l10off": 110.0,
     "l10def": 108.8,
     "net": 1.25,
-    "net10": 1.25
+    "net10": 1.25,
+    "rating": 4.08
    },
    "Orlando Magic": {
     "gp": 8,
@@ -10556,7 +10762,8 @@ window.NBA_DATA = {
     "l10off": 105.5,
     "l10def": 115.0,
     "net": -9.5,
-    "net10": -9.5
+    "net10": -9.5,
+    "rating": -4.54
    },
    "Philadelphia 76ers": {
     "gp": 9,
@@ -10571,7 +10778,8 @@ window.NBA_DATA = {
     "l10off": 111.0,
     "l10def": 105.2,
     "net": 5.78,
-    "net10": 5.78
+    "net10": 5.78,
+    "rating": 2.82
    },
    "Phoenix Suns": {
     "gp": 7,
@@ -10586,7 +10794,8 @@ window.NBA_DATA = {
     "l10off": 113.9,
     "l10def": 121.4,
     "net": -7.57,
-    "net10": -7.57
+    "net10": -7.57,
+    "rating": -2.1
    },
    "Portland Trail Blazers": {
     "gp": 7,
@@ -10601,7 +10810,8 @@ window.NBA_DATA = {
     "l10off": 121.9,
     "l10def": 110.7,
     "net": 11.14,
-    "net10": 11.14
+    "net10": 11.14,
+    "rating": 5.82
    },
    "Sacramento Kings": {
     "gp": 8,
@@ -10616,7 +10826,8 @@ window.NBA_DATA = {
     "l10off": 109.2,
     "l10def": 123.2,
     "net": -14.0,
-    "net10": -14.0
+    "net10": -14.0,
+    "rating": -8.35
    },
    "San Antonio Spurs": {
     "gp": 8,
@@ -10631,7 +10842,8 @@ window.NBA_DATA = {
     "l10off": 116.9,
     "l10def": 108.6,
     "net": 8.25,
-    "net10": 8.25
+    "net10": 8.25,
+    "rating": 5.99
    },
    "Toronto Raptors": {
     "gp": 8,
@@ -10646,7 +10858,8 @@ window.NBA_DATA = {
     "l10off": 117.9,
     "l10def": 113.5,
     "net": 4.38,
-    "net10": 4.38
+    "net10": 4.38,
+    "rating": 2.28
    },
    "Utah Jazz": {
     "gp": 8,
@@ -10661,7 +10874,8 @@ window.NBA_DATA = {
     "l10off": 107.8,
     "l10def": 119.0,
     "net": -11.25,
-    "net10": -11.25
+    "net10": -11.25,
+    "rating": -6.62
    },
    "Washington Wizards": {
     "gp": 8,
@@ -10676,7 +10890,8 @@ window.NBA_DATA = {
     "l10off": 108.9,
     "l10def": 109.0,
     "net": -0.12,
-    "net10": -0.12
+    "net10": -0.12,
+    "rating": -4.67
    }
   }
  },
@@ -10700,7 +10915,8 @@ window.NBA_DATA = {
    "l10def": 114.5,
    "l10rec": "6-4",
    "net": 3.18,
-   "net10": 2.8
+   "net10": 2.8,
+   "rating": 1.13
   },
   "Boston Celtics": {
    "abbr": "BOS",
@@ -10721,7 +10937,8 @@ window.NBA_DATA = {
    "l10def": 105.1,
    "l10rec": "7-2",
    "net": 9.67,
-   "net10": 9.67
+   "net10": 9.67,
+   "rating": 5.28
   },
   "Brooklyn Nets": {
    "abbr": "BKN",
@@ -10742,7 +10959,8 @@ window.NBA_DATA = {
    "l10def": 114.1,
    "l10rec": "2-7",
    "net": -5.89,
-   "net10": -5.89
+   "net10": -5.89,
+   "rating": -5.72
   },
   "Charlotte Hornets": {
    "abbr": "CHA",
@@ -10763,7 +10981,8 @@ window.NBA_DATA = {
    "l10def": 110.2,
    "l10rec": "3-7",
    "net": -13.9,
-   "net10": -13.9
+   "net10": -13.9,
+   "rating": -9.04
   },
   "Chicago Bulls": {
    "abbr": "CHI",
@@ -10784,7 +11003,8 @@ window.NBA_DATA = {
    "l10def": 129.6,
    "l10rec": "1-7",
    "net": -18.0,
-   "net10": -18.0
+   "net10": -18.0,
+   "rating": -10.43
   },
   "Cleveland Cavaliers": {
    "abbr": "CLE",
@@ -10805,7 +11025,8 @@ window.NBA_DATA = {
    "l10def": 114.1,
    "l10rec": "5-5",
    "net": 2.9,
-   "net10": 2.9
+   "net10": 2.9,
+   "rating": 3.11
   },
   "Dallas Mavericks": {
    "abbr": "DAL",
@@ -10826,7 +11047,8 @@ window.NBA_DATA = {
    "l10def": 110.9,
    "l10rec": "5-4",
    "net": 1.22,
-   "net10": 1.22
+   "net10": 1.22,
+   "rating": 0.73
   },
   "Denver Nuggets": {
    "abbr": "DEN",
@@ -10847,7 +11069,8 @@ window.NBA_DATA = {
    "l10def": 113.1,
    "l10rec": "5-3",
    "net": 2.12,
-   "net10": 2.12
+   "net10": 2.12,
+   "rating": 3.06
   },
   "Detroit Pistons": {
    "abbr": "DET",
@@ -10868,7 +11091,8 @@ window.NBA_DATA = {
    "l10def": 101.8,
    "l10rec": "6-2",
    "net": 9.38,
-   "net10": 9.38
+   "net10": 9.38,
+   "rating": 6.17
   },
   "Golden State Warriors": {
    "abbr": "GSW",
@@ -10889,7 +11113,8 @@ window.NBA_DATA = {
    "l10def": 113.6,
    "l10rec": "7-3",
    "net": 5.0,
-   "net10": 5.0
+   "net10": 5.0,
+   "rating": 3.67
   },
   "Houston Rockets": {
    "abbr": "HOU",
@@ -10910,7 +11135,8 @@ window.NBA_DATA = {
    "l10def": 107.0,
    "l10rec": "7-3",
    "net": 9.0,
-   "net10": 9.0
+   "net10": 9.0,
+   "rating": 7.99
   },
   "Indiana Pacers": {
    "abbr": "IND",
@@ -10931,7 +11157,8 @@ window.NBA_DATA = {
    "l10def": 114.2,
    "l10rec": "3-7",
    "net": -3.9,
-   "net10": -3.9
+   "net10": -3.9,
+   "rating": -4.89
   },
   "Los Angeles Clippers": {
    "abbr": "LAC",
@@ -10952,7 +11179,8 @@ window.NBA_DATA = {
    "l10def": 115.6,
    "l10rec": "1-7",
    "net": -6.5,
-   "net10": -6.5
+   "net10": -6.5,
+   "rating": -2.3
   },
   "Los Angeles Lakers": {
    "abbr": "LAL",
@@ -10973,7 +11201,8 @@ window.NBA_DATA = {
    "l10def": 114.3,
    "l10rec": "8-2",
    "net": 7.7,
-   "net10": 7.7
+   "net10": 7.7,
+   "rating": 4.57
   },
   "Memphis Grizzlies": {
    "abbr": "MEM",
@@ -10994,7 +11223,8 @@ window.NBA_DATA = {
    "l10def": 111.8,
    "l10rec": "6-3",
    "net": 6.11,
-   "net10": 6.11
+   "net10": 6.11,
+   "rating": 0.72
   },
   "Miami Heat": {
    "abbr": "MIA",
@@ -11015,7 +11245,8 @@ window.NBA_DATA = {
    "l10def": 122.6,
    "l10rec": "3-6",
    "net": -6.56,
-   "net10": -6.56
+   "net10": -6.56,
+   "rating": -2.81
   },
   "Milwaukee Bucks": {
    "abbr": "MIL",
@@ -11036,7 +11267,8 @@ window.NBA_DATA = {
    "l10def": 122.1,
    "l10rec": "1-8",
    "net": -12.44,
-   "net10": -12.44
+   "net10": -12.44,
+   "rating": -8.45
   },
   "Minnesota Timberwolves": {
    "abbr": "MIN",
@@ -11057,7 +11289,8 @@ window.NBA_DATA = {
    "l10def": 107.7,
    "l10rec": "7-3",
    "net": 10.7,
-   "net10": 10.7
+   "net10": 10.7,
+   "rating": 7.95
   },
   "New Orleans Pelicans": {
    "abbr": "NOP",
@@ -11078,7 +11311,8 @@ window.NBA_DATA = {
    "l10def": 118.8,
    "l10rec": "4-5",
    "net": 1.44,
-   "net10": 1.44
+   "net10": 1.44,
+   "rating": -1.0
   },
   "New York Knicks": {
    "abbr": "NYK",
@@ -11099,7 +11333,8 @@ window.NBA_DATA = {
    "l10def": 104.2,
    "l10rec": "5-4",
    "net": 5.67,
-   "net10": 5.67
+   "net10": 5.67,
+   "rating": 3.87
   },
   "Oklahoma City Thunder": {
    "abbr": "OKC",
@@ -11120,7 +11355,8 @@ window.NBA_DATA = {
    "l10def": 104.2,
    "l10rec": "8-2",
    "net": 8.0,
-   "net10": 8.0
+   "net10": 8.0,
+   "rating": 8.38
   },
   "Orlando Magic": {
    "abbr": "ORL",
@@ -11141,7 +11377,8 @@ window.NBA_DATA = {
    "l10def": 116.2,
    "l10rec": "2-7",
    "net": -9.22,
-   "net10": -9.22
+   "net10": -9.22,
+   "rating": -4.09
   },
   "Philadelphia 76ers": {
    "abbr": "PHI",
@@ -11162,7 +11399,8 @@ window.NBA_DATA = {
    "l10def": 106.6,
    "l10rec": "8-2",
    "net": 2.8,
-   "net10": 2.8
+   "net10": 2.8,
+   "rating": 1.2
   },
   "Phoenix Suns": {
    "abbr": "PHX",
@@ -11183,7 +11421,8 @@ window.NBA_DATA = {
    "l10def": 118.6,
    "l10rec": "3-5",
    "net": -6.25,
-   "net10": -6.25
+   "net10": -6.25,
+   "rating": -1.14
   },
   "Portland Trail Blazers": {
    "abbr": "POR",
@@ -11204,7 +11443,8 @@ window.NBA_DATA = {
    "l10def": 113.8,
    "l10rec": "6-3",
    "net": 5.56,
-   "net10": 5.56
+   "net10": 5.56,
+   "rating": 3.7
   },
   "Sacramento Kings": {
    "abbr": "SAC",
@@ -11225,7 +11465,8 @@ window.NBA_DATA = {
    "l10def": 123.3,
    "l10rec": "1-8",
    "net": -14.11,
-   "net10": -14.11
+   "net10": -14.11,
+   "rating": -8.67
   },
   "San Antonio Spurs": {
    "abbr": "SAS",
@@ -11246,7 +11487,8 @@ window.NBA_DATA = {
    "l10def": 108.1,
    "l10rec": "8-2",
    "net": 10.3,
-   "net10": 10.3
+   "net10": 10.3,
+   "rating": 7.91
   },
   "Toronto Raptors": {
    "abbr": "TOR",
@@ -11267,7 +11509,8 @@ window.NBA_DATA = {
    "l10def": 112.8,
    "l10rec": "5-4",
    "net": 5.44,
-   "net10": 5.44
+   "net10": 5.44,
+   "rating": 2.7
   },
   "Utah Jazz": {
    "abbr": "UTA",
@@ -11288,7 +11531,8 @@ window.NBA_DATA = {
    "l10def": 118.2,
    "l10rec": "1-8",
    "net": -11.33,
-   "net10": -11.33
+   "net10": -11.33,
+   "rating": -7.02
   },
   "Washington Wizards": {
    "abbr": "WAS",
@@ -11309,7 +11553,8 @@ window.NBA_DATA = {
    "l10def": 112.5,
    "l10rec": "4-6",
    "net": -4.7,
-   "net10": -4.7
+   "net10": -4.7,
+   "rating": -6.58
   }
  }
 };
