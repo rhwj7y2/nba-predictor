@@ -1527,8 +1527,8 @@
   // （2023-24 的上季起點用 2022-23 整季）
   var BACKTEST = { all: "68.7%", low: "56.1%", mid: "65.8%", high: "82.5%" };
   // 各個玩法三季回測勝率（2023-24～2025-26，用現在的模型逐場往前推：含傷病、連兩天、對戰節奏調整；盤口只用有開盤的場次，打平盤與預測剛好等於盤口的不算）：
-  // 新球隊評分：不讓分 2503 / 3643、讓分 1838 / 3579、單隊大小 3601 / 7193、總分大小 1817 / 3595
-  var BET_BACKTEST = { ml: "68.7%", sp: "51.4%", tt: "50.1%", tot: "50.5%" };
+  // 新球隊評分：不讓分 2503 / 3643、讓分 1838 / 3579、客隊單隊大小 1835 / 3607、主隊單隊大小 1766 / 3586、總分大小 1817 / 3595
+  var BET_BACKTEST = { ml: "68.7%", sp: "51.4%", tta: "50.9%", tth: "49.2%", tot: "50.5%" };
   function accuracyRows() {
     var rows = [];
     if (!MODEL || !SCHEDULE) return rows;
@@ -1545,9 +1545,9 @@
 
   // 盤口勝率：已完賽、有記下開賽前盤口的比賽，賽前預測比分對著盤口選的邊，猜中幾次。
   // 規則和賽後頁面的 ✅ ❌ 一樣：預測剛好等於盤口的不選、實際剛好打平盤的不算輸贏。
-  // 回傳 { ml, sp, tt, tot }，每項 [猜中, 總次數]；單隊大小每場最多算兩次（客隊、主隊各一次）
+  // 回傳 { ml, sp, tta, tth, tot }，每項 [猜中, 總次數]；單隊大小分成客隊（tta）、主隊（tth）各算一次
   function betStats() {
-    var s = { ml: [0, 0], sp: [0, 0], tt: [0, 0], tot: [0, 0] };
+    var s = { ml: [0, 0], sp: [0, 0], tta: [0, 0], tth: [0, 0], tot: [0, 0] };
     if (!MODEL || !SCHEDULE) return s;
     SCHEDULE.games.forEach(function (g0) {
       var g = withLive(g0);
@@ -1560,8 +1560,8 @@
         if (pred === line || actual === line) return;
         box[1]++; if ((actual > line) === (pred > line)) box[0]++;
       };
-      ou(s.tt, pa, Number(half(g.ou / 2 + g.sp / 2)), g.as);
-      ou(s.tt, ph, Number(half(g.ou / 2 - g.sp / 2)), g.hs);
+      ou(s.tta, pa, Number(half(g.ou / 2 + g.sp / 2)), g.as);
+      ou(s.tth, ph, Number(half(g.ou / 2 - g.sp / 2)), g.hs);
       ou(s.tot, pa + ph, g.ou, g.as + g.hs);
     });
     return s;
@@ -1597,7 +1597,7 @@
     var bs = betStats();
     if (bs.ml[1]) {
       html += '<div class="card"><h2>各個玩法準確率</h2><table class="acc-table"><thead><tr><th>項目</th><th>猜中</th><th>勝率</th><th>三季回測</th></tr></thead><tbody>' +
-        [["ml", "不讓分"], ["sp", "讓分"], ["tt", "單隊大小"], ["tot", "總分大小"]].map(function (x) {
+        [["ml", "不讓分"], ["sp", "讓分"], ["tta", "客隊單隊大小"], ["tth", "主隊單隊大小"], ["tot", "總分大小"]].map(function (x) {
           return "<tr><td>" + x[1] + "</td><td>" + bs[x[0]][0] + " / " + bs[x[0]][1] + "</td><td>" + pct(bs[x[0]][0], bs[x[0]][1]) + '</td><td class="muted">' + BET_BACKTEST[x[0]] + "</td></tr>";
         }).join("") + '</tbody></table><p class="acc-note">以準確率來看，不讓分值得參考，其他太看運氣啦</p></div>';
     }
