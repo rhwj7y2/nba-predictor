@@ -308,7 +308,7 @@ def build_schedule(raw_dir):
     """賽程分頁的資料：每場轉成台灣日期與開賽時間（台灣沒有夏令時間，固定 UTC+8）。沒有賽程檔就回傳 None。
 
     每場：d = 台灣日期、t = 台灣開賽時間、a/h = 客/主隊縮寫（盃賽決賽等還沒決定的是 null）、
-    s = F 已完賽 / S 尚未開打 / L 進行中 / X 延期或取消、n = 中立場地（不加主場優勢）、tag = 備註標籤、as/hs = 已完賽的比分。
+    s = F 已完賽 / S 尚未開打 / L 進行中 / X 延期或取消、n = 中立場地（不加主場優勢）、tag = 備註標籤、as/hs = 已完賽的比分、q = 已完賽的各節得分 [客隊各節, 主隊各節]。
     """
     path = raw_dir / SCHEDULE_FILE
     if not path.exists():
@@ -329,6 +329,8 @@ def build_schedule(raw_dir):
             "s": s, "n": g["neutral"], "tag": SCHEDULE_TAGS.get(g["note"], g["note"]),
             "as": g["away_pts"], "hs": g["home_pts"],
         }
+        if g.get("away_q") and g.get("home_q"):  # 各節得分 [客隊各節, 主隊各節]（第 5 個以後是延長賽）
+            item["q"] = [g["away_q"], g["home_q"]]
         rec = odds.get(g["id"]) if s in ("F", "S", "L") else None
         if rec:  # 記下來的盤口：sp = 主隊讓分、ou = 總分（已完賽預測頁、已開賽的比賽顯示用，ESPN 開賽後就不給盤口了；開盤和賠率留在 raw/ 的紀錄檔）
             item["sp"], item["ou"] = rec["spread_home"][1], rec["total"][1]

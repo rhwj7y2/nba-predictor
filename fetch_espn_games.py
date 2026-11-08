@@ -104,6 +104,9 @@ def schedule_of_day(d):
             "note": notes[0] if notes else None,
             "away_pts": int(side["away"]["score"]) if final else None,
             "home_pts": int(side["home"]["score"]) if final else None,
+            # 各節得分（第 1~4 節，打延長賽會多幾個）；賽程每次整個重抓，所以以前打完的比賽也會自動補上
+            "away_q": [int(x["value"]) for x in side["away"].get("linescores", [])] if final else None,
+            "home_q": [int(x["value"]) for x in side["home"].get("linescores", [])] if final else None,
         })
     return out
 

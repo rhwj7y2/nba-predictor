@@ -585,6 +585,14 @@ td:first-child, th:first-child { text-align: left; }
 .pre-title { color: var(--muted); font-size: .85rem; font-weight: 600; }
 .pre-score { margin: 4px 0; font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .pre-conf .conf { font-size: 1.1rem; }
+/* 各節得分表（放在已完賽比分下面） */
+.final-q { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+.q-table td, .q-table th { padding: 6px 4px; }
+.q-table th:first-child, .q-table td:first-child { text-align: left; }
+.q-table .q-team { color: inherit; font-size: .88rem; font-weight: 700; white-space: nowrap; }
+.q-table .q-win { font-weight: 800; }
+.q-table .q-total { font-weight: 800; }
+.q-table tbody td:not(.q-win):not(.q-total) { color: var(--muted); }
 .pre-picks { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: .95rem; line-height: 1.8; font-variant-numeric: tabular-nums; }
 .odds-title { margin: 0 0 8px; text-align: center; font-weight: 700; }
 .odds-msg { margin: 0; text-align: center; color: var(--muted); font-size: .9rem; }

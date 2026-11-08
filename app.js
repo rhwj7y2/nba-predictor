@@ -377,6 +377,8 @@
       // 第一張卡：實際比分（隊徽、隊名、大比分，贏的一方綠色）
       setBlock("final-away", teamBlock(a, "客隊", String(finalGame.as), finalGame.as > finalGame.hs));
       setBlock("final-home", teamBlock(h, "主隊", String(finalGame.hs), finalGame.hs > finalGame.as));
+      $("final-q").innerHTML = quarterTable(a, h, finalGame);
+      $("final-q").hidden = !finalGame.q;
       // 第二張卡：賽前預測、信心、各選項對錯
       $("pre-board").innerHTML = '<div class="pre-title">賽前預測</div>' +
         '<div class="pre-score">' + a.zh + " " + f1(cmp.p1.away) + " : " + f1(cmp.p1.home) + " " + h.zh + "</div>" +
@@ -538,6 +540,22 @@
 
   // 已完賽：把賽前預測拿去對盤口，每個選項對不對（讓分選哪一邊、單隊總分與總分選大或小）。
   // 預測比分用畫面上顯示的 0.1 位數；剛好等於盤口的不選、實際剛好打平盤的不標對錯
+  // 各節得分表：第 1~4 節 + 延長賽（OT1、OT2…）+ 總分；每節得分比對手高的那格加粗，一眼看出哪一節誰佔上風
+  function quarterTable(a, h, g) {
+    if (!g.q) return "";
+    var qa = g.q[0], qh = g.q[1], n = Math.max(qa.length, qh.length);
+    var head = "<th></th>";
+    for (var i = 0; i < n; i++) head += "<th>" + (i < 4 ? i + 1 : n > 5 ? "OT" + (i - 3) : "OT") + "</th>";
+    head += "<th>總分</th>";
+    function row(t, mine, other, total) {
+      var cells = '<th class="q-team">' + t.zh + "</th>";
+      for (var i = 0; i < n; i++) cells += "<td" + (mine[i] > other[i] ? ' class="q-win"' : "") + ">" + (mine[i] == null ? "-" : mine[i]) + "</td>";
+      return "<tr>" + cells + '<td class="q-total">' + total + "</td></tr>";
+    }
+    return '<table class="q-table"><thead><tr>' + head + "</tr></thead><tbody>" +
+      row(a, qa, qh, g.as) + row(h, qh, qa, g.hs) + "</tbody></table>";
+  }
+
   function betPicksHtml(a, h, p, g) {
     if (g.sp == null || g.ou == null) return "";
     var mark = function (ok) { return ok === null ? "" : ok ? " ✅" : " ❌"; };

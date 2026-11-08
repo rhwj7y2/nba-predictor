@@ -1,8 +1,8 @@
 {
-"fetched": "2026-11-08T02:45Z",
+"fetched": "2026-11-08T04:31Z",
 "teams": {
 "Atlanta Hawks": [{"id": "4585618", "n": "Keshon Gilbert", "s": "Out"}, {"id": "4873201", "n": "Asa Newell", "s": "Out"}, {"id": "3146557", "n": "Jock Landale", "s": "Out"}, {"id": "4712863", "n": "Mouhamed Gueye", "s": "Out"}, {"id": "5105571", "n": "Henri Veesaar", "s": "Out"}],
-"Brooklyn Nets": [{"id": "4432194", "n": "Day'Ron Sharpe", "s": "Day-To-Day"}, {"id": "5175643", "n": "Egor Demin", "s": "Out"}],
+"Brooklyn Nets": [{"id": "5101761", "n": "Mikel Brown Jr.", "s": "Out"}, {"id": "5175643", "n": "Egor Demin", "s": "Out"}],
 "Charlotte Hornets": [{"id": "4433249", "n": "Moussa Diabate", "s": "Day-To-Day"}, {"id": "4433287", "n": "Brandon Miller", "s": "Day-To-Day"}, {"id": "3032979", "n": "Dennis Schroder", "s": "Out"}, {"id": "5061575", "n": "Kon Knueppel", "s": "Out"}, {"id": "4066218", "n": "Grant Williams", "s": "Out"}],
 "Chicago Bulls": [{"id": "5105555", "n": "Tobe Awaka", "s": "Day-To-Day"}, {"id": "4397189", "n": "Jalen Smith", "s": "Day-To-Day"}, {"id": "4278067", "n": "Nic Claxton", "s": "Out"}, {"id": "4066650", "n": "Zach Collins", "s": "Out"}],
 "Cleveland Cavaliers": [{"id": "4683747", "n": "Jaylon Tyson", "s": "Out"}, {"id": "4066757", "n": "Sam Merrill", "s": "Out"}, {"id": "4066328", "n": "Jarrett Allen", "s": "Out"}],
@@ -27,6 +27,6 @@
 "San Antonio Spurs": [{"id": "6440", "n": "Tobias Harris", "s": "Out"}, {"id": "5101845", "n": "Jayden Quaintance", "s": "Out"}],
 "Toronto Raptors": [{"id": "4433134", "n": "Scottie Barnes", "s": "Day-To-Day"}, {"id": "4395724", "n": "Immanuel Quickley", "s": "Day-To-Day"}, {"id": "6450", "n": "Kawhi Leonard", "s": "Out"}, {"id": "4432586", "n": "Nate Bittle", "s": "Out"}],
 "Utah Jazz": [{"id": "4066336", "n": "Lauri Markkanen", "s": "Day-To-Day"}, {"id": "3102530", "n": "Jusuf Nurkic", "s": "Out"}, {"id": "4277961", "n": "Jaren Jackson Jr.", "s": "Out"}],
-"Washington Wizards": [{"id": "6583", "n": "Anthony Davis", "s": "Out"}, {"id": "4432187", "n": "Reece Beekman", "s": "Out"}, {"id": "4997537", "n": "Tristan Vukcevic", "s": "Out"}, {"id": "4432907", "n": "Justin Champagnie", "s": "Out"}, {"id": "4606840", "n": "Jamir Watkins", "s": "Out"}]
+"Washington Wizards": [{"id": "4278129", "n": "Deandre Ayton", "s": "Out"}, {"id": "6583", "n": "Anthony Davis", "s": "Out"}, {"id": "4432187", "n": "Reece Beekman", "s": "Out"}, {"id": "4997537", "n": "Tristan Vukcevic", "s": "Out"}, {"id": "4432907", "n": "Justin Champagnie", "s": "Out"}, {"id": "4606840", "n": "Jamir Watkins", "s": "Out"}]
 }
 }
