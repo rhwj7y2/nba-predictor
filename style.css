@@ -464,11 +464,13 @@ a.game:hover { border-color: var(--accent); }
 .gm-qn-a { left: -10px; }
 .gm-qn-h { right: -10px; }
 .gm-rec { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
-.gm-up { display: block; width: fit-content; margin: 0 auto 5px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 1.4; }  /* 冷門觀察名單選的那隊：隊徽上面的小標籤 */
+.gm-topl { height: 19px; line-height: 19px; font-size: .7rem; font-weight: 700; color: var(--accent); white-space: nowrap; }  /* 隊徽上面的小行：連勝 / 連敗、冷門觀察標籤（每行固定 19px，兩隊的隊徽才對得齊） */
+.gm-topl .cold { color: var(--cold); }
+.gm-up { display: block; width: fit-content; margin: 1px auto; padding: 0 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 15px; }  /* 冷門觀察名單選的那隊：隊徽上面的小標籤 */
 .gm-up-gap { visibility: hidden; }  /* 對手：同樣高度的看不見空位，兩隊才會對齊 */
 .gm-wp { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px; position: relative; }  /* 預測勝率條：客隊% | 條 | 主隊%（信心下面） */
 .gm-wc { color: var(--muted); font-size: .6rem; line-height: 1.2; text-align: center; margin-top: 1px; }  /* 勝率條下面的小字：賭盤勝率 / 模型勝率 */
-.gm-wbar { display: flex; width: 4.2rem; height: 5px; border-radius: 999px; overflow: hidden; background: var(--line); gap: 1px; }
+.gm-wbar { display: flex; width: calc(var(--gm-mid) - 3.6rem); height: 5px; border-radius: 999px; overflow: hidden; background: var(--line); gap: 1px; }
 .gm-wbar > span { display: block; height: 100%; }
 .gm-wbar > span:last-child { flex: 1; }
 .gm-wn { color: var(--muted); font-size: .68rem; font-variant-numeric: tabular-nums; min-width: 2.1em; }
@@ -483,10 +485,10 @@ a.game:hover { border-color: var(--accent); }
 .gm-mid .gm-wp { margin-top: 1px; }  /* 勝率條的中心 = 戰績那一行的中心 */
 .gm-mid .gm-wc { margin-top: 3px; font-size: .62rem; }
 .gm-row:has(.gm-mid .gm-wp) { align-items: start; padding-top: 7px; padding-bottom: 0; }  /* 有賭盤勝率條的卡片：兩側隊徽欄和中間欄都從上緣開始排，下面的中間欄用 padding 對齊兩側 */
-.gm-mid:has(.gm-wp) { padding-top: 27.5px; }  /* 開賽時間的中心 = 隊名那一行的中心 */
+.gm-mid:has(.gm-wp) { padding-top: calc(27.5px + var(--gm-top, 0px)); }  /* 開賽時間的中心 = 隊名那一行的中心 */
 @media (max-width: 600px) {  /* 手機：開賽時間放大、往上移一點，離賭盤勝率條遠一些（條仍然對齊戰績那一行） */
   .game-time { font-size: 2rem; }
-  .gm-mid:has(.gm-wp) { padding-top: 12.4px; }
+  .gm-mid:has(.gm-wp) { padding-top: calc(12.4px + var(--gm-top, 0px)); }
   .gm-mid .gm-wp { margin-top: 8.9px; }
 }
 .game-pred .gm-wp { margin-top: 9px; }

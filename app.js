@@ -134,8 +134,8 @@
     return 1.05 / (lum + 0.05) >= 4.5 ? "#fff" : "#000";
   }
 
-  // 連勝 / 連敗：超過 3 場（4 場起）才在隊徽上方標出來；連勝橘色 🔥、連敗藍色 🧊
-  var STREAK_MIN = 4;
+  // 連勝 / 連敗：3 場起才在隊徽上方標出來；連勝橘色 🔥、連敗藍色 🧊
+  var STREAK_MIN = 3;
   function streakText(t) {
     if (t.streak >= STREAK_MIN) return "🔥 " + t.streak + " 連勝";
     if (t.lstreak >= STREAK_MIN) return '<span class="cold">🧊 ' + t.lstreak + " 連敗</span>";
@@ -372,7 +372,7 @@
     var wPace = winnerOf(pace);
 
     // 主記分板
-    // 任一隊連勝超過 3 場，兩隊都留出隊徽上方那一行（沒連勝的留白），隊徽才不會一高一低
+    // 任一隊連勝（或連敗）3 場以上，兩隊都留出隊徽上方那一行（沒連勝的留白），隊徽才不會一高一低
     var showStreak = !pregame && (!!streakText(a) || !!streakText(h));
     setBlock("board-away", teamBlock(a, "客隊", pace.away, wPace === "away", showStreak ? streakText(a) : undefined));
     setBlock("board-home", teamBlock(h, "主隊", pace.home, wPace === "home", showStreak ? streakText(h) : undefined));
@@ -1048,11 +1048,14 @@
     if (typeof g.mq !== "number" || !a || !h) return "";
     return probBar(100 - g.mq, g.mq, a, h, "賭盤預估勝率（去抽水）：客隊 ", "賭盤勝率");
   }
-  // tag："show" = 這隊是「冷門觀察」名單選的那隊，隊徽上面放小標籤；"space" = 對手，放一個看不見的同樣高度的空位（兩隊才會對齊）；沒有就不放
-  function teamCell(t, tag) {
-    var tg = tag ? '<div class="gm-up' + (tag === "space" ? " gm-up-gap" : "") + '">冷門觀察</div>' : "";
-    if (!t) return '<div class="gm-team">' + tg + '<span class="mini-badge tbd">?</span><div class="gm-name">待定</div></div>';
-    return '<div class="gm-team">' + tg + miniBadge(t) + '<div class="gm-name">' + t.zh + '</div><div class="gm-rec">' +
+  // 隊徽上面的小行（固定 19px 高；兩隊都留這一行，隊徽、隊名才會對齊）：
+  //   streak：undefined = 沒有這一行；字串 = 這一行的內容（連勝 / 連敗的字，或「冷門觀察」小標籤；什麼都沒有就是空字串，留空白）
+  //   tag：舊的用法（「show」/「space」，隊徽上面另外一行小標籤），賽程卡片已經改成放在 streak 那一行，這裡保留給其他地方
+  function teamCell(t, tag, streak) {
+    var top = (streak !== undefined ? '<div class="gm-topl">' + streak + "</div>" : "") +
+      (tag ? '<div class="gm-topl"><div class="gm-up' + (tag === "space" ? " gm-up-gap" : "") + '">冷門觀察</div></div>' : "");
+    if (!t) return '<div class="gm-team">' + top + '<span class="mini-badge tbd">?</span><div class="gm-name">待定</div></div>';
+    return '<div class="gm-team">' + top + miniBadge(t) + '<div class="gm-name">' + t.zh + '</div><div class="gm-rec">' +
       t.w + "-" + t.l + "</div></div>";
   }
 
@@ -1064,6 +1067,13 @@
     var h = g.h ? T[ABBR[g.h]] : null;
     var pi = MODEL ? preGameInfo(g) : null;
     var up = a && h ? UPSET_BY[date + "|" + g.a + "|" + g.h] : null;  // 這場有沒有冷門觀察
+    // 還沒開打的比賽：隊徽上面標連勝 / 連敗（3 場起；是「現在」的連勝連敗，已完賽的卡片不標）；任一隊有就兩隊都留一行
+    var upcoming = (g.s === "S" || g.s === "L") && a && h && MODEL;
+    var stA = upcoming ? streakText(a) : "", stH = upcoming ? streakText(h) : "";
+    // 隊徽上面只有一行：被「冷門觀察」選到的那隊放小標籤（優先，蓋過它的連勝連敗），另一隊放自己的連勝連敗
+    var tagHtml = '<div class="gm-up">冷門觀察</div>';
+    var lineA = up && up.side === "a" ? tagHtml : stA, lineH = up && up.side === "h" ? tagHtml : stH;
+    var hasTop = !!(up || stA || stH), nTop = hasTop ? 1 : 0;
     // 首頁簡版：還沒開打的顯示預測比分；開打後已經抓到即時比分的，就跟賽程一樣顯示即時比分
     var homePred = mode === "home" && MODEL && a && h && (g.s === "S" || g.s === "L") && !liveMidCache[date + "|" + g.a + "|" + g.h] ? compareModels(a, h, g.n, gameAdj(g)) : null;
     var past = date < todayTW();
@@ -1131,7 +1141,8 @@
       ? '<div class="gm-head' + (tags ? "" : " solo") + '"><div class="gm-head-l">' + tags + '</div><span class="gm-res ' + (pi.ok1 ? "ok" : "bad") + '">' + (pi.ok1 ? "預測正確" : "預測失敗") + '</span></div>'
       : tags ? '<div class="gm-tags">' + tags + "</div>" : "";
     el.innerHTML = head +
-      '<div class="gm-row">' + teamCell(a, up ? (up.side === "a" ? "show" : "space") : null) + '<div class="gm-mid">' + mid + "</div>" + teamCell(h, up ? (up.side === "h" ? "show" : "space") : null) + "</div>" +
+      '<div class="gm-row"' + (nTop ? ' style="--gm-top:' + nTop * 19 + 'px"' : "") + ">" + teamCell(a, null, hasTop ? lineA : undefined) +
+      '<div class="gm-mid">' + mid + "</div>" + teamCell(h, null, hasTop ? lineH : undefined) + "</div>" +
       (line ? '<div class="game-pred">' + line + "</div>" : "");
     if ((g.s === "S" || g.s === "L") && a && h) {  // 超級球星出賽成疑：球隊戰績下面補一行（資料來自 ESPN 傷病名單，抓回來之後補；已經抓到就直接補）
       el.setAttribute("data-gk", date + "|" + g.a + "|" + g.h);
