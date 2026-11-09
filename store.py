@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS odds (
     spread_home_open REAL, spread_home_close REAL, total_open REAL, total_close REAL, detail TEXT
 );
 CREATE TABLE IF NOT EXISTS injury_snapshots (
-    fetched TEXT NOT NULL, team TEXT NOT NULL, player_id TEXT NOT NULL, name TEXT, status TEXT,
+    fetched TEXT NOT NULL, team TEXT NOT NULL, player_id TEXT NOT NULL, name TEXT, status TEXT, ret TEXT DEFAULT '',  -- ret = ESPN 的預計回歸日（美國日期，沒填就是空字串）
     PRIMARY KEY (fetched, team, player_id)
 );
 CREATE TABLE IF NOT EXISTS injury_adj (
@@ -69,6 +69,8 @@ def connect(path=None):
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    if "ret" not in [r[1] for r in conn.execute("PRAGMA table_info(injury_snapshots)")]:  # 舊資料庫：補上「預計回歸日」欄位
+        conn.execute("ALTER TABLE injury_snapshots ADD COLUMN ret TEXT DEFAULT ''")
     return conn
 
 
@@ -106,14 +108,15 @@ def save_odds(conn, game_id, rec):
 
 
 def save_injury_snapshot(conn, fetched, teams):
-    """teams: {隊名: [{"id", "n", "s"}]}。和最新一份完全一樣就不新增（歷史只記「有變」的時刻），但「最後抓取時間」每次都更新。"""
-    new = {(t, r["id"], r["n"], r["s"]) for t, rows in teams.items() for r in rows}
+    """teams: {隊名: [{"id", "n", "s", "r"（預計回歸日，可省略）}]}。和最新一份完全一樣就不新增（歷史只記「有變」的時刻），但「最後抓取時間」每次都更新。"""
+    new = {(t, r["id"], r["n"], r["s"], r.get("r") or "") for t, rows in teams.items() for r in rows}
     last = conn.execute("SELECT MAX(fetched) FROM injury_snapshots").fetchone()[0]
-    old = {(r["team"], r["player_id"], r["name"], r["status"]) for r in conn.execute(
-        "SELECT team, player_id, name, status FROM injury_snapshots WHERE fetched = ?", (last,))} if last else None
+    old = {(r["team"], r["player_id"], r["name"], r["status"], r["ret"] or "") for r in conn.execute(
+        "SELECT team, player_id, name, status, ret FROM injury_snapshots WHERE fetched = ?", (last,))} if last else None
     changed = old != new
     if changed:
-        conn.executemany("INSERT OR REPLACE INTO injury_snapshots VALUES (?, ?, ?, ?, ?)", [(fetched, t, i, n, s) for t, i, n, s in sorted(new)])
+        conn.executemany("INSERT OR REPLACE INTO injury_snapshots (fetched, team, player_id, name, status, ret) VALUES (?, ?, ?, ?, ?, ?)",
+                         [(fetched, *row) for row in sorted(new)])
     set_meta(conn, "injuries_fetched", fetched)
     return changed
 
@@ -197,14 +200,14 @@ def read_odds_status(conn):
 
 
 def read_injuries_latest(conn):
-    """{fetched, teams: {隊名: [{id, n, s}]}}；從沒抓過回傳 None"""
+    """{fetched, teams: {隊名: [{id, n, s, r}]}}（r = 預計回歸日，美國日期，沒有就是空字串）；從沒抓過回傳 None"""
     fetched = conn.execute("SELECT value FROM meta WHERE key = 'injuries_fetched'").fetchone()
     last = conn.execute("SELECT MAX(fetched) FROM injury_snapshots").fetchone()[0]
     if not fetched or not last:
         return None
     teams = {}
-    for r in conn.execute("SELECT team, player_id, name, status FROM injury_snapshots WHERE fetched = ? ORDER BY team, rowid", (last,)):
-        teams.setdefault(r["team"], []).append({"id": r["player_id"], "n": r["name"], "s": r["status"]})
+    for r in conn.execute("SELECT team, player_id, name, status, ret FROM injury_snapshots WHERE fetched = ? ORDER BY team, rowid", (last,)):
+        teams.setdefault(r["team"], []).append({"id": r["player_id"], "n": r["name"], "s": r["status"], "r": r["ret"] or ""})
     return {"fetched": fetched["value"], "teams": teams}
 
 

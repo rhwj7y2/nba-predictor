@@ -247,7 +247,7 @@ def fetch_injuries(conn):
     """ESPN 現在的傷病名單 -> injury_snapshots（名單有變才新增一份快照；「最後抓取時間」每次都更新）。
 
     build_data.py 拿最新一份算「還沒開打的比賽」每隊缺陣球員的傷病扣分；開賽後那場的扣分就凍結在 injury_adj，不會再跟著名單變。
-    每位球員記 id（ESPN 球員編號，和逐場球員數據的編號一樣）、名字、狀態（Out = 缺陣、Day-To-Day = 每日觀察）。
+    每位球員記 id（ESPN 球員編號，和逐場球員數據的編號一樣）、名字、狀態（Out = 缺陣、Day-To-Day = 每日觀察）、預計回歸日 r（美國日期）。
     """
     j = fetch_json(INJ_URL, "傷病名單")
     teams = {}
@@ -258,7 +258,7 @@ def fetch_injuries(conn):
             m = re.search(r"/id/(\d+)/", json.dumps(a.get("links", [])))
             pid = str(a.get("id") or (m.group(1) if m else ""))
             if pid:
-                rows.append({"id": pid, "n": a.get("displayName", "?"), "s": i.get("status", "")})
+                rows.append({"id": pid, "n": a.get("displayName", "?"), "s": i.get("status", ""), "r": (i.get("details") or {}).get("returnDate") or ""})
         teams[NAME_FIX.get(t["displayName"], t["displayName"])] = rows
     fetched = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
     changed = store.save_injury_snapshot(conn, fetched, teams)

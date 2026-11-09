@@ -191,7 +191,7 @@
   }
 
   function cardBackground() {
-    var m = getComputedStyle($("stats-title").parentNode).backgroundColor.match(/\d+/g);
+    var m = getComputedStyle($("stats-title").closest(".card")).backgroundColor.match(/\d+/g);
     return [Number(m[0]), Number(m[1]), Number(m[2])];
   }
 
@@ -373,14 +373,33 @@
     return Object.assign({}, g, { s: "F", as: f.as, hs: f.hs, ot: f.ot, live: true });
   }
 
+  // 折疊卡片（和「賭盤變化」一樣：點標題展開 / 收起，預設收起來）。卡片內容會被重畫（票數更新、傷病名單載入完），
+  // 所以展開與否記在 foldOpen（卡片代號 -> 是否展開），重畫時照記的狀態開著；換一場比賽（render）就全部收回去
+  var foldOpen = {};
+  var FOLD_DEFAULT_OPEN = {};  // 預設就展開的卡片（用 foldHtml 畫的；render 依已完賽 / 還沒開賽設定）；其他一律預設收起
+  function foldHtml(id, title, inner) {
+    var open = id in foldOpen ? foldOpen[id] : !!FOLD_DEFAULT_OPEN[id];
+    return '<details class="ot-details fold" data-fold="' + id + '"' + (open ? " open" : "") + "><summary>" + title + "</summary>" + inner + "</details>";
+  }
+  document.addEventListener("toggle", function (e) {  // toggle 事件不會往上傳，要用 capture 才收得到
+    var d = e.target;
+    if (d && d.dataset && d.dataset.fold) foldOpen[d.dataset.fold] = d.open;
+  }, true);
+
   function render() {
+    foldOpen = {};
+    // 卡片順序與預設展開：已完賽 = 得分前三（展開）、數據對照（收起）；還沒開賽 = 數據對照（展開）、傷病名單、得分前三（收起）。其他卡片都預設收起
+    FOLD_DEFAULT_OPEN = pregame ? { players: true } : {};
+    $("stats-fold").open = !pregame;
+    if (pregame) $("stats-card").parentNode.insertBefore($("players-card"), $("stats-card"));
+    else $("inj-card").parentNode.insertBefore($("players-card"), $("odds-card"));
     var aKey = awaySel.value;
     var hKey = homeSel.value;
     var hint = $("hint");
     var result = $("result");
     $("neutral-note").hidden = !neutral;
     $("odds-card").hidden = true;  // 盤口等這次預測算完、確定有這場比賽才會再打開
-    $("vote-card").hidden = true;  // 投票卡片也一樣，算完才打開
+    $("comment-card").hidden = true;  // 留言卡片也一樣，算完才打開
     $("inj-card").hidden = true;   // 傷病名單也一樣
     $("players-card").hidden = true;  // 得分前三球員也一樣
     $("picker").hidden = pregame;  // 已完賽的比賽是固定頁面，不能換隊
@@ -495,13 +514,13 @@
     }).join("");
 
     result.hidden = false;
-    showMatchVote(dayIdx >= 0 ? dayList[dayIdx] : null, fromDate);  // 從賽程點進來的比賽才有投票
+    showComments(finalGame || (dayIdx >= 0 ? dayList[dayIdx] : null));  // 從賽程點進來的比賽（含已完賽）才有留言
     if (!pregame) renderPlayers(aKey, hKey, a, h, aColor, hColor);   // 得分前三球員（本季場均）
     else renderGameTop(a, h, aColor, hColor, finalGame);              // 已完賽的固定頁面：改顯示本場得分前三球員
     if (!pregame) renderInjuries(aKey, hKey, a, h, aColor, hColor);  // 傷病名單：已完賽的固定頁面不顯示
     if (MODEL) {
       if (pregame) showRecordedOdds(a, h, aColor, hColor, cmp.p1);
-      else renderOdds(aKey, hKey, a, h, aColor, hColor);
+      else renderOdds(aKey, hKey, a, h, aColor, hColor, cmp.p1);
     }
   }
 
@@ -541,35 +560,9 @@
     return isNaN(n) ? null : n;
   }
 
-  // 畫盤口卡片：homeLine = 主隊讓分（負 = 主隊讓分），totalLine = 總分；note = 卡片外的兩行小字
-  // 單隊總分：由讓分與總分推算，再調成 .5 結尾（x.0 進位到 x.5，例如 112.0 -> 112.5）；順序是 讓分、單隊總分、總分
-  // res = 已完賽比賽的實際比分 { as, hs }：有的話，讓分打 ✅ 在讓分過關的那一邊，單隊總分與總分打 ⬆️（大）/ ⬇️（小）；剛好打平盤的不標
+  // 單隊總分：由讓分與總分推算，再調成 .5 結尾（x.0 進位到 x.5，例如 112.0 -> 112.5）
   function sgn(v) { return (v > 0 ? "+" : "") + f1(v); }          // 讓分顯示：+1.5 / -1.5
   function half(v) { return f1(Math.floor(v) + 0.5); }             // 單隊總分調成 .5 結尾（x.0 進位到 x.5）
-
-  function drawOdds(a, h, aColor, hColor, homeLine, totalLine, note, res) {
-    var UP = " ⬆️", DOWN = " ⬇️", OK = " ✅";
-    var overUnder = function (actual, line) { return actual > line ? UP : actual < line ? DOWN : ""; };
-    var rows = "";
-    if (homeLine != null) {
-      var cover = res ? (res.hs - res.as + homeLine) : 0;  // > 0 主隊讓分過關（受讓方贏盤），< 0 客隊過關
-      rows += "<tr><td>" + sgn(-homeLine) + (res && cover < 0 ? OK : "") + "</td><td>讓分</td><td>" +
-        sgn(homeLine) + (res && cover > 0 ? OK : "") + "</td></tr>";
-    }
-    if (homeLine != null && totalLine != null) {
-      var aTT = half(totalLine / 2 + homeLine / 2), hTT = half(totalLine / 2 - homeLine / 2);
-      rows += "<tr><td>" + aTT + (res ? overUnder(res.as, Number(aTT)) : "") + "</td><td>單隊總分</td><td>" +
-        hTT + (res ? overUnder(res.hs, Number(hTT)) : "") + "</td></tr>";
-    }
-    if (totalLine != null) {
-      rows += '<tr><td colspan="3"><b>總分 ' + totalLine + (res ? overUnder(res.as + res.hs, totalLine) : "") + "</b></td></tr>";
-    }
-    if (!rows) return false;
-    $("odds-body").innerHTML = '<div class="odds-title">' + (res ? "賭盤結果" : "賭盤") + '</div><table class="stats"><thead><tr><th style="color:' + aColor + '">' + a.zh +
-      '</th><th></th><th style="color:' + hColor + '">' + h.zh + "</th></tr></thead><tbody>" + rows + "</tbody></table>";
-    $("odds-note").innerHTML = note + "<br>非投注建議，娛樂參考 !";
-    return true;
-  }
 
   // 已完賽：把賽前預測拿去對盤口，每個選項對不對（讓分選哪一邊、單隊總分與總分選大或小）。
   // 預測比分用畫面上顯示的 0.1 位數；剛好等於盤口的不選、實際剛好打平盤的不標對錯
@@ -618,17 +611,56 @@
     return rows.map(function (r) { return '<span class="op-n">' + r[0] + '</span><span class="op-v">' + r[1] + '</span><span class="op-m">' + r[2] + "</span>"; }).join("");
   }
 
-  function showOdds(a, h, aColor, hColor, o) {  // 即時盤口（ESPN 賽事列表的 odds）
-    var ps = o.pointSpread, tot = o.total;
-    var hl = ps && ps.home && ps.home.close;
-    var ov = tot && tot.over && tot.over.close;
-    var homeLine = hl ? lineNum(hl.line) : null;
-    var totalLine = ov ? lineNum(ov.line) : (typeof o.overUnder === "number" ? o.overUnder : null);
-    var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
-    return drawOdds(a, h, aColor, hColor, homeLine, totalLine, "經 ESPN 取得 DraftKings 的賭盤概況，台灣時間 " + hh + " 更新");
+  // 已完賽的比賽（最下面那張卡）：賽前預測拿去對收盤盤口，每個選項選哪邊、對不對（sp = 主隊讓分、ou = 總分；原始紀錄在 raw/odds_2026-27.json）
+  // 賭盤變化卡片（另一張卡片、預設折疊；已完賽和還沒開賽的比賽都有）：不讓分只放賠率（小數賠率），讓分、總分、單隊總分只放盤口；客隊在上、主隊在下
+  // od：{ sp 主隊讓分, so 讓分賠率 [主, 客], t 總分, to 總分賠率 [大, 小], ml 勝負盤賠率 [主, 客] }，每項都是 [開盤, 收盤]
+  // 單隊總分查不到莊家實際開的盤口，用「讓分 + 總分」推算（客隊 = 總分/2 + 主隊讓分/2，主隊 = 總分/2 - 主隊讓分/2，調成 .5 結尾），所以沒有賠率
+  function oddsTableHtml(a, h, aColor, hColor, od, when, p1, label) {  // when = 「最終」那一欄的時間（台灣時間，字串），label = 時間前面的字（預設「最新資訊更新時間」，即時抓的寫「即時抓取」）；p1 = 我們的預測比分 { away, home }（算最下面「模型」那一條勝率）
+    if (!od) return "";
+    var d = function (x) { return x == null ? "" : x.toFixed(2); };
+    var line = function (x) { return x == null ? "" : sgn(x); };
+    var num = function (x) { return x == null ? "" : String(x); };
+    var neg = function (x) { return x == null ? null : -x; };
+    var tt = function (i, awaySide) {  // 推算的單隊總分
+      if (od.sp[i] == null || od.t[i] == null) return "";
+      return half(od.t[i] / 2 + (awaySide ? od.sp[i] : -od.sp[i]) / 2);
+    };
+    // 一格：type "lo" = 盤口 + 賠率（兩個固定寬度的小欄，上下對齊）、"o" = 只有賠率、"l" = 只有盤口
+    var cell = function (type, ln, od2, close) {
+      var inner = type === "lo" ? '<b class="ot-ln">' + ln + '</b><i class="ot-od">' + od2 + "</i>" : type === "o" ? '<i class="ot-od ot-solo">' + od2 + "</i>" : '<b class="ot-ln ot-solo">' + ln + "</b>";
+      return '<span class="ot-cell' + (close ? " ot-cl" : "") + '">' + inner + "</span>";
+    };
+    var row = function (name, color, type, vals) {  // vals = [開盤盤口, 開盤賠率, 收盤盤口, 收盤賠率]
+      return '<div class="ot-r"><span class="ot-t"' + (color ? ' style="color:' + color + '"' : "") + ">" + name + "</span>" +
+        cell(type, vals[0], vals[1], false) + cell(type, vals[2], vals[3], true) + "</div>";
+    };
+    var html = '<div class="ot-g"><div class="ot-h"><span></span><span>初始</span><span>最終</span></div>';
+    html += '<div class="ot-sec">不讓分（賠率）</div>' +
+      row(a.zh, aColor, "o", ["", d(od.ml[1][0]), "", d(od.ml[1][1])]) + row(h.zh, hColor, "o", ["", d(od.ml[0][0]), "", d(od.ml[0][1])]);
+    html += '<div class="ot-sec">讓分</div>' +
+      row(a.zh, aColor, "l", [line(neg(od.sp[0])), "", line(neg(od.sp[1])), ""]) +
+      row(h.zh, hColor, "l", [line(od.sp[0]), "", line(od.sp[1]), ""]);
+    html += '<div class="ot-sec">單隊總分</div>' +
+      row(a.zh, aColor, "l", [tt(0, true), "", tt(1, true), ""]) + row(h.zh, hColor, "l", [tt(0, false), "", tt(1, false), ""]);
+    html += '<div class="ot-sec">總分</div>' +
+      row("合計", "", "l", [num(od.t[0]), "", num(od.t[1]), ""]);  // 總分不分大小，只有一行；放在最下面（單隊總分下面）
+    var mq = p1 ? Math.round(normCdf((p1.home - p1.away) / 13.5) * 100) : null;  // 模型的主隊勝率（%），算法和賽程卡片的模型勝率條一樣
+    if ((od.q && (od.q[0] != null || od.q[1] != null)) || mq != null) {  // 勝率條（放在最下面）：賭盤勝率（把莊家抽成扣掉）的初始、最終，再加我們模型的勝率；客隊在左、主隊在右，用隊色
+      var bar = function (label, qh) {
+        if (qh == null || qh === false) return "";
+        return '<div class="ot-wr"><span class="ot-wl">' + label + '</span><span class="ot-wp"><b>' + (100 - qh) + '%</b><span class="ot-wbar"><span style="width:' + (100 - qh) +
+          "%;background:" + aColor + '"></span><span style="background:' + hColor + '"></span></span><b>' + qh + "%</b></span></div>";
+      };
+      html += '<div class="ot-sec">勝率</div><div class="ot-wr ot-wlg"><span></span><span class="ot-wp"><span style="color:' + aColor + '">' + a.zh +
+        '</span><span style="color:' + hColor + '">' + h.zh + "</span></span></div>" + bar("初始", od.q && od.q[0]) + bar("最終", od.q && od.q[1]) + bar("模型", mq);
+    }
+    html += "</div>";
+    return '<details class="ot-details"><summary>賭盤變化</summary>' + html +
+      '<p class="ot-note">初始：ESPN 沒有提供初始時間<br>最終：' + (label || "最新資訊更新時間") + " " + when + '</p></details>';
   }
 
-  // 已完賽的比賽（最下面那張卡）：賽前預測拿去對收盤盤口，每個選項選哪邊、對不對（sp = 主隊讓分、ou = 總分；原始紀錄在 raw/odds_2026-27.json）
+  function tipText(g) { return Number(g.d.slice(5, 7)) + "/" + Number(g.d.slice(8)) + " " + g.t; }  // 開賽時間（台灣時間）"月/日 時:分"
+
   function showRecordedOdds(a, h, aColor, hColor, p1) {
     ++oddsToken;  // 作廢還在路上的即時盤口
     var g = finalGame;
@@ -637,7 +669,11 @@
       card.hidden = true;
       return;
     }
-    $("odds-body").innerHTML = '<div class="odds-title">賭盤結果</div><div class="odds-picks">' + betPicksHtml(a, h, p1, g) + "</div>";
+    $("odds-body").hidden = false;
+    $("odds-body").innerHTML = foldHtml("oddsres", "賭盤結果", '<div class="odds-picks">' + betPicksHtml(a, h, p1, g) + "</div>");  // 預設收起來
+    var hist = $("odds-hist"), tbl = oddsTableHtml(a, h, aColor, hColor, g.od, tipText(g), p1);
+    hist.innerHTML = tbl;
+    hist.hidden = !tbl;
     $("odds-note").innerHTML = "經 ESPN 取得 DraftKings 的賭盤概況，開賽前最後的盤口<br>非投注建議，娛樂參考 !";
     card.hidden = false;
   }
@@ -647,27 +683,63 @@
     return g.s === "L" || Date.now() >= new Date(g.d + "T" + g.t + ":00+08:00").getTime();
   }
 
-  function renderOdds(aKey, hKey, a, h, aColor, hColor) {
-    var card = $("odds-card");
+  // 小數賠率：美式賠率字串（"+112"、"-133"、"EVEN"）-> 小數賠率（+112 -> 2.12、-133 -> 1.75）；看不懂回傳 null
+  function americanToDec(s) {
+    if (s == null) return null;
+    if (/^even/i.test(String(s))) return 2;
+    var n = parseFloat(s);
+    if (isNaN(n) || n === 0) return null;
+    return n > 0 ? 1 + n / 100 : 1 + 100 / -n;
+  }
+
+  // ESPN 賽事列表的 odds -> 和 g.od 一樣的格式（sp 主隊讓分、t 總分、ml 勝負盤賠率 [主, 客]，每項 [初始, 最終]；初始 = ESPN 的 open、最終 = 現在的 close）
+  function oddsFromEspn(o) {
+    var both = function (side, f) { return [f(side && side.open), f(side && side.close)]; };
+    var ln = function (x) { return x ? lineNum(x.line) : null; };
+    var dec = function (x) { return x ? americanToDec(x.odds) : null; };
+    var ps = o.pointSpread || {}, tot = o.total || {}, ml = o.moneyline || {};
+    var od = { sp: both(ps.home, ln), t: both(tot.over, ln), ml: [both(ml.home, dec), both(ml.away, dec)] };
+    od.q = [0, 1].map(function (k) {  // 主隊賭盤勝率（去抽水，整數 %）[初始, 最終]
+      var dh = od.ml[0][k], da = od.ml[1][k];
+      return dh && da ? Math.round((1 / dh) / (1 / dh + 1 / da) * 100) : null;
+    });
+    if (od.t[1] == null && typeof o.overUnder === "number") od.t[1] = o.overUnder;
+    return od;
+  }
+
+  // 還沒開賽（或剛開賽還沒打完）的比賽：只顯示「賭盤變化」卡片（初始 -> 最終），沒有別的賭盤卡片
+  function renderOdds(aKey, hKey, a, h, aColor, hColor, p1) {
+    var card = $("odds-card"), body = $("odds-body"), hist = $("odds-hist");
     var g = upcomingGameOf(a.abbr, h.abbr);
     var token = ++oddsToken;
     if (!g) { card.hidden = true; return; }
-    // 更新資料時記下來的盤口（sp = 主隊讓分、ou = 總分）：ESPN 賽事列表一開賽就不給盤口了，開賽後就顯示這份，定案不再變動
-    var hasRec = g.sp != null && g.ou != null;
-    if (hasRec && gameStarted(g) &&
-      drawOdds(a, h, aColor, hColor, g.sp, g.ou, "經 ESPN 取得 DraftKings 的賭盤概況，這場已開賽，盤口定案在開賽前最後記錄的數字")) {
+    var show = function (od, when, note, label) {
+      body.hidden = true;
+      hist.innerHTML = oddsTableHtml(a, h, aColor, hColor, od, when, p1, label);
+      hist.hidden = false;
+      $("odds-note").innerHTML = note + "<br>非投注建議，娛樂參考 !";
       card.hidden = false;
+    };
+    var msg = function (text) {
+      body.hidden = false;
+      body.innerHTML = '<p class="odds-msg">' + text + "</p>";
+      hist.hidden = true;
+      $("odds-note").textContent = "";
+      card.hidden = false;
+    };
+    // 更新資料時記下來的盤口：ESPN 賽事列表一開賽就不給盤口了，開賽後就顯示這份，定案不再變動
+    // 舊資料檔只有收盤的讓分 sp 和總分 ou（沒有初始和賠率），就只放最終
+    var rec = g.od || (g.sp != null && g.ou != null ? { sp: [null, g.sp], t: [null, g.ou], ml: [[null, null], [null, null]] } : null);
+    if (rec && gameStarted(g)) {
+      show(rec, tipText(g), "經 ESPN 取得 DraftKings 的賭盤概況，這場已開賽，盤口定案在開賽前最後記錄的數字");
       return;
     }
-    $("odds-body").innerHTML = '<p class="odds-msg">載入中…</p>';
-    $("odds-note").textContent = "";
-    card.hidden = false;
-    var fail = function (msg) {
+    msg("載入中…");
+    var fail = function (text) {
       if (token !== oddsToken) return;
       // 即時盤口抓不到（還沒開出盤口、ESPN 暫時抓不到），有記下來的就先顯示那份
-      if (hasRec && drawOdds(a, h, aColor, hColor, g.sp, g.ou, "經 ESPN 取得 DraftKings 的賭盤概況，目前抓不到即時盤口，這是最近一次記錄的盤口")) return;
-      $("odds-body").innerHTML = '<p class="odds-msg">' + msg + "</p>";
-      $("odds-note").textContent = "";
+      if (rec) show(rec, "—", "經 ESPN 取得 DraftKings 的賭盤概況，目前抓不到即時盤口，這是最近一次記錄的盤口");
+      else msg(text);
     };
     // 賽程日期是台灣日期，ESPN 用美東日期：台灣日期的前一天到當天一起抓，再用隊名對出這場
     Promise.all([fetchScoreboard(addDays(g.d, -1)), fetchScoreboard(g.d)]).then(function (days) {
@@ -685,13 +757,15 @@
         if (names.away === aKey && names.home === hKey) ev = comp;
       });
       var o = ev && ev.odds && ev.odds[0];
-      if (!o) return fail("賭鬼 這場目前沒抓到賭盤 請晚點再來!!");
-      if (!showOdds(a, h, aColor, hColor, o)) fail("賭鬼 這場目前沒抓到賭盤 請晚點再來!!");
+      var od = o && oddsFromEspn(o);
+      if (!od || (od.sp[1] == null && od.t[1] == null)) return fail("賭鬼 這場目前沒抓到賭盤 請晚點再來!!");
+      var n = new Date(Date.now() + 8 * 3600 * 1000).toISOString();  // 現在的台灣時間
+      show(od, Number(n.slice(5, 7)) + "/" + Number(n.slice(8, 10)) + " " + n.slice(11, 16), "經 ESPN 取得 DraftKings 的賭盤概況", "即時抓取");
     }, function () { fail("盤口暫時抓不到，稍後重新整理再試。"); });
   }
 
   // ---------- 每隊得分前三高的球員（build_data.py 用每場比賽的球員數據算出來，只收出賽過半的球員） ----------
-  // 放在投票下面、本季數據對照上面；已完賽的固定頁面不顯示（那是現在的數字，不是當時的）
+  // 放在留言下面、本季數據對照上面；已完賽的固定頁面不顯示（那是現在的數字，不是當時的）
   var PLAYERS = window.NBA_PLAYERS && window.NBA_PLAYERS.teams ? window.NBA_PLAYERS.teams : null;
 
   function plStat(label, val, cls) {
@@ -722,8 +796,8 @@
       if (!tp[0][i] && !tp[1][i]) break;
       rows += '<div class="pl-row">' + playerCell(obj(tp[0][i]), aColor, true, true) + playerCell(obj(tp[1][i]), hColor, true, false) + "</div>";
     }
-    card.innerHTML = '<div class="odds-title">本場得分前三球員</div>' +
-      '<div class="pl-head"><span style="color:' + aColor + '">' + a.zh + '</span><span style="color:' + hColor + '">' + h.zh + "</span></div>" + rows;
+    card.innerHTML = foldHtml("players", "本場得分前三球員",
+      '<div class="pl-head"><span style="color:' + aColor + '">' + a.zh + '</span><span style="color:' + hColor + '">' + h.zh + "</span></div>" + rows);
     card.hidden = false;
   }
 
@@ -736,9 +810,8 @@
       if (!pa[i] && !ph[i]) break;
       rows += '<div class="pl-row">' + playerCell(pa[i], aColor) + playerCell(ph[i], hColor) + "</div>";
     }
-    card.innerHTML = '<div class="odds-title">得分前三球員</div>' +
-      '<div class="pl-head"><span style="color:' + aColor + '">' + a.zh + '</span><span style="color:' + hColor + '">' + h.zh + "</span></div>" +
-      rows;
+    card.innerHTML = foldHtml("players", "得分前三球員",
+      '<div class="pl-head"><span style="color:' + aColor + '">' + a.zh + '</span><span style="color:' + hColor + '">' + h.zh + "</span></div>" + rows);
     card.hidden = false;
   }
 
@@ -821,6 +894,14 @@
     }
     return null;
   }
+  // 缺陣（Out）但預計回歸日剛好是這隊下一場比賽的美國日期（或前一天）：ESPN 的 Out 多半是上一場的狀態、還沒更新成這場的出賽狀態，
+  // 這場很可能回來，標成「預計回歸、出賽成疑」，不當成缺陣（模型的傷病扣分也一樣不扣，見 build_data.py 的 back_for）。回歸日早更多天、名單卻還寫 Out 的（逾期很久）仍算缺陣
+  function backForNextGame(x, abbr) {
+    var ret = (x.details && x.details.returnDate) || "", ng = nextGameOf(abbr);
+    if (x.status !== "Out" || !/^\d{4}-\d{2}-\d{2}$/.test(ret) || !ng) return false;
+    var days = Math.round((Date.parse(addDays(ng.d, -1)) - Date.parse(ret)) / 86400000);  // 這場的美國日期（台灣日期 - 1 天）- 預計回歸日
+    return days >= 0 && days <= 1;
+  }
   function loadQuestionable() {
     if (!MODEL || !SCHEDULE || QSTAT || qLoading) return;
     qLoading = true;
@@ -834,7 +915,7 @@
           var ps = m ? playerStat(m[1]) : null;
           if (!ps || ps.pts < 25 || ps.gp < 3) return;
           var fresh = injGameStatus(x, team.abbr), kind = "";
-          if (/出賽成疑$/.test(fresh)) kind = "q";
+          if (/出賽成疑$/.test(fresh) || backForNextGame(x, team.abbr)) kind = "q";
           else if (x.status === "Out") kind = "o";
           if (!kind) return;
           (q[team.abbr] = q[team.abbr] || []).push({ n: (x.athlete && x.athlete.displayName) || "?", k: kind, pts: ps.pts, ret: (x.details && x.details.returnDate) || "" });
@@ -906,7 +987,8 @@
     // ESPN 給的預計回歸是美國日期（指那天晚上的比賽）；美國晚上的比賽是台灣隔天，所以加 1 天換成台灣日期
     var tw = /^\d{4}-\d{2}-\d{2}$/.test(d.returnDate || "") ? addDays(d.returnDate, 1) : "";
     var ret = tw ? "預計 " + Number(tw.slice(5, 7)) + "/" + Number(tw.slice(8)) + " 回歸" : "";
-    var st = x.status === "Out" ? '<span class="inj-st out">缺陣</span>' : x.status === "Day-To-Day" ? '<span class="inj-st dtd">每日觀察</span>' :
+    var back = backForNextGame(x, abbr);  // 預計這場回歸：標「預計回歸」、後面寫出賽成疑，不標缺陣
+    var st = back ? '<span class="inj-st dtd">預計回歸</span>' : x.status === "Out" ? '<span class="inj-st out">缺陣</span>' : x.status === "Day-To-Day" ? '<span class="inj-st dtd">每日觀察</span>' :
       '<span class="inj-st">' + (x.status || "") + "</span>";
     var pos = x.athlete && x.athlete.position && x.athlete.position.abbreviation;
     // 整季報銷：預計回歸日在例行賽結束之後（ESPN 對長期傷勢會填一個很遠的日期），或傷病快訊明說 season-ending / 剩下整季都缺席
@@ -914,7 +996,7 @@
       /season-ending|rest of the (2026-27 )?season|miss the (entire |rest of the )?(2026-27 )?season|remainder of the season|out for the (season|year)/i.test((x.shortComment || "") + " " + (x.longComment || ""));
     st += seasonOut ? '<span class="inj-season">整季報銷</span>' : "";
     return '<li><div class="inj-who"><span class="inj-nm"><b>' + ((x.athlete && x.athlete.displayName) || "?") + "</b>" + (pos ? " <span class=\"inj-pos\">" + pos + "</span>" : "") +
-      "</span> " + st + "</div>" + stat + '<div class="inj-what">' + [place + kind, ret, injGameStatus(x, abbr)].filter(Boolean).join("・") + "</div></li>";
+      "</span> " + st + "</div>" + stat + '<div class="inj-what">' + [place + kind, ret, injGameStatus(x, abbr) || (back ? "對" + nextOpponent(abbr) + " 出賽成疑" : "")].filter(Boolean).join("・") + "</div></li>";
   }
 
   // 傷病名單：全部列出，排序依本季場均得分由高到低（本季沒出賽過、沒有場均得分的排最後）；得分一樣就缺陣在前、每日觀察其次，再依名字
@@ -935,8 +1017,8 @@
   function renderInjuries(aKey, hKey, a, h, aColor, hColor) {
     var card = $("inj-card");
     var token = ++injToken;
-    var head = '<div class="odds-title">🚑 傷病名單</div><p class="inj-warn">11/8 開始有納入傷病</p>';
-    card.innerHTML = head + '<p class="odds-msg">載入中…</p>';
+    var fold = function (inner) { return foldHtml("inj", "🚑 傷病名單", '<p class="inj-warn">11/8 開始有納入傷病</p>' + inner); };
+    card.innerHTML = fold('<p class="odds-msg">載入中…</p>');
     card.hidden = false;
     fetchInjuries().then(function (res) {
       if (token !== injToken) return;
@@ -947,11 +1029,11 @@
           (list.length ? '<ul class="inj-list">' + list.map(function (x) { return injRow(x, t.abbr); }).join("") + "</ul>" : '<p class="inj-none">目前沒有傷病名單</p>');
       };
       var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
-      card.innerHTML = head + team(aKey, a, aColor) + team(hKey, h, hColor) +
-        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新；場均上場時間不到8分鐘不提供數據；預計回歸日期為台灣日期；出賽狀態取自 2 天內的傷病快訊，沒標示代表 ESPN 沒有更新</p>";
+      card.innerHTML = fold(team(aKey, a, aColor) + team(hKey, h, hColor) +
+        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新；場均上場時間不到8分鐘不提供數據；預計回歸日期為台灣日期；出賽狀態取自 2 天內的傷病快訊，沒標示代表 ESPN 沒有更新</p>");
     }, function () {
       if (token !== injToken) return;
-      card.innerHTML = head + '<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>';
+      card.innerHTML = fold('<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>');
     });
   }
 
@@ -1178,7 +1260,7 @@
       var homeWon = g.hs > g.as;
       mid = '<div class="gm-score"><span class="gm-pts ' + (homeWon ? "lose" : "win") + '">' + g.as + "</span>" +
         '<span class="gm-final"><b>' + (homeWon ? "▶" : "◀") + "</b>" + finalLabel(g) + "</span>" +
-        '<span class="gm-pts ' + (homeWon ? "win" : "lose") + '">' + g.hs + "</span></div>";
+        '<span class="gm-pts ' + (homeWon ? "win" : "lose") + '">' + g.hs + "</span></div>" + marketBar(g, a, h);  // 比分下面放賭盤勝率（收盤）
     } else if ((g.s === "S" || g.s === "L") && liveMidCache[date + "|" + g.a + "|" + g.h]) {
       mid = liveMidCache[date + "|" + g.a + "|" + g.h];  // 已經抓到的即時比分，重畫時先用這份
     } else {
@@ -1278,10 +1360,10 @@
     if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
   }
 
-  // 即時比分在兩個畫面都有：賽程（卡片列表 #game-list）和投票（#vote-list）
-  var LIVE_VIEWS = { schedule: { list: "#game-list", box: "view-schedule" }, vote: { list: "#vote-list", box: "view-vote" }, home: { list: "#home-games", box: "view-home" } };
+  // 即時比分在兩個畫面都有：賽程（卡片列表 #game-list）和首頁（#home-games）
+  var LIVE_VIEWS = { schedule: { list: "#game-list", box: "view-schedule" }, home: { list: "#home-games", box: "view-home" } };
   var homeDate = null;  // 首頁下拉清單現在顯示的比賽日
-  var liveMidCache = {};  // "日期|客隊|主隊" -> 最近一次的中間欄 HTML；畫面重畫（例如投票後）時先用這份，不會閃回「進行中」
+  var liveMidCache = {};  // "日期|客隊|主隊" -> 最近一次的中間欄 HTML；畫面重畫時先用這份，不會閃回「進行中」
 
   function startLive(date, view) {
     stopLive();
@@ -1368,7 +1450,7 @@
     var soon = games.some(function (g) { return Date.now() >= new Date(g.d + "T" + g.t + ":00+08:00").getTime() - 600000; });
     if (!soon) return;
     Promise.all([fetchScoreboard(addDays(date, -1), 20000), fetchScoreboard(date, 20000)]).then(function (days) {
-      if ((view === "vote" ? voteDate : view === "home" ? homeDate : curDate) !== date || $(V.box).hidden) return;  // 使用者已經換日期或離開這個畫面了
+      if ((view === "home" ? homeDate : curDate) !== date || $(V.box).hidden) return;  // 使用者已經換日期或離開這個畫面了
       var byPair = pairIndex(days[0].concat(days[1]));
       document.querySelectorAll(V.list + " [data-live]").forEach(function (el) {
         var k = el.getAttribute("data-live").split("_");
@@ -1378,7 +1460,6 @@
         if (name === "STATUS_FINAL") {  // 打完了：整張卡換成已完賽的樣子（預測正確/失敗、賽前預測比分，點進去是完賽頁）
           liveFinals[date + "|" + k[0] + "|" + k[1]] = finalScore(e);
           var gm = (gamesByDate[date] || []).filter(function (x) { return x.a === k[0] && x.h === k[1]; })[0];
-          if (view === "vote") { drawVote(); return; }  // 投票頁整頁重畫：多了猜對/猜錯和統計
           if (gm && el.parentNode) {
             el.parentNode.replaceWith(gameItem(withLive(gm), date, view === "home" ? "home" : undefined));
             if (view === "home") drawHomeStats();  // 首頁準確率卡片的「猜對 X / Y」
@@ -1408,216 +1489,112 @@
     replaceHash({ tab: "schedule", date: d });
   }
 
-  // ---------- 投票專區：每場猜勝負，不擋重複投票 ----------
-  // 票數存在 Firebase Realtime Database，網頁直接用網址讀寫（REST），不用裝任何套件。
-  // VOTE_DB 填資料庫網址（例如 https://xxxx-default-rtdb.firebaseio.com）；留空 = 不開放投票，分頁和首頁入口都不顯示
-  var VOTE_DB = "https://nba-predictor-c0fb5-default-rtdb.asia-southeast1.firebasedatabase.app";
-  var VOTE_ON = !!VOTE_DB && hasUpcoming();
-  var voteDate = null;
-  var votes = {};        // 這一天的票數：{ "BOS_NYK": { a: 客隊票數, h: 主隊票數 } }
-  var voteState = "loading";  // loading 讀取中、ok 讀到了、err 讀不到
-  var votePending = 0;   // 已送出、還沒收到回覆的票數
+  // ---------- 留言：每場比賽各自一串，全部匿名 ----------
+  // 留言存在 Firebase Realtime Database，網頁直接用網址讀寫（REST），不用裝任何套件：/comments/{日期_客隊_主隊}/{自動編號} = { m: 留言, t: 伺服器時間 }
+  // 留言只能新增、不能修改或刪除（規則見 firebase_rules.json）；要刪不當留言，到 Firebase 主控台手動刪
+  // COMMENT_DB 填資料庫網址；留空 = 不開放留言，比賽頁就沒有留言卡片
+  var COMMENT_DB = "https://nba-predictor-c0fb5-default-rtdb.asia-southeast1.firebasedatabase.app";
+  var COMMENT_MAX = 200;      // 一則最多幾個字
+  var COMMENT_SHOW = 50;      // 每場最多顯示最新的幾則
+  var COMMENT_GAP = 15000;    // 同一支瀏覽器兩則留言至少隔幾毫秒（擋連續洗版；只是前端的基本防護）
+  var cmt = { key: null, state: "loading", list: [] };  // 目前這場的留言：state = loading / ok / err
 
-  function voteUrl(path) { return VOTE_DB.replace(/\/+$/, "") + "/votes/" + path + ".json"; }
-  function voteKey(g) { return g.a + "_" + g.h; }
-
-  // 還能不能投：還沒開賽（開賽時間比現在晚）才能投；資料沒更新、狀態還是「尚未開打」的過期比賽也算已開賽
-  function voteOpen(g, date) {
-    return g.s === "S" && Date.now() < new Date(date + "T" + g.t + ":00+08:00").getTime();
+  function commentKey(g) { return g.d + "_" + g.a + "_" + g.h; }  // 台灣日期_客隊縮寫_主隊縮寫，例如 2026-11-10_LAL_ATL
+  function commentUrl(key, query) { return COMMENT_DB.replace(/\/+$/, "") + "/comments/" + key + ".json" + (query || ""); }
+  function commentTime(t) {  // 毫秒 -> 台灣時間「月/日 時:分」
+    var s = new Date(t + 8 * 3600 * 1000).toISOString();
+    return Number(s.slice(5, 7)) + "/" + Number(s.slice(8, 10)) + " " + s.slice(11, 16);
   }
 
-  function setVoteMsg(text) {
-    $("vote-msg").hidden = !text;
-    $("vote-msg").textContent = text || "";
-  }
-
-  function loadVotes(date) {
-    return fetch(voteUrl(date), { cache: "no-store" })
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (d) { if (voteDate === date) { votes = d || {}; voteState = "ok"; } })
-      .catch(function () { if (voteDate === date) voteState = "err"; })
-      .then(function () { if (voteDate === date) redrawVote(); });
-  }
-
-  function renderVote(date) {
-    voteDate = date;
-    votes = {};
-    voteState = "loading";
-    setVoteMsg("");
-    $("vote-date").textContent = fmtDate(date);
-    $("vote-prev").disabled = !prevMatchDay(date);
-    $("vote-next").disabled = !nextMatchDay(date);
-    drawVote();
-    loadVotes(date);
-    startLive(date, "vote");
-  }
-
-  function goVoteDate(d) {
-    if (!d) return;
-    renderVote(d);
-    replaceHash({ tab: "vote", date: d });
-  }
-
-  // 一場比賽的投票內容（投票頁每張卡、單場頁的投票卡片共用）：
-  // btns 兩個投票按鈕（還能投才有）、bar 票數比例條、info 開賽後的對照（網友多數猜誰、我們預測誰，已完賽再標對錯）
-  // crowd / model：已完賽時網友、我們猜對 (true) 或猜錯 (false)；沒得比就是 null
-  // 第二隊色：兩隊主色太像時，主隊改用這個（只有投票比例條會用到）
-  var ALT_COLOR = {
-    ATL: "#C1D32F", BOS: "#BA9653", BKN: "#000000", CHA: "#1D1160", CHI: "#000000", CLE: "#041E42", DAL: "#002B5E", DEN: "#0E2240",
-    DET: "#1D42BA", GSW: "#FFC72C", HOU: "#C4CED4", IND: "#002D62", LAC: "#1D428A", LAL: "#FDB927", MEM: "#12173F", MIA: "#F9A01B",
-    MIL: "#EEE1C6", MIN: "#78BE20", NOP: "#0C2340", NYK: "#006BB6", OKC: "#EF3B24", ORL: "#C4CED4", PHI: "#ED174C", PHX: "#1D1160",
-    POR: "#000000", SAC: "#63727A", SAS: "#000000", TOR: "#753BBD", UTA: "#002B5C", WAS: "#E31837"
-  };
-
-  function voteParts(g, date) {
-    var a = T[ABBR[g.a]], h = T[ABBR[g.h]];
-    var v = votes[voteKey(g)] || {};
-    var na = v.a || 0, nh = v.h || 0, tot = na + nh;
-    var open = voteOpen(g, date);
-    var pa = Math.round(na / (tot || 1) * 100);
-    var ready = voteState === "ok";
-
-    var btns = open
-      ? '<div class="vote-btns"><button type="button" class="vote-btn" data-k="' + voteKey(g) + '" data-s="a">' + a.zh +
-        ' 贏</button><button type="button" class="vote-btn" data-k="' + voteKey(g) + '" data-s="h">' + h.zh + " 贏</button></div>"
-      : "";
-
-    // 比例條和票數都用兩隊的隊色（跟數據對照同一套，深色底上太暗的顏色會自動調亮）；兩隊顏色太像時，主隊改用灰色，才分得出來
-    var bg = cardBackground();
-    var ca = readableOn(a.color, bg), ch = readableOn(h.color, bg);        // 文字色：要看得清楚
-    var ba = readableOn(a.color, bg, 1.5), bh = readableOn(h.color, bg, 1.5);  // 比例條色塊：只要和底色分得開，盡量保持原本的隊色（金塊才是金色）
-    var rgbA = hexToRgb(a.color), rgbH = hexToRgb(h.color);
-    var colorGap = function (x, y) { return Math.abs(x[0] - y[0]) + Math.abs(x[1] - y[1]) + Math.abs(x[2] - y[2]); };
-    if (colorGap(rgbA, rgbH) < 90) {  // 兩隊顏色太像（例如金塊和溜馬都是黃色）：主隊改用牠的第二隊色，還是太像才用灰色
-      var alt = ALT_COLOR[h.abbr];
-      var useAlt = alt && colorGap(rgbA, hexToRgb(alt)) >= 90;
-      ch = useAlt ? readableOn(alt, bg) : "var(--muted)";
-      bh = useAlt ? readableOn(alt, bg, 1.5) : "var(--muted)";
-    }
-    var bar = '<div class="vote-bar' + (tot ? "" : " empty") + '"' + (tot ? ' style="background:' + bh + '"' : "") +
-      '><span class="vb-a" style="width:' + pa + '%;background:' + ba + '"></span></div>' +
-      '<div class="vote-nums"><span style="color:' + ca + '">' + a.zh + " " + (ready ? na + " 票" + (tot ? "（" + pa + "%）" : "") : "—") + '</span><span style="color:' + ch + '">' +
-      h.zh + " " + (ready ? nh + " 票" + (tot ? "（" + (100 - pa) + "%）" : "") : "—") + "</span></div>";
-
-    var info = "", crowdRes = null, modelRes = null;
-    if (!open && ready) {
-      var lines = [];
-      var crowd = na === nh ? null : (na > nh ? "away" : "home");
-      var pi = g.s === "F" && MODEL ? preGameInfo(g) : null;
-      if (tot) {
-        var cm = "";
-        if (g.s === "F" && crowd) {
-          crowdRes = (crowd === "home") === (g.hs > g.as);
-          cm = crowdRes ? " ✅" : " ❌";
-        }
-        lines.push("網友多數猜 " + (crowd ? (crowd === "home" ? h : a).zh + " 勝" : "五五開") + cm);
-      }
-      var c = pi ? pi.c : (MODEL && g.s !== "F" ? compareModels(a, h, g.n, gameAdj(g)) : null);
-      if (c) {
-        if (pi) modelRes = pi.ok1;
-        lines.push("我們預測 " + (c.w1 === "home" ? h : a).zh + " 勝（" + confHtml(c.p1) + "）" + (pi ? (pi.ok1 ? " ✅" : " ❌") : ""));
-      }
-      info = lines.length ? '<div class="game-pred">' + lines.join("<br>") + "</div>" : "";
-    }
-    return { btns: btns, bar: bar, info: info, crowd: crowdRes, model: modelRes, open: open };
-  }
-
-  // 投票頁：畫出這一天每一場，開賽前顯示兩個投票按鈕，開賽後鎖票，賽後對照「網友猜的」「我們預測的」「實際結果」
-  function drawVote() {
-    var date = voteDate;
-    var games = (gamesByDate[date] || []).filter(function (g) { return g.a && g.h && T[ABBR[g.a]] && T[ABBR[g.h]]; }).map(withLive);
-    var list = $("vote-list");
-    list.innerHTML = "";
-    if (voteState === "err") setVoteMsg("票數暫時讀不到，請晚點再來!!");
-    var crowdOk = 0, crowdN = 0, modelOk = 0, modelN = 0;
-    games.forEach(function (g) {
-      var a = T[ABBR[g.a]], h = T[ABBR[g.h]];
-      var p = voteParts(g, date);
-      if (p.crowd !== null) { crowdN++; if (p.crowd) crowdOk++; }
-      if (p.model !== null) { modelN++; if (p.model) modelOk++; }
-
-      var mid;
-      if (g.s === "F") {
-        var homeWon = g.hs > g.as;
-        mid = '<div class="gm-score"><span class="gm-pts ' + (homeWon ? "lose" : "win") + '">' + g.as + "</span>" +
-          '<span class="gm-final"><b>' + (homeWon ? "▶" : "◀") + "</b>" + finalLabel(g) + "</span>" +
-          '<span class="gm-pts ' + (homeWon ? "win" : "lose") + '">' + g.hs + "</span></div>";
-      } else if ((g.s === "S" || g.s === "L") && liveMidCache[date + "|" + g.a + "|" + g.h]) {
-        mid = liveMidCache[date + "|" + g.a + "|" + g.h];  // 即時比分（開賽後每 30 秒更新）
-      } else {
-        mid = '<div class="game-time">' + g.t + "</div>" +
-          (g.s === "L" ? '<div class="gm-sub live">進行中</div>' : p.open ? "" : '<div class="gm-sub">已開賽</div>');
-      }
-
-      var li = document.createElement("li");
-      li.innerHTML = '<div class="game vote-card"' + ((g.s === "S" || g.s === "L") ? ' data-live="' + g.a + "_" + g.h + '"' : "") + '><div class="gm-row">' + teamCell(a) + '<div class="gm-mid">' + mid + "</div>" +
-        teamCell(h) + "</div>" + p.btns + p.bar + p.info + "</div>";
-      list.appendChild(li);
-    });
-    if (!games.length) list.innerHTML = '<li class="game-empty"><p>' + fmtDate(date) + "沒有比賽。</p></li>";
-    var sum = $("vote-summary");
-    sum.hidden = !(crowdN || modelN);
-    sum.innerHTML = '網友猜對 <span class="ok">' + crowdOk + "</span> / " + crowdN + " 場　我們猜對 <span class=\"ok\">" + modelOk + "</span> / " + modelN + " 場";
-  }
-
-  // 單場頁（賽程點進來的那場）的投票卡片：放在兩隊對戰紀錄下面、本季數據對照上面
-  var matchVote = null;  // { g: 這場比賽, date: 賽程日期 }；不是從賽程點進來的（自選對戰）就是 null
-
-  function showMatchVote(g, date) {
-    matchVote = VOTE_ON && g && date && g.s !== "F" ? { g: g, date: date } : null;  // 已完賽的比賽頁不放投票卡（投票頁的列表還看得到）
-    if (!matchVote) { $("vote-card").hidden = true; return; }
-    if (voteDate !== date) {  // 這一天的票數還沒讀過：讀一次（同一天的其他場、投票頁共用同一份）
-      voteDate = date;
-      votes = {};
-      voteState = "loading";
-      setVoteMsg("");
-      loadVotes(date);
-    }
-    drawMatchVote();
-  }
-
-  function drawMatchVote() {
-    var card = $("vote-card");
-    if (!matchVote || matchVote.date !== voteDate) { card.hidden = true; return; }
-    var p = voteParts(matchVote.g, matchVote.date);
-    card.innerHTML = "<h2>🗳️ 投票" + (p.open ? "：誰會贏？" : "") + "</h2>" +
-      (voteState === "err" ? '<p class="vote-msg">票數暫時讀不到，請晚點再來!!</p>' : "") +
-      p.btns + p.bar + p.info;
+  // 一張留言卡片：標題 + 輸入框 + 留言列表。輸入框只建一次，之後只更新列表，不會因為讀到新留言就把你打到一半的字洗掉
+  function showComments(g) {
+    var card = $("comment-card");
+    if (!COMMENT_DB || !g || !g.a || !g.d || !g.h) { card.hidden = true; cmt.key = null; return; }
+    var key = commentKey(g);
+    cmt = { key: key, state: "loading", list: [] };
+    card.innerHTML = foldHtml("comment", "💬 留言",
+      '<form class="cm-form" autocomplete="off"><textarea class="cm-input" maxlength="' + COMMENT_MAX + '" rows="3" placeholder="說點什麼吧（匿名，最多 ' + COMMENT_MAX + ' 字）"></textarea>' +
+      '<div class="cm-bar"><span class="cm-count">0 / ' + COMMENT_MAX + '</span><button type="submit" class="cm-send">送出</button></div></form>' +
+      '<p class="cm-msg" role="alert" hidden></p><ul class="cm-list"></ul>');
     card.hidden = false;
+    drawComments();
+    loadComments(key);
   }
 
-  // 票數有變動：投票頁、單場頁哪個看得到就重畫哪個
-  function redrawVote() {
-    if (!$("view-vote").hidden) drawVote();
-    drawMatchVote();
+  function setCommentMsg(text) {
+    var m = $("comment-card").querySelector(".cm-msg");
+    if (!m) return;
+    m.hidden = !text;
+    m.textContent = text || "";
   }
 
-  function castVote(date, key, side) {
-    var v = votes[key] || (votes[key] = {});
-    v[side] = (v[side] || 0) + 1;  // 先在畫面上加 1，不用等伺服器
-    redrawVote();
-    var body = {};
-    body[side] = { ".sv": { increment: 1 } };  // 叫伺服器自己加 1，兩個人同時投也不會互相蓋掉
-    votePending++;
-    fetch(voteUrl(date + "/" + key), { method: "PATCH", body: JSON.stringify(body) })
-      .then(function (r) { if (!r.ok) throw new Error(r.status); })
-      .catch(function () {
-        v[side]--;
-        if (voteDate === date) { setVoteMsg("這票沒送出去，請晚點再試!!"); redrawVote(); }
+  function drawComments() {  // 只更新標題的則數和列表；留言一律用 textContent 放進畫面（不會被當成 HTML 執行）
+    var card = $("comment-card"), ul = card.querySelector(".cm-list"), sum = card.querySelector("summary");
+    if (!ul || !sum) return;
+    sum.textContent = "💬 留言" + (cmt.state === "ok" && cmt.list.length ? "（" + cmt.list.length + (cmt.list.length >= COMMENT_SHOW ? "+" : "") + "）" : "");
+    ul.textContent = "";
+    if (cmt.state === "err") return;  // 讀不到就不顯示任何字（輸入框還是在；送出失敗會另外提示）
+    if (cmt.state !== "ok" || !cmt.list.length) {
+      var empty = document.createElement("li");
+      empty.className = "cm-empty";
+      empty.textContent = cmt.state === "loading" ? "載入中…" : "還沒有人留言，來當第一個吧";
+      ul.appendChild(empty);
+      return;
+    }
+    cmt.list.forEach(function (c) {
+      var li = document.createElement("li"), t = document.createElement("span"), p = document.createElement("p");
+      t.className = "cm-t";
+      t.textContent = commentTime(c.t);
+      p.className = "cm-m";
+      p.textContent = c.m;
+      li.appendChild(t);
+      li.appendChild(p);
+      ul.appendChild(li);
+    });
+  }
+
+  function loadComments(key) {  // 讀這場最新的幾則（用自動編號排序，編號就是依時間產生的），新的在上面
+    var q = "?orderBy=" + encodeURIComponent('"$key"') + "&limitToLast=" + COMMENT_SHOW;
+    return fetch(commentUrl(key, q), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        if (cmt.key !== key) return;  // 已經換成別場了
+        d = d || {};
+        cmt.list = Object.keys(d).sort().reverse().map(function (id) { return { id: id, m: String((d[id] && d[id].m) || ""), t: Number(d[id] && d[id].t) || 0 }; });
+        cmt.state = "ok";
+        drawComments();
       })
-      .then(function () {
-        votePending--;
-        if (!votePending && voteDate === date) loadVotes(date);  // 都送完了，重新讀一次，連別人剛投的一起更新
-      });
+      .catch(function () { if (cmt.key === key) { cmt.state = "err"; drawComments(); } });
   }
 
-  // 四個畫面：home 首頁、schedule 賽程、vote 投票、matchup 自選對戰（含賽程點進去的單場頁）、stats 準確率
+  function sendComment(form) {
+    var box = form.querySelector(".cm-input"), btn = form.querySelector(".cm-send");
+    var text = box.value.trim();
+    if (!text || !cmt.key) return;
+    var last = 0;
+    try { last = Number(localStorage.getItem("nba-cm-last")) || 0; } catch (e) { /* 讀不到就當作沒留過 */ }
+    var wait = COMMENT_GAP - (Date.now() - last);
+    if (wait > 0) { setCommentMsg("慢一點，請等 " + Math.ceil(wait / 1000) + " 秒再留言"); return; }
+    var key = cmt.key;
+    btn.disabled = true;
+    setCommentMsg("");
+    fetch(commentUrl(key), { method: "POST", body: JSON.stringify({ m: text.slice(0, COMMENT_MAX), t: { ".sv": "timestamp" } }) })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); })
+      .then(function () {
+        try { localStorage.setItem("nba-cm-last", String(Date.now())); } catch (e) { /* 存不了就算了 */ }
+        if (cmt.key === key) { box.value = ""; form.querySelector(".cm-count").textContent = "0 / " + COMMENT_MAX; return loadComments(key); }
+      })
+      .catch(function () { setCommentMsg("留言沒送出去，請晚點再試!!"); })
+      .then(function () { btn.disabled = false; });
+  }
+
+  // 四個畫面：home 首頁、schedule 賽程、matchup 自選對戰（含賽程點進去的單場頁）、stats 準確率
   function showTab(name) {
-    ["home", "schedule", "vote", "matchup", "stats"].forEach(function (v) {
+    ["home", "schedule", "matchup", "stats"].forEach(function (v) {
       $("view-" + v).hidden = v !== name;
       $("tab-" + v).setAttribute("aria-current", v === name ? "page" : "false");
     });
-    if (name !== "schedule" && name !== "vote" && name !== "home") stopLive();  // 離開賽程、投票、首頁就不用再更新即時比分
+    if (name !== "schedule" && name !== "home") stopLive();  // 離開賽程、首頁就不用再更新即時比分
     if (name !== "home" && name !== "stats") stopFinalsPoll();  // 離開首頁和準確率就不用再看有沒有新打完的比賽
     $("tabs").hidden = !hasUpcoming() || name === "home";  // 首頁自己就是選單，不再顯示分頁列
   }
@@ -1662,7 +1639,6 @@
       box.hidden = true;
       homeDate = null;
     }
-    $("home-vote").hidden = !VOTE_ON;
     drawHomeStats();
     renderStandings();
   }
@@ -1854,7 +1830,7 @@
   // 依網址決定要顯示哪一層、哪一場
   function applyHash() {
     var p = readHash();
-    if (hasUpcoming() && (p.get("tab") === "home" || (!p.get("tab") && !p.get("away") && !p.get("home")))) {
+    if (hasUpcoming() && (p.get("tab") === "home" || p.get("tab") === "vote" || (!p.get("tab") && !p.get("away") && !p.get("home")))) {  // 舊的「投票專區」網址（#tab=vote）也導回首頁
       showTab("home");
       renderHome();
       startFinalsPoll(function () { if (!$("view-home").hidden) drawHomeStats(); });
@@ -1864,12 +1840,6 @@
       showTab("stats");
       renderStats();
       startFinalsPoll(function () { if (!$("view-stats").hidden) renderStats(); });
-      return;
-    }
-    if (VOTE_ON && p.get("tab") === "vote") {
-      showTab("vote");
-      var vd = p.get("date");
-      renderVote(isDate(vd) && gamesByDate[vd] ? vd : (nextUpcomingDate() || lastDate));
       return;
     }
     if (hasUpcoming() && p.get("tab") === "schedule") {
@@ -1914,7 +1884,7 @@
 
   // 使用者切換淺色/深色模式時，隊色要跟著重新調整
   // 主題選擇（白色 / 卡其 / 深色 / 黑色）的按鈕、記憶、亮起都在 index.html 的 script 裡處理；這裡只負責換色之後重畫
-  var onTheme = function () { render(); if (VOTE_ON && voteDate) redrawVote(); };  // 隊色、投票條的顏色要跟著新的底色重算
+  var onTheme = function () { render(); };  // 隊色要跟著新的底色重算
   window.addEventListener("nba-theme", onTheme);
   var darkMq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
   if (darkMq) {  // 沒選過主題、系統深淺色切換時，隊色也要跟著重新調整
@@ -1935,17 +1905,11 @@
       location.hash = hashOf({ tab: "schedule", date: curDate || nextGameDate(todayTW()) || lastDate });
     });
     $("tab-home").addEventListener("click", function () { location.hash = hashOf({ tab: "home" }); });
-    if (VOTE_ON) {
-      // 分頁列不放「投票」按鈕：只有首頁的「投票專區」卡片進得去
-      $("vote-prev").addEventListener("click", function () { goVoteDate(prevMatchDay(voteDate)); });
-      $("vote-next").addEventListener("click", function () { goVoteDate(nextMatchDay(voteDate)); });
-      var onVoteClick = function (e) {
-        var b = e.target.closest ? e.target.closest(".vote-btn") : null;
-        if (b) castVote(voteDate, b.getAttribute("data-k"), b.getAttribute("data-s"));
-      };
-      $("vote-list").addEventListener("click", onVoteClick);
-      $("vote-card").addEventListener("click", onVoteClick);
-    }
+    // 留言卡片（比賽頁）：輸入框的字數、送出（卡片內容是 JS 畫的，事件掛在卡片上）
+    $("comment-card").addEventListener("input", function (e) {
+      if (e.target.classList && e.target.classList.contains("cm-input")) e.target.closest("form").querySelector(".cm-count").textContent = e.target.value.length + " / " + COMMENT_MAX;
+    });
+    $("comment-card").addEventListener("submit", function (e) { e.preventDefault(); sendComment(e.target); });
     $("st-east").addEventListener("click", function () { stConf = "E"; renderStandings(); });
     $("st-west").addEventListener("click", function () { stConf = "W"; renderStandings(); });
     $("inj-home").addEventListener("toggle", function () { if (this.open) renderInjHome(); });  // 點開才去 ESPN 抓傷病

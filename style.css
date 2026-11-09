@@ -273,27 +273,21 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .home-games .game-list { margin-top: 10px; }
 .gm-pts.pred { font-size: 1.3rem; }
 
-/* 投票專區：兩個投票按鈕 + 一條票數比例條（客隊在左、主隊在右） */
-.vote-date { flex: 1; text-align: center; font-size: 1.1rem; font-weight: 800; }
-#view-vote .datebar { margin-bottom: 8px; }
-.vote-intro { margin: 0 0 12px; text-align: center; color: var(--muted); font-size: .85rem; }
-.vote-msg { margin: 0 0 12px; text-align: center; color: var(--bad); font-weight: 600; }
-.vote-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-.vote-btn {
-  font: inherit; font-weight: 700; padding: 10px 6px;
-  color: var(--text); background: var(--surface);
-  border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
-}
-.vote-btn:hover { border-color: var(--accent); color: var(--accent); }
-.vote-btn:active { transform: scale(.97); }
-.vote-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.vote-bar { display: flex; height: 10px; margin-top: 12px; overflow: hidden; background: var(--cold); border-radius: 999px; }
-.vote-bar.empty { background: var(--line); }
-.vote-bar .vb-a { display: block; background: var(--accent); transition: width .25s; }
-.vote-nums { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.vote-nums span:first-child { color: var(--accent); }
-.vote-nums span:last-child { color: var(--cold); text-align: right; }
-.home-vote { text-align: center; }
+/* 留言卡片（比賽頁）：輸入框 + 字數 / 送出 + 留言列表（新的在上面，匿名） */
+.cm-form { margin-top: 2px; }
+.cm-input { width: 100%; box-sizing: border-box; font: inherit; font-size: .95rem; padding: 10px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; resize: vertical; min-height: 4.2em; }
+.cm-input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.cm-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.cm-count { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.cm-send { font: inherit; font-weight: 700; padding: 6px 18px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+.cm-send:hover { border-color: var(--accent); color: var(--accent); }
+.cm-send:disabled { opacity: .5; cursor: default; }
+.cm-msg { margin: 8px 0 0; text-align: center; color: var(--bad); font-weight: 600; font-size: .85rem; }
+.cm-list { list-style: none; margin: 12px 0 0; padding: 0; }
+.cm-list li { padding: 10px 0; border-top: 1px solid var(--line); }
+.cm-t { display: block; color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
+.cm-m { margin: 3px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .95rem; }
+.cm-list .cm-empty { text-align: center; color: var(--muted); font-size: .85rem; border-top: 0; }
 
 
 /* 得分前三球員：左客隊、右主隊，同一排是同名次；每人四個數字（得分、籃板、助攻、+/-） */
@@ -650,9 +644,39 @@ td:first-child, th:first-child { text-align: left; }
 .odds-picks .op-n { text-align: left; }
 .odds-picks .op-v { text-align: center; }
 .odds-picks .op-m { text-align: center; }
+.ot-details > summary { cursor: pointer; font-weight: 700; text-align: center; list-style: none; padding: 2px 0; }  /* 開盤 / 收盤賠率：折疊（點開才看到表格） */
+.fold[open] > summary { margin-bottom: 12px; }  /* 折疊卡片：展開後標題和內容之間留空 */
+.ot-details > summary::-webkit-details-marker { display: none; }
+.ot-details > summary::after { content: " ▾"; color: var(--muted); }
+.ot-details[open] > summary::after { content: " ▴"; }
+.ot-g { margin-top: 12px; font-variant-numeric: tabular-nums; }  /* 開盤 / 收盤：三欄（隊 | 開盤 | 收盤），每個盤口一小節，數字固定寬度、上下對齊 */
+.ot-h, .ot-r { display: grid; grid-template-columns: 3.6em 1fr 1fr; align-items: center; column-gap: 8px; }
+.ot-h { padding-bottom: 6px; color: var(--muted); font-size: .8rem; font-weight: 600; text-align: center; }
+.ot-sec { margin-top: 12px; padding-left: 8px; border-left: 3px solid var(--line); color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; }
+.ot-r { padding: 5px 0; font-size: .92rem; }
+.ot-t { font-weight: 700; text-align: left; white-space: nowrap; }
+.ot-cell { display: flex; justify-content: center; align-items: baseline; gap: 8px; padding: 3px 0; border-radius: 8px; white-space: nowrap; }
+.ot-cell .ot-ln { min-width: 3.6em; text-align: right; font-weight: 600; font-style: normal; }
+.ot-cell .ot-od { min-width: 2.6em; text-align: left; color: var(--muted); font-style: normal; }
+.ot-cell .ot-solo { min-width: 0; text-align: center; }
+.ot-cell .ot-od.ot-solo { color: var(--text); }
+.ot-cell.ot-cl { font-weight: 700; }  /* 最終那一欄數字加粗（最準），沒有底色 */
+.ot-cell.ot-cl .ot-ln, .ot-cell.ot-cl .ot-od { font-weight: 700; }
+.ot-cell.ot-cl .ot-od { color: var(--text); }
+@media (max-width: 360px) { .ot-h, .ot-r { grid-template-columns: 3em 1fr 1fr; column-gap: 4px; } .ot-cell { gap: 5px; } .ot-r { font-size: .86rem; } .ot-cell .ot-ln { min-width: 3.3em; } .ot-cell .ot-od { min-width: 2.4em; } }
+.ot-wr { display: grid; grid-template-columns: 3.6em 1fr; align-items: center; column-gap: 8px; padding: 5px 0; font-size: .92rem; }  /* 賭盤勝率條：標籤（初始 / 最終）| 客隊 % 條 主隊 % */
+.ot-wl { font-weight: 700; }
+.ot-wp { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ot-wp b { min-width: 2.4em; font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: left; }
+.ot-wp b:first-child { text-align: right; }
+.ot-wbar { flex: 1; display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--line); gap: 1px; }
+.ot-wbar > span { display: block; height: 100%; }
+.ot-wbar > span:last-child { flex: 1; }
+.ot-wlg .ot-wp { justify-content: space-between; font-size: .82rem; font-weight: 700; padding: 0 2px; }  /* 條上面標出左右各是哪一隊 */
+.ot-note { margin: 8px 0 0; text-align: center; color: var(--muted); font-size: .72rem; }
 .odds-title { margin: 0 0 8px; text-align: center; font-weight: 700; }
 .odds-msg { margin: 0; text-align: center; color: var(--muted); font-size: .9rem; }
-.odds-note { margin: -6px 0 16px; text-align: center; color: var(--muted); font-size: .78rem; }
+.odds-note { margin: 4px 0 16px; text-align: center; color: var(--muted); font-size: .78rem; }
 #odds-body td[colspan] { text-align: center; }
 
 .foot { text-align: center; color: var(--muted); font-size: .78rem; margin-top: 24px; }
@@ -666,3 +690,4 @@ td:first-child, th:first-child { text-align: left; }
   .picker { grid-template-columns: 1fr 1fr; }
   .swap { grid-column: 1 / -1; grid-row: 2; justify-self: center; width: 40px; height: 40px; }
 }
+#odds-card[hidden] ~ .odds-note { display: none; }  /* 沒有賭盤卡片時，下面的資料來源說明也不顯示 */

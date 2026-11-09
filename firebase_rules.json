@@ -2,14 +2,15 @@
   "rules": {
     ".read": false,
     ".write": false,
-    "votes": {
+    "comments": {
       ".read": true,
-      "$date": {
-        ".validate": "$date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
-        "$game": {
-          ".validate": "$game.matches(/^[A-Z]{2,4}_[A-Z]{2,4}$/)",
-          "a": { ".write": true, ".validate": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1" },
-          "h": { ".write": true, ".validate": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1" },
+      "$game": {
+        ".validate": "$game.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}_[A-Z]{2,4}_[A-Z]{2,4}$/)",
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['m', 't'])",
+          "m": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 200" },
+          "t": { ".validate": "newData.val() == now" },
           "$other": { ".validate": false }
         }
       }

@@ -452,9 +452,19 @@ def build_schedule(conn):
         if rec:  # 記下來的盤口：sp = 主隊讓分、ou = 總分（已完賽預測頁、已開賽的比賽顯示用，ESPN 開賽後就不給盤口了；開盤和賠率留在 raw/ 的紀錄檔）
             item["sp"], item["ou"] = rec["spread_home"][1], rec["total"][1]
             ml = rec.get("moneyline") or {}
+            if s in ("F", "S", "L"):  # 賭盤變化卡片用（已完賽、還沒開賽、進行中都有）：開盤 / 收盤的數值和賠率（小數賠率），已完賽頁的賭盤表格用：sp 主隊讓分、so 讓分賠率 [主, 客]、t 總分、to 總分賠率 [大, 小]、ml 勝負盤賠率 [主, 客]，每項都是 [開盤, 收盤]
+                dec2 = lambda pair: [None if x is None else round(american_to_decimal(x), 2) for x in (pair or [None, None])[:2]]
+                so, tot_o, ml_o = rec.get("spread_odds") or {}, rec.get("total_odds") or {}, ml
+                item["od"] = {"sp": rec["spread_home"], "so": [dec2(so.get("home")), dec2(so.get("away"))],
+                              "t": rec["total"], "to": [dec2(tot_o.get("over")), dec2(tot_o.get("under"))],
+                              "ml": [dec2(ml_o.get("home")), dec2(ml_o.get("away"))]}
+                mh0, ma0 = ml_o.get("home") or [None, None], ml_o.get("away") or [None, None]
+                # q = 主隊的賭盤勝率（去抽水，整數 %）[初始, 最終]；賭盤變化卡片的「賭盤勝率」那一節用
+                item["od"]["q"] = [round(fair_probs(american_to_decimal(mh0[k]), american_to_decimal(ma0[k]))[0] * 100)
+                                   if len(mh0) > k and len(ma0) > k and mh0[k] is not None and ma0[k] is not None else None for k in (0, 1)]
             mh, ma = ml.get("home") or [], ml.get("away") or []
-            if s == "S" and len(mh) >= 2 and len(ma) >= 2 and mh[1] is not None and ma[1] is not None:
-                # 還沒開打：賭盤預估勝率 mq = 主隊的去抽水勝率（用「目前」勝負盤賠率，四捨五入成整數百分比），賽程卡片的勝率條用
+            if s in ("S", "F") and len(mh) >= 2 and len(ma) >= 2 and mh[1] is not None and ma[1] is not None:
+                # 賭盤預估勝率 mq = 主隊的去抽水勝率（還沒開打用「目前」勝負盤賠率、已完賽用收盤賠率，四捨五入成整數百分比），賽程卡片的勝率條用
                 item["mq"] = round(fair_probs(american_to_decimal(mh[1]), american_to_decimal(ma[1]))[0] * 100)
         games.append(item)
     games.sort(key=lambda x: (x["d"], x["t"], x["a"] or "", x["h"] or ""))
@@ -697,13 +707,21 @@ def apply_injury_adj(conn, schedule, tiers, backfill_games=None):
         mem.update(filled)
         print(f"傷病扣分（事後回補）：2026-11-08 以前 {len(filled)} 場有人缺陣被扣分")
 
-    def deductions(team_name):
-        """這隊現在被扣的 [(球員, 扣分)]：名單裡標 Out、本季出賽 >= INJURY_MIN_GP 場、等級有扣分的人。"""
+    def back_for(ret, game_et):
+        """預計回歸日（美國日期）剛好是這場比賽日、或前一天：ESPN 的「Out」多半是上一場的狀態，還沒更新成這場的出賽狀態，
+        這場他很可能回來（出賽成疑），不當成缺陣扣分。回歸日早更多天、名單卻還寫 Out 的（逾期很久），仍當成缺陣。"""
+        if not ret or not game_et:
+            return False
+        d = (datetime.strptime(game_et, "%Y-%m-%d") - datetime.strptime(ret, "%Y-%m-%d")).days
+        return 0 <= d <= 1
+
+    def deductions(team_name, game_et=None):
+        """這隊現在被扣的 [(球員, 扣分)]：名單裡標 Out、本季出賽 >= INJURY_MIN_GP 場、等級有扣分的人；game_et = 這場的美國日期，預計這場回歸的不扣（見 back_for）。"""
         mine = {p["id"]: p for p in tiers["teams"].get(team_name, [])}
         out = []
         for r in snap["teams"].get(team_name, []):
             p = mine.get(r["id"])
-            if r["s"] != "Out" or not p or p["gp"] < INJURY_MIN_GP:
+            if r["s"] != "Out" or not p or p["gp"] < INJURY_MIN_GP or back_for(r.get("r"), game_et):
                 continue
             d = INJURY_DEDUCT.get(p["t"], 0.0)
             if d > 0:
@@ -714,7 +732,8 @@ def apply_injury_adj(conn, schedule, tiers, backfill_games=None):
     if snap:
         fresh = datetime.strptime(snap["fetched"], "%Y-%m-%dT%H:%MZ")
         schedule["injAsOf"] = snap["fetched"]
-        cur = {abbr: deductions(name) for abbr, name in abbr_name.items()}
+        today_et = (now - timedelta(hours=6)).strftime("%Y-%m-%d")  # 現在的美國日期（現在 UTC - 6 小時；自選對戰用）
+        cur = {abbr: deductions(name, today_et) for abbr, name in abbr_name.items()}
         schedule["inj"] = {a: sum(d for _, d in v) for a, v in cur.items() if v}
         schedule["injn"] = {a: [[n, d] for n, d in v] for a, v in cur.items() if v}
     n_new = n_frozen = 0
@@ -725,7 +744,8 @@ def apply_injury_adj(conn, schedule, tiers, backfill_games=None):
         start_utc = datetime.strptime(g["d"] + " " + g["t"], "%Y-%m-%d %H:%M") - timedelta(hours=8)
         if g["s"] == "S" and now < start_utc <= now + timedelta(hours=INJURY_HORIZON_HOURS) and snap \
                 and now - fresh < timedelta(hours=INJURY_STALE_HOURS):
-            jp = [["a", n, d] for n, d in deductions(abbr_name[g["a"]])] + [["h", n, d] for n, d in deductions(abbr_name[g["h"]])]
+            et_day = (start_utc - timedelta(hours=6)).strftime("%Y-%m-%d")  # 這場的美國日期（開賽時間 UTC - 6 小時，和 apply_h2h_pace_adj 同一種算法）
+            jp = [["a", n, d] for n, d in deductions(abbr_name[g["a"]], et_day)] + [["h", n, d] for n, d in deductions(abbr_name[g["h"]], et_day)]
             if jp:
                 mem[key] = {"ja": sum(d for s, _, d in jp if s == "a"), "jh": sum(d for s, _, d in jp if s == "h"), "jp": jp, "at": snap["fetched"]}
             else:
