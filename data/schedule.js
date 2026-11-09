@@ -68,10 +68,10 @@ window.NBA_SCHEDULE = {"season":"2026-27","timezone":"Asia/Taipei","b2bDeduct":2
 {"d":"2026-11-10","t":"08:00","a":"LAL","h":"ATL","s":"S","n":false,"tag":null,"as":null,"hs":null,"b":"a","sp":2.5,"ou":235.5,"mq":44,"ja":3.0,"jh":0,"jp":[["a","Luka Doncic",3.0]],"pt":1.4},
 {"d":"2026-11-10","t":"08:00","a":"WAS","h":"DET","s":"S","n":false,"tag":null,"as":null,"hs":null,"b":"h","sp":-10.5,"ou":218.5,"mq":79,"pt":1.6},
 {"d":"2026-11-10","t":"08:30","a":"MEM","h":"TOR","s":"S","n":false,"tag":null,"as":null,"hs":null,"sp":-3.5,"ou":230.5,"mq":58,"ja":1.5,"jh":0,"jp":[["a","Isaiah Stewart",1.5]],"pt":-1.2},
-{"d":"2026-11-10","t":"09:00","a":"IND","h":"DAL","s":"S","n":false,"tag":null,"as":null,"hs":null,"b":"h","sp":-3.5,"ou":222.5,"mq":60,"ja":2.0,"jh":0,"jp":[["a","Tyrese Haliburton",2.0]],"pt":3.2},
+{"d":"2026-11-10","t":"09:00","a":"IND","h":"DAL","s":"S","n":false,"tag":null,"as":null,"hs":null,"b":"h","sp":-2.5,"ou":222.5,"mq":58,"ja":2.0,"jh":0,"jp":[["a","Tyrese Haliburton",2.0]],"pt":3.2},
 {"d":"2026-11-10","t":"09:30","a":"DEN","h":"HOU","s":"S","n":false,"tag":null,"as":null,"hs":null,"sp":-8.5,"ou":217.5,"mq":75,"pt":-4.3},
-{"d":"2026-11-10","t":"10:00","a":"SAS","h":"PHX","s":"S","n":false,"tag":null,"as":null,"hs":null,"sp":8.5,"ou":228.5,"mq":25,"pt":-1.8},
-{"d":"2026-11-10","t":"11:00","a":"NOP","h":"GSW","s":"S","n":false,"tag":null,"as":null,"hs":null,"b":"a","sp":-8.5,"ou":231.5,"mq":76,"pt":-3.6},
+{"d":"2026-11-10","t":"10:00","a":"SAS","h":"PHX","s":"S","n":false,"tag":null,"as":null,"hs":null,"sp":8.5,"ou":227.5,"mq":25,"pt":-1.8},
+{"d":"2026-11-10","t":"11:00","a":"NOP","h":"GSW","s":"S","n":false,"tag":null,"as":null,"hs":null,"b":"a","sp":-9.5,"ou":232.5,"mq":76,"pt":-3.6},
 {"d":"2026-11-11","t":"08:30","a":"MIL","h":"NYK","s":"S","n":false,"tag":null,"as":null,"hs":null,"pt":-4.5},
 {"d":"2026-11-11","t":"09:00","a":"BOS","h":"PHI","s":"S","n":false,"tag":null,"as":null,"hs":null,"sp":1.5,"ou":215.5,"mq":50,"pt":-5.7},
 {"d":"2026-11-11","t":"10:00","a":"LAC","h":"PHX","s":"S","n":false,"tag":null,"as":null,"hs":null,"b":"h","pt":-5.6},
@@ -1123,4 +1123,4 @@ window.NBA_SCHEDULE = {"season":"2026-27","timezone":"Asia/Taipei","b2bDeduct":2
 {"d":"2027-04-12","t":"08:30","a":"PHX","h":"LAL","s":"S","n":false,"tag":null,"as":null,"hs":null,"pt":-4.3},
 {"d":"2027-04-12","t":"08:30","a":"POR","h":"SAS","s":"S","n":false,"tag":null,"as":null,"hs":null,"pt":-0.9},
 {"d":"2027-04-12","t":"08:30","a":"SAC","h":"LAC","s":"S","n":false,"tag":null,"as":null,"hs":null,"pt":-4.3},
-{"d":"2027-04-12","t":"08:30","a":"UTA","h":"GSW","s":"S","n":false,"tag":null,"as":null,"hs":null,"pt":0.1}],"injAsOf":"2026-11-09T07:11Z","inj":{"BKN":1.5,"CHA":3.5,"CHI":1.5,"IND":2.0,"LAL":3.0,"MEM":1.5,"MIN":3.0,"OKC":3.0,"POR":1.5,"SAC":1.5,"UTA":3.0},"injn":{"BKN":[["Mikel Brown Jr.",1.5]],"CHA":[["Dennis Schroder",1.5],["Brandon Miller",2.0]],"CHI":[["Norman Powell",1.5]],"IND":[["Tyrese Haliburton",2.0]],"LAL":[["Luka Doncic",3.0]],"MEM":[["Isaiah Stewart",1.5]],"MIN":[["Anthony Edwards",3.0]],"OKC":[["Chet Holmgren",1.5],["Jalen Williams",1.5]],"POR":[["Ja Morant",1.5]],"SAC":[["Domantas Sabonis",1.5]],"UTA":[["Lauri Markkanen",1.5],["Jaren Jackson Jr.",1.5]]}};
+{"d":"2027-04-12","t":"08:30","a":"UTA","h":"GSW","s":"S","n":false,"tag":null,"as":null,"hs":null,"pt":0.1}],"injAsOf":"2026-11-09T10:19Z","inj":{"BKN":1.5,"CHA":3.5,"CHI":1.5,"IND":2.0,"LAL":3.0,"MEM":1.5,"MIN":3.0,"OKC":3.0,"POR":1.5,"SAC":1.5,"UTA":3.0},"injn":{"BKN":[["Mikel Brown Jr.",1.5]],"CHA":[["Dennis Schroder",1.5],["Brandon Miller",2.0]],"CHI":[["Norman Powell",1.5]],"IND":[["Tyrese Haliburton",2.0]],"LAL":[["Luka Doncic",3.0]],"MEM":[["Isaiah Stewart",1.5]],"MIN":[["Anthony Edwards",3.0]],"OKC":[["Chet Holmgren",1.5],["Jalen Williams",1.5]],"POR":[["Ja Morant",1.5]],"SAC":[["Domantas Sabonis",1.5]],"UTA":[["Lauri Markkanen",1.5],["Jaren Jackson Jr.",1.5]]}};
