@@ -648,9 +648,10 @@ td:first-child, th:first-child { text-align: left; }
 .fold[open] > summary { margin-bottom: 12px; }  /* 折疊卡片：展開後標題和內容之間留空 */
 .ot-details > summary::-webkit-details-marker { display: none; }
 .ot-details > summary::after { content: " ▾"; color: var(--muted); }
+.ot-details > summary::before { content: " ▾"; visibility: hidden; }  /* 左邊放一個看不見、跟右邊箭頭一樣寬的字，標題文字才會真的置中（箭頭不會把字推向左） */
 .ot-details[open] > summary::after { content: " ▴"; }
 .ot-g { margin-top: 12px; font-variant-numeric: tabular-nums; }  /* 開盤 / 收盤：三欄（隊 | 開盤 | 收盤），每個盤口一小節，數字固定寬度、上下對齊 */
-.ot-h, .ot-r { display: grid; grid-template-columns: 3.6em 1fr 1fr; align-items: center; column-gap: 8px; }
+.ot-h, .ot-r { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; column-gap: 8px; }  /* 三等分：隊名 | 初始 | 最終；中間那欄（初始）剛好在卡片正中間，和上面「賭盤變化」標題對齊 */
 .ot-h { padding-bottom: 6px; color: var(--muted); font-size: .8rem; font-weight: 600; text-align: center; }
 .ot-sec { margin-top: 12px; padding-left: 8px; border-left: 3px solid var(--line); color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; }
 .ot-r { padding: 5px 0; font-size: .92rem; }
@@ -663,10 +664,11 @@ td:first-child, th:first-child { text-align: left; }
 .ot-cell.ot-cl { font-weight: 700; }  /* 最終那一欄數字加粗（最準），沒有底色 */
 .ot-cell.ot-cl .ot-ln, .ot-cell.ot-cl .ot-od { font-weight: 700; }
 .ot-cell.ot-cl .ot-od { color: var(--text); }
-@media (max-width: 360px) { .ot-h, .ot-r { grid-template-columns: 3em 1fr 1fr; column-gap: 4px; } .ot-cell { gap: 5px; } .ot-r { font-size: .86rem; } .ot-cell .ot-ln { min-width: 3.3em; } .ot-cell .ot-od { min-width: 2.4em; } }
-.ot-wr { display: grid; grid-template-columns: 3.6em 1fr; align-items: center; column-gap: 8px; padding: 5px 0; font-size: .92rem; }  /* 賭盤勝率條：標籤（初始 / 最終）| 客隊 % 條 主隊 % */
+@media (max-width: 360px) { .ot-h, .ot-r { column-gap: 4px; } .ot-cell { gap: 5px; } .ot-r { font-size: .86rem; } .ot-cell .ot-ln { min-width: 3.3em; } .ot-cell .ot-od { min-width: 2.4em; } }
+.ot-wr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; column-gap: 8px; padding: 5px 0; font-size: .92rem; }  /* 賭盤勝率條：標籤（初始 / 最終）| 客隊 % 條 主隊 % */
 .ot-wl { font-weight: 700; }
-.ot-wp { display: flex; align-items: center; gap: 6px; min-width: 0; }
+@media (max-width: 360px) { .ot-wr { column-gap: 4px; } }  /* 窄螢幕：欄寬和上面的表格一樣（要放在 .ot-wr 的主規則後面才會生效） */
+.ot-wp { display: flex; align-items: center; gap: 6px; min-width: 0; grid-column: 2 / 4; }  /* 勝率條佔「初始」「最終」兩欄的寬度 */
 .ot-wp b { min-width: 2.4em; font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: left; }
 .ot-wp b:first-child { text-align: right; }
 .ot-wbar { flex: 1; display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--line); gap: 1px; }
