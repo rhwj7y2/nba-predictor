@@ -308,6 +308,9 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .pl-empty { color: var(--muted); text-align: center; }
 .pl-note { margin: 6px 0 0; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: .72rem; text-align: center; }  /* 輪替陣容卡片最下面的小說明 */
 .rp-row { padding: 9px 0; border-top: 1px solid var(--line); }  /* 本季輪替陣容球員：每人兩行（名字、七項數據） */
+.rp-inj { margin-top: 3px; text-align: center; line-height: 1.2; }  /* 輪替陣容球員目前的傷病狀態：名字下面獨立一行，名字維持置中不被推歪 */
+.rp-inj .inj-st { font-size: .66rem; padding: 0 7px; }
+.rp-injd { margin-left: 6px; color: var(--muted); font-size: .68rem; }
 .rp-stats { grid-template-columns: repeat(7, minmax(0, 1fr)); margin-top: 5px; }
 .rp-stats .pl-st b { font-size: .8rem; }
 .rp-stats .pl-st span { font-size: .6rem; white-space: nowrap; }

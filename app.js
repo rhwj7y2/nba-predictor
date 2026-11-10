@@ -807,6 +807,32 @@
   // 每人兩行：名字、場均上場 / 得分 / 籃板 / 助攻 / 投籃命中率 / 三分命中率 / 正負值（命中率是本季總命中 ÷ 總出手）
   var ROTATION_MIN = 12;
   var playersSide = "a", playersKey = "", playersCtx = null;
+  var playersInj = {}, playersInjToken = 0;  // 球員編號 -> { cls, text, note }：現在的傷病狀態（ESPN 即時抓，跟傷病名單卡片同一份資料）
+
+  // 傷病狀態 -> 標籤：預計缺陣（紅）、預計這場回歸 / 每日觀察（重點色）；其他狀態照 ESPN 寫的。不寫預計回歸日；整季報銷的在後面註明
+  function injTag(x, abbr) {
+    var ret = (x.details && x.details.returnDate) || "";
+    if (backForNextGame(x, abbr)) return { cls: "dtd", text: "預計回歸", note: "出賽成疑" };
+    if (x.status === "Out") return { cls: "out", text: "預計缺陣", note: ret >= SEASON_END_US ? "整季報銷" : "" };
+    if (x.status === "Day-To-Day") return { cls: "dtd", text: "每日觀察", note: "" };
+    return { cls: "", text: x.status || "", note: "" };
+  }
+
+  function loadPlayersInj() {
+    var c = playersCtx, token = ++playersInjToken;
+    fetchInjuries().then(function (res) {
+      if (token !== playersInjToken) return;
+      var m = {};
+      [[c.aKey, c.a.abbr], [c.hKey, c.h.abbr]].forEach(function (t) {
+        (res.by[t[0]] || []).forEach(function (x) {
+          var id = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));
+          if (id && x.status) m[id[1]] = injTag(x, t[1]);
+        });
+      });
+      playersInj = m;
+      drawPlayers();
+    }, function () { /* 抓不到就沒有註記，卡片照常 */ });
+  }
 
   function rotationOf(k) {
     var TR = window.NBA_PLAYER_TIERS && window.NBA_PLAYER_TIERS.teams;
@@ -816,7 +842,10 @@
 
   function rotationRow(p, color) {
     var dash = function (v) { return v == null ? "—" : f1(v); };  // 沒出手過（命中率算不出來）顯示 —
-    return '<div class="rp-row"><div class="pl-name" style="color:' + color + '">' + p.n + '</div><div class="pl-stats rp-stats">' +
+    var inj = playersInj[p.id];  // 現在有傷病狀態的人：名字下面多一行小標籤（獨立一行，名字不會被推歪）
+    return '<div class="rp-row"><div class="pl-name" style="color:' + color + '">' + p.n + "</div>" +
+      (inj ? '<div class="rp-inj"><span class="inj-st ' + inj.cls + '">' + inj.text + "</span>" + (inj.note ? '<span class="rp-injd">' + inj.note + "</span>" : "") + "</div>" : "") +
+      '<div class="pl-stats rp-stats">' +
       plStat("上場", f1(p.mn)) + plStat("得分", f1(p.pts)) + plStat("籃板", f1(p.reb)) + plStat("助攻", f1(p.ast)) +
       plStat("投籃%", dash(p.fg)) + plStat("三分%", dash(p.tp)) + plStat("+/-", sgn(p.pm), p.pm > 0 ? "pos" : p.pm < 0 ? "neg" : "") + "</div></div>";
   }
@@ -838,9 +867,10 @@
     if (!rotationOf(aKey).length && !rotationOf(hKey).length) { card.hidden = true; return; }  // 沒有 player_tiers.js（或兩隊都沒人符合）就不顯示
     playersCtx = { aKey: aKey, hKey: hKey, a: a, h: h, aColor: aColor, hColor: hColor };
     var key = aKey + "|" + hKey;
-    if (key !== playersKey) { playersKey = key; playersSide = "a"; }
+    if (key !== playersKey) { playersKey = key; playersSide = "a"; playersInj = {}; }
     drawPlayers();
     card.hidden = false;
+    loadPlayersInj();  // 傷病註記要等 ESPN 回來才有，回來後重畫一次
   }
 
   // ---------- 最近五場戰績（還沒開賽的比賽頁；放在本季輪替陣容球員下面，預設收起） ----------
@@ -1072,8 +1102,8 @@
     var d = x.details || {};
     var idm = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));  // ESPN 傷病資料的球員編號藏在連結裡
     var ps = idm ? playerStat(idm[1]) : null;
-    var stat = ps && ps.mn >= 8 ? '<div class="inj-stat">得分 ' + f1(ps.pts) + " / 籃板 " + f1(ps.reb) + " / 助攻 " + f1(ps.ast) + " / " + sgn(ps.pm) +
-      ' <span class="inj-gp">（' + ps.gp + " 場）</span></div>" : "";  // 場均上場時間不到 8 分鐘、或本季沒出賽過的人不提供數據
+    var stat = ps ? '<div class="inj-stat">得分 ' + f1(ps.pts) + " / 籃板 " + f1(ps.reb) + " / 助攻 " + f1(ps.ast) + " / " + sgn(ps.pm) +
+      ' <span class="inj-gp">（' + ps.gp + " 場）</span></div>" : "";  // 名單只留場均上場超過 INJ_MIN_MIN 分鐘的人（見 injSorted），所以每位都有場均數據
     var place = (d.side === "Left" ? "左" : d.side === "Right" ? "右" : "") + (INJ_PART[d.type] || d.type || "");
     var kind = d.detail && d.detail !== "Not Specified" ? (INJ_KIND[d.detail] || d.detail) : "";
     // ESPN 給的預計回歸是美國日期（指那天晚上的比賽）；美國晚上的比賽是台灣隔天，所以加 1 天換成台灣日期
@@ -1092,7 +1122,13 @@
   }
 
   // 傷病名單：全部列出，排序依本季場均得分由高到低（本季沒出賽過、沒有場均得分的排最後）；得分一樣就缺陣在前、每日觀察其次，再依名字
+  var INJ_MIN_MIN = 5;  // 傷病名單只列本季場均上場時間超過這麼多分鐘的球員（本季沒出賽過的人沒有場均上場時間，也不列）
   function injSorted(list) {
+    list = (list || []).filter(function (x) {
+      var m = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));
+      var ps = m ? playerStat(m[1]) : null;
+      return !!ps && ps.mn > INJ_MIN_MIN;
+    });
     var order = { "Out": 0, "Day-To-Day": 1 };
     var rank = function (x) { return order[x.status] != null ? order[x.status] : 2; };
     var ppg = function (x) {
@@ -1122,7 +1158,7 @@
       };
       var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
       card.innerHTML = fold(team(aKey, a, aColor) + team(hKey, h, hColor) +
-        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新；場均上場時間不到8分鐘不提供數據；預計回歸日期為台灣日期；出賽狀態取自 2 天內的傷病快訊，沒標示代表 ESPN 沒有更新</p>");
+        '<p class="inj-note">經 ESPN 取得，台灣時間 ' + hh + " 更新；只列場均上場時間超過 5 分鐘的球員；預計回歸日期為台灣日期；出賽狀態取自 2 天內的傷病快訊，沒標示代表 ESPN 沒有更新</p>");
     }, function () {
       if (token !== injToken) return;
       card.innerHTML = fold('<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>');
@@ -1788,7 +1824,7 @@
           (list.length ? '<ul class="inj-list">' + list.map(function (x) { return injRow(x); }).join("") + "</ul>" : '<p class="inj-none">目前沒有傷病名單</p>') + "</details>";
       }).join("");
       var hh = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(11, 16);
-      $("inj-home-note").innerHTML = "經 ESPN 取得，台灣時間 " + hh + " 更新<br>場均上場時間不到8分鐘不提供數據";
+      $("inj-home-note").innerHTML = "經 ESPN 取得，台灣時間 " + hh + " 更新<br>只列場均上場時間超過 5 分鐘的球員";
     }, function () {
       if (token !== injHomeToken) return;
       box.innerHTML = '<p class="odds-msg">傷病名單暫時抓不到，稍後重新整理再試。</p>';
