@@ -341,9 +341,17 @@ def _player_totals(conn, games):
             continue
         for team in (vis, home):
             team_gp[team] += 1
-            for pid, name, mins, pts, reb, ast, pm in rec["p"][team]:
-                p = tot[team].setdefault(pid, {"id": pid, "n": name, "gp": 0, "min": 0, "pts": 0, "reb": 0, "ast": 0, "pm": 0})
+            for pid, name, mins, pts, reb, ast, pm, fgm, fga, tpm, tpa in rec["p"][team]:
+                p = tot[team].setdefault(pid, {"id": pid, "n": name, "gp": 0, "min": 0, "pts": 0, "reb": 0, "ast": 0, "pm": 0,
+                                               "fgm": 0, "fga": 0, "tpm": 0, "tpa": 0, "noshot": 0})
                 p["gp"] += 1
+                if fga is None or tpa is None:  # 這場還沒有投籃數據（舊紀錄還沒補）：命中率就不算，免得只算到一部分
+                    p["noshot"] += 1
+                else:
+                    p["fgm"] += fgm
+                    p["fga"] += fga
+                    p["tpm"] += tpm
+                    p["tpa"] += tpa
                 p["min"] += mins
                 p["pts"] += pts
                 p["reb"] += reb
@@ -384,6 +392,7 @@ def build_player_tiers(conn, games):
     """所有出賽過的球員，依「場均得分」分級（給之後的傷病扣分用）。回傳 None = 沒有球員數據檔。
 
     每位球員：id = ESPN 球員編號（和 ESPN 傷病名單的球員編號對得上）、n = 名字、gp = 出賽場數、mn = 場均上場分鐘（網頁傷病名單用它決定要不要顯示數據）、pts / reb / ast / pm = 場均得分 / 籃板 / 助攻 / 正負值、
+    fg / tp = 本季投籃 / 三分命中率（%）、
     t = 等級（1~5，1 最高，對照 tiers）、small = 1 表示出賽場數不到球隊已打場數的一半（樣本小，場均得分可能不準，
     常見於剛傷癒或剛傷倒的人；用等級做事前要自己決定要不要信它）。球隊內依場均得分高到低排。
     """
@@ -397,9 +406,11 @@ def build_player_tiers(conn, games):
         rows = []
         for p in sorted(tot[team].values(), key=lambda p: (-p["pts"] / p["gp"], p["n"])):
             pts = round(p["pts"] / p["gp"], 1)
+            # fg / tp = 本季投籃 / 三分命中率（%，小數 1 位）：總命中 ÷ 總出手（不是每場命中率的平均）；沒出手過、或還有場次沒有投籃數據就是 None
+            pct = lambda m, a: round(m / a * 100, 1) if a and not p["noshot"] else None
             rows.append({"id": p["id"], "n": p["n"], "gp": p["gp"], "mn": round(p["min"] / p["gp"], 1), "pts": pts, "reb": round(p["reb"] / p["gp"], 1),
-                         "ast": round(p["ast"] / p["gp"], 1), "pm": round(p["pm"] / p["gp"], 1), "t": tier_of(pts),
-                         **({"small": 1} if p["gp"] < need else {})})
+                         "ast": round(p["ast"] / p["gp"], 1), "pm": round(p["pm"] / p["gp"], 1), "fg": pct(p["fgm"], p["fga"]), "tp": pct(p["tpm"], p["tpa"]),
+                         "t": tier_of(pts), **({"small": 1} if p["gp"] < need else {})})
         teams[team] = rows
     return {"asOf": games[-1][0].strftime("%Y-%m-%d"),
             "tiers": [{"t": i, "name": name, "min": low} for i, (low, name) in enumerate(PLAYER_TIERS, start=1)],
@@ -468,7 +479,21 @@ def build_schedule(conn):
                 item["mq"] = round(fair_probs(american_to_decimal(mh[1]), american_to_decimal(ma[1]))[0] * 100)
         games.append(item)
     games.sort(key=lambda x: (x["d"], x["t"], x["a"] or "", x["h"] or ""))
-    return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "retro": [B2B_FROM, RETRO_UNTIL], "games": games}
+    # 每隊最近 5 場已完賽的比賽（還沒開打的比賽頁「最近五場戰績」卡片用，新到舊）：
+    # recent[隊縮寫] = [[台灣日期, 對手縮寫, 1 主場 / 0 客場, 本隊得分, 對手得分, 本隊各節, 對手各節], ...]；各節 = 每節得分（第 5 個以後是延長賽），沒有就是空陣列。
+    # 不受 SCHEDULE_SHOW_FROM 限制（賽程只從 11/1 開始顯示，但球隊的最近五場可能更早）
+    recent = defaultdict(list)
+    finals = [g for g in raw_games if g["status"] == "STATUS_FINAL" and g["away"] in TEAMS and g["home"] in TEAMS
+              and g["away_pts"] is not None and g["home_pts"] is not None]
+    for g in sorted(finals, key=lambda g: g["utc"], reverse=True):
+        day = (datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") + timedelta(hours=8)).strftime("%Y-%m-%d")
+        aq, hq = list(g.get("away_q") or []), list(g.get("home_q") or [])
+        for me, opp, home_flag, mp, op, mq, oq in ((g["away"], g["home"], 0, g["away_pts"], g["home_pts"], aq, hq),
+                                                    (g["home"], g["away"], 1, g["home_pts"], g["away_pts"], hq, aq)):
+            if len(recent[TEAMS[me][0]]) < 5:
+                recent[TEAMS[me][0]].append([day, TEAMS[opp][0], home_flag, mp, op, mq, oq])
+    return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "retro": [B2B_FROM, RETRO_UNTIL],
+            "games": games, "recent": dict(recent)}
 
 
 def american_to_decimal(x):

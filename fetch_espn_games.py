@@ -3,7 +3,7 @@
 從 ESPN 抓新球季的比賽資料，寫進資料庫 db/nba.db（資料表說明見 store.py）：
   games             每場比賽（已完賽的、還沒打的都有）：比分、各節得分、開賽時間、備註。每次更新，變動過的比賽就覆寫（賽程會改期、盃賽決賽的兩隊要打完四強才知道）
   team_box          已完賽比賽每隊的出手/罰球/籃板/失誤（算本季 PACE 用）。已經抓過的場次不會再抓，所以第一次跑要幾分鐘，之後每次只抓新打完的比賽
-  player_box        已完賽比賽每位上場球員的上場時間、得分、籃板、助攻、正負值（算每隊得分前三高的球員、球員分級用）。一樣是增量
+  player_box        已完賽比賽每位上場球員的上場時間、得分、籃板、助攻、正負值、投籃與三分的命中 / 出手（算球員分級、輪替陣容用）。一樣是增量
   odds              賭盤紀錄（DraftKings 的開盤與收盤）
   injury_snapshots  ESPN 現在的傷病名單；名單有變才新增一份快照，build_data.py 用最新一份算還沒開打的比賽的傷病扣分
 
@@ -132,8 +132,17 @@ def _int(s):
         return None
 
 
+def _made_att(s):
+    """'12-21' -> (12, 21)；看不懂回傳 (None, None)。"""
+    try:
+        m, a = str(s).strip().split("-")
+        return int(m), int(a)
+    except ValueError:
+        return None, None
+
+
 def players_of(summary, game):
-    """summary -> 兩隊每位上場球員的 [ESPN球員編號, 名字, 上場分鐘, 得分, 籃板, 助攻, 正負值]（沒上場的不收）。"""
+    """summary -> 兩隊每位上場球員的 [ESPN球員編號, 名字, 上場分鐘, 得分, 籃板, 助攻, 正負值, 投籃命中, 投籃出手, 三分命中, 三分出手]（沒上場的不收）。"""
     out = {}
     for t in summary["boxscore"]["players"]:
         name = NAME_FIX.get(t["team"]["displayName"], t["team"]["displayName"])
@@ -148,7 +157,8 @@ def players_of(summary, game):
             if not row[0]:  # 上場時間是 0 或 "--" = 沒有真的上場（ESPN 有時不會標 DNP）
                 continue
             assert None not in row, f"事件 {game['id']} {a['athlete']['displayName']} 的數據看不懂：{s}"
-            rows.append([a["athlete"]["id"], a["athlete"]["displayName"]] + row)
+            shots = [*_made_att(s[st["labels"].index("FG")]), *_made_att(s[st["labels"].index("3PT")])] if "FG" in st["labels"] and "3PT" in st["labels"] else [None] * 4
+            rows.append([a["athlete"]["id"], a["athlete"]["displayName"]] + row + shots)
         out[name] = rows
     assert set(out) == {game["away"], game["home"]}, f"事件 {game['id']} 球員數據隊名對不上：{set(out)}"
     return out
@@ -206,7 +216,7 @@ def fetch_summaries(conn):
     """
     now = datetime.now(timezone.utc).replace(tzinfo=None)  # 現在的 UTC 時間（和賽程裡的 utc 欄位同一種）
     have_box = {r[0] for r in conn.execute("SELECT DISTINCT game_id FROM team_box")}
-    have_players = {r[0] for r in conn.execute("SELECT DISTINCT game_id FROM player_box")}
+    have_players = {r[0] for r in conn.execute("SELECT DISTINCT game_id FROM player_box WHERE fga IS NOT NULL")}  # 還沒有投籃數據的舊紀錄也算「缺」，會重抓一次補上
     odds_st = {r["game_id"]: r["st"] for r in conn.execute("SELECT game_id, st FROM odds")}
     new_box = new_odds = missing = 0
     for g in conn.execute("SELECT * FROM games WHERE season = ? AND away IS NOT NULL AND home IS NOT NULL ORDER BY date, seq, id", (SEASON,)).fetchall():

@@ -306,6 +306,12 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .pl-crown-l { right: 100%; margin-right: 4px; }
 .pl-crown-r { left: 100%; margin-left: 4px; }  /* 單場得分 30 以上、籃板 / 助攻 10 以上：紅字 */
 .pl-empty { color: var(--muted); text-align: center; }
+.pl-note { margin: 6px 0 0; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: .72rem; text-align: center; }  /* 輪替陣容卡片最下面的小說明 */
+.rp-row { padding: 9px 0; border-top: 1px solid var(--line); }  /* 本季輪替陣容球員：每人兩行（名字、七項數據） */
+.rp-stats { grid-template-columns: repeat(7, minmax(0, 1fr)); margin-top: 5px; }
+.rp-stats .pl-st b { font-size: .8rem; }
+.rp-stats .pl-st span { font-size: .6rem; white-space: nowrap; }
+@media (max-width: 340px) { .rp-stats .pl-st b { font-size: .74rem; } }
 
 /* 傷病名單：先寫「沒參考傷病」，再一隊一段，缺陣紅色、每日觀察橘色 */
 .inj-warn { margin: 2px 0 12px; text-align: center; color: var(--muted); font-size: .85rem; }
@@ -665,6 +671,27 @@ td:first-child, th:first-child { text-align: left; }
 .ot-cell.ot-cl .ot-ln, .ot-cell.ot-cl .ot-od { font-weight: 700; }
 .ot-cell.ot-cl .ot-od { color: var(--text); }
 @media (max-width: 360px) { .ot-h, .ot-r { column-gap: 4px; } .ot-cell { gap: 5px; } .ot-r { font-size: .86rem; } .ot-cell .ot-ln { min-width: 3.3em; } .ot-cell .ot-od { min-width: 2.4em; } }
+
+/* 最近五場戰績（還沒開賽的比賽頁）：A / B 隊按鈕 + 每場一塊（日期、勝敗、對手、比分，下面是每一節的比分表） */
+.rc-seg { display: flex; width: max-content; margin: 0 auto 10px; }
+.rc-sum { margin: 0 0 4px; text-align: center; font-weight: 800; }
+.rc-game { padding: 10px 0; border-top: 1px solid var(--line); }
+.rc-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.rc-date { min-width: 2.8em; color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.rc-res { font-weight: 800; }
+.rc-w { color: var(--win); }
+.rc-l { color: var(--bad); }
+.rc-opp { flex: 1; min-width: 0; font-weight: 700; }
+.rc-score { font-weight: 800; font-variant-numeric: tabular-nums; }
+.rc-q { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: .86rem; font-variant-numeric: tabular-nums; }
+.rc-q th { padding: 2px 0; color: var(--muted); font-size: .75rem; font-weight: 600; text-align: center; }
+.rc-q td { padding: 3px 0; color: var(--muted); text-align: center; }
+.rc-q th:first-child, .rc-q td.rc-nm { width: 24%; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-q tr.rc-pr td { padding-top: 4px; font-size: .72rem; font-weight: 600; }  /* 最下面一列：我們當初的賽前預測比分，置中在各節欄位下面 */
+.rc-q td.rc-nm { color: var(--text); font-weight: 700; }
+.rc-q td.rc-hi { color: var(--text); font-weight: 800; }  /* 那一節得分比較高的那隊 */
+.rc-q td.rc-tot { color: var(--text); font-weight: 800; }
+.rc-q th:last-child { font-weight: 800; }
 .ot-wr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; column-gap: 8px; padding: 5px 0; font-size: .92rem; }  /* 賭盤勝率條：標籤（初始 / 最終）| 客隊 % 條 主隊 % */
 .ot-wl { font-weight: 700; }
 @media (max-width: 360px) { .ot-wr { column-gap: 4px; } }  /* 窄螢幕：欄寬和上面的表格一樣（要放在 .ot-wr 的主規則後面才會生效） */

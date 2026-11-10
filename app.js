@@ -392,7 +392,7 @@
     FOLD_DEFAULT_OPEN = pregame ? { players: true } : {};
     $("stats-fold").open = !pregame;
     if (pregame) $("stats-card").parentNode.insertBefore($("players-card"), $("stats-card"));
-    else $("inj-card").parentNode.insertBefore($("players-card"), $("odds-card"));
+    else $("inj-card").parentNode.insertBefore($("players-card"), $("recent-card"));  // 還沒開賽：傷病名單 -> 得分前三 -> 最近五場（recent-card 在 HTML 裡就在賭盤前面）
     var aKey = awaySel.value;
     var hKey = homeSel.value;
     var hint = $("hint");
@@ -402,6 +402,7 @@
     $("comment-card").hidden = true;  // 留言卡片也一樣，算完才打開
     $("inj-card").hidden = true;   // 傷病名單也一樣
     $("players-card").hidden = true;  // 得分前三球員也一樣
+    $("recent-card").hidden = true;   // 最近五場戰績也一樣
     $("picker").hidden = pregame;  // 已完賽的比賽是固定頁面，不能換隊
     $("board-card").hidden = pregame;
     $("pre-board").hidden = !pregame;
@@ -516,6 +517,7 @@
     result.hidden = false;
     showComments(finalGame || (dayIdx >= 0 ? dayList[dayIdx] : null));  // 從賽程點進來的比賽（含已完賽）才有留言
     if (!pregame) renderPlayers(aKey, hKey, a, h, aColor, hColor);   // 得分前三球員（本季場均）
+    if (!pregame) renderRecent(a, h, aColor, hColor);                // 最近五場戰績（兩隊各一頁，選 A / B 隊；已完賽的固定頁面不顯示）
     else renderGameTop(a, h, aColor, hColor, finalGame);              // 已完賽的固定頁面：改顯示本場得分前三球員
     if (!pregame) renderInjuries(aKey, hKey, a, h, aColor, hColor);  // 傷病名單：已完賽的固定頁面不顯示
     if (MODEL) {
@@ -764,10 +766,7 @@
     }, function () { fail("盤口暫時抓不到，稍後重新整理再試。"); });
   }
 
-  // ---------- 每隊得分前三高的球員（build_data.py 用每場比賽的球員數據算出來，只收出賽過半的球員） ----------
-  // 放在留言下面、本季數據對照上面；已完賽的固定頁面不顯示（那是現在的數字，不是當時的）
-  var PLAYERS = window.NBA_PLAYERS && window.NBA_PLAYERS.teams ? window.NBA_PLAYERS.teams : null;
-
+  // ---------- 球員卡片（還沒開賽：本季輪替陣容球員；已完賽的固定頁面：本場得分前三球員） ----------
   function plStat(label, val, cls) {
     return '<div class="pl-st"><b' + (cls ? ' class="' + cls + '"' : "") + ">" + val + "</b><span>" + label + "</span></div>";
   }
@@ -780,7 +779,8 @@
     var hot = function (v, min) { return whole && v >= min ? "hot" : ""; };
     var triple = whole && p.pts >= 10 && p.reb >= 10 && p.ast >= 10;
     return '<div class="pl-cell"><div class="pl-name" style="color:' + color + '"><span class="pl-nm">' + p.n +
-      (triple ? '<span class="pl-crown ' + (left ? "pl-crown-l" : "pl-crown-r") + '" title="大三元（得分、籃板、助攻都 10 以上）">👑</span>' : "") + "</span></div>" +
+      (triple ? '<span class="pl-crown ' + (left ? "pl-crown-l" : "pl-crown-r") + '" title="大三元（得分、籃板、助攻都 10 以上）">👑</span>' : "") + "</span>" +
+      "</div>" +
       '<div class="pl-stats">' + plStat("得分", fx(p.pts), hot(p.pts, 30)) + plStat("籃板", fx(p.reb), hot(p.reb, 10)) + plStat("助攻", fx(p.ast), hot(p.ast, 10)) +
       plStat("+/-", pm, p.pm > 0 ? "pos" : p.pm < 0 ? "neg" : "") + "</div></div>";
   }
@@ -801,17 +801,109 @@
     card.hidden = false;
   }
 
+  // 還沒開賽的比賽頁：本季輪替陣容球員 = 本季場均上場時間超過 ROTATION_MIN 分鐘的球員（資料在 data/player_tiers.js，每人有 mn = 場均上場分鐘），
+  // 而且出賽場數要超過球隊已打場數的 50%（剛傷癒、剛傷倒的人樣本太小不算）；依場均得分高到低排。
+  // 人數多，兩隊放一起太擠，所以跟「最近五場戰績」一樣用按鈕選要看哪一隊（左邊客隊、右邊主隊，換一場比賽回到客隊）；
+  // 每人兩行：名字、場均上場 / 得分 / 籃板 / 助攻 / 投籃命中率 / 三分命中率 / 正負值（命中率是本季總命中 ÷ 總出手）
+  var ROTATION_MIN = 12;
+  var playersSide = "a", playersKey = "", playersCtx = null;
+
+  function rotationOf(k) {
+    var TR = window.NBA_PLAYER_TIERS && window.NBA_PLAYER_TIERS.teams;
+    var gp = (T[k] && T[k].gp) || 0;
+    return ((TR && TR[k]) || []).filter(function (p) { return p.mn > ROTATION_MIN && p.gp > gp / 2; });  // 場均上場超過 12 分鐘，而且出賽場數超過球隊已打場數的 50%
+  }
+
+  function rotationRow(p, color) {
+    var dash = function (v) { return v == null ? "—" : f1(v); };  // 沒出手過（命中率算不出來）顯示 —
+    return '<div class="rp-row"><div class="pl-name" style="color:' + color + '">' + p.n + '</div><div class="pl-stats rp-stats">' +
+      plStat("上場", f1(p.mn)) + plStat("得分", f1(p.pts)) + plStat("籃板", f1(p.reb)) + plStat("助攻", f1(p.ast)) +
+      plStat("投籃%", dash(p.fg)) + plStat("三分%", dash(p.tp)) + plStat("+/-", sgn(p.pm), p.pm > 0 ? "pos" : p.pm < 0 ? "neg" : "") + "</div></div>";
+  }
+
+  function drawPlayers() {
+    var c = playersCtx, side = playersSide, t = side === "a" ? c.a : c.h, color = side === "a" ? c.aColor : c.hColor;
+    var list = rotationOf(side === "a" ? c.aKey : c.hKey);
+    var seg = '<div class="seg rc-seg" role="group" aria-label="選擇球隊">' + ["a", "h"].map(function (x) {
+      return '<button type="button" class="seg-btn" data-pl="' + x + '" aria-pressed="' + (side === x ? "true" : "false") + '">' + (x === "a" ? c.a : c.h).zh + "</button>";
+    }).join("") + "</div>";
+    var body = list.length
+      ? '<p class="rc-sum" style="color:' + color + '">' + t.zh + " 輪替陣容 " + list.length + " 人</p>" + list.map(function (p) { return rotationRow(p, color); }).join("")
+      : '<p class="rc-sum">' + t.zh + " 目前沒有符合條件的球員</p>";
+    $("players-card").innerHTML = foldHtml("players", "本季輪替陣容球員", seg + body + '<p class="pl-note">只記錄場均上場時間 &gt; ' + ROTATION_MIN + " 分鐘的球員</p>");
+  }
+
   function renderPlayers(aKey, hKey, a, h, aColor, hColor) {
     var card = $("players-card");
-    var pa = PLAYERS && PLAYERS[aKey] || [], ph = PLAYERS && PLAYERS[hKey] || [];
-    if (!pa.length && !ph.length) { card.hidden = true; return; }
-    var rows = "";
-    for (var i = 0; i < 3; i++) {
-      if (!pa[i] && !ph[i]) break;
-      rows += '<div class="pl-row">' + playerCell(pa[i], aColor) + playerCell(ph[i], hColor) + "</div>";
+    if (!rotationOf(aKey).length && !rotationOf(hKey).length) { card.hidden = true; return; }  // 沒有 player_tiers.js（或兩隊都沒人符合）就不顯示
+    playersCtx = { aKey: aKey, hKey: hKey, a: a, h: h, aColor: aColor, hColor: hColor };
+    var key = aKey + "|" + hKey;
+    if (key !== playersKey) { playersKey = key; playersSide = "a"; }
+    drawPlayers();
+    card.hidden = false;
+  }
+
+  // ---------- 最近五場戰績（還沒開賽的比賽頁；放在本季輪替陣容球員下面，預設收起） ----------
+  // 資料在賽程檔的 recent[隊縮寫]（build_data.py 產生，新到舊）：每場 [台灣日期, 對手縮寫, 1 主場 / 0 客場, 本隊得分, 對手得分, 本隊各節, 對手各節]
+  // 兩隊放一起會太擠，所以跟東 / 西區排名一樣用按鈕選要看哪一隊（A = 客隊、B = 主隊）；換一場比賽就回到客隊
+  var recentSide = "a", recentKey = "", recentCtx = null;
+
+  // 那場比賽「我們當初的賽前預測比分」（本隊 : 對手；和下面每一節比分表的兩列同一個順序）。賽程只從 11/1 開始有預測，更早的、或算不出來的回傳空字串
+  function recentPred(g, myAbbr) {
+    if (!SCHEDULE || !MODEL) return "";
+    var aAb = g[2] ? g[1] : myAbbr, hAb = g[2] ? myAbbr : g[1], gm = null;
+    for (var i = 0; i < SCHEDULE.games.length; i++) {
+      var x = SCHEDULE.games[i];
+      if (x.d === g[0] && x.a === aAb && x.h === hAb && x.s === "F") { gm = x; break; }
     }
-    card.innerHTML = foldHtml("players", "得分前三球員",
-      '<div class="pl-head"><span style="color:' + aColor + '">' + a.zh + '</span><span style="color:' + hColor + '">' + h.zh + "</span></div>" + rows);
+    var pi = gm && preGameInfo(gm);
+    if (!pi) return "";
+    var p = pi.c.p1;
+    return g[2] ? f1(p.home) + " : " + f1(p.away) : f1(p.away) + " : " + f1(p.home);
+  }
+
+  function recentGameHtml(g, myName, myColor, myAbbr) {
+    var opp = T[ABBR[g[1]]], oppName = (opp && opp.zh) || g[1], win = g[3] > g[4], pred = recentPred(g, myAbbr);
+    var mq = g[5] || [], oq = g[6] || [], n = Math.max(mq.length, oq.length);
+    var head = "", rowM = "", rowO = "";
+    for (var i = 0; i < n; i++) {
+      head += "<th>" + (i < 4 ? i + 1 : n > 5 ? "OT" + (i - 3) : "OT") + "</th>";  // 第 5 節以後是延長賽；打了兩節以上就標 OT1、OT2
+      var m = mq[i], o = oq[i];
+      rowM += "<td" + (m > o ? ' class="rc-hi"' : "") + ">" + (m == null ? "–" : m) + "</td>";  // 那一節得分比較高的那隊加粗
+      rowO += "<td" + (o > m ? ' class="rc-hi"' : "") + ">" + (o == null ? "–" : o) + "</td>";
+    }
+    // 最下面多一列：我們當初的賽前預測比分（本隊 : 對手），橫跨整張表、置中在卡片正中間；沒有預測就不放這一列
+    var predRow = pred ? '<tr class="rc-pr"><td colspan="' + (n + 2) + '" title="賽前預測比分">預測 ' + pred + "</td></tr>" : "";
+    var table = n ? '<table class="rc-q"><thead><tr><th></th>' + head + "<th>總</th></tr></thead><tbody>" +
+      '<tr><td class="rc-nm" style="color:' + myColor + '">' + myName + "</td>" + rowM + '<td class="rc-tot">' + g[3] + "</td></tr>" +
+      '<tr><td class="rc-nm">' + oppName + "</td>" + rowO + '<td class="rc-tot">' + g[4] + "</td></tr>" + predRow + "</tbody></table>" : "";
+    return '<div class="rc-game"><div class="rc-top">' +
+      '<span class="rc-res ' + (win ? "rc-w" : "rc-l") + '">' + (win ? "勝" : "敗") + "</span>" +  // 勝敗在日期左邊
+      '<span class="rc-date">' + g[0].slice(5).replace("-", "/") + "</span>" +
+      '<span class="rc-opp"><span style="color:' + myColor + '">' + myName + "</span> @ " + oppName + '</span><span class="rc-score"><span style="color:' + myColor + '">' + g[3] + "</span> : " + g[4] + "</span></div>" + table + "</div>";  // 每場都寫「本隊 @ 對手」（不分主客場，統一寫法）
+  }
+
+  function drawRecent() {
+    var c = recentCtx, t = recentSide === "a" ? c.a : c.h, color = recentSide === "a" ? c.aColor : c.hColor;
+    var list = SCHEDULE.recent[t.abbr] || [], wins = 0;
+    list.forEach(function (g) { if (g[3] > g[4]) wins++; });
+    var seg = '<div class="seg rc-seg" role="group" aria-label="選擇球隊">' + ["a", "h"].map(function (s) {
+      return '<button type="button" class="seg-btn" data-rc="' + s + '" aria-pressed="' + (recentSide === s ? "true" : "false") + '">' + (s === "a" ? c.a : c.h).zh + "</button>";
+    }).join("") + "</div>";
+    var body = list.length
+      ? '<p class="rc-sum" style="color:' + color + '">' + t.zh + " 近 " + list.length + " 場：" + wins + " 勝 " + (list.length - wins) + " 敗</p>" +
+        list.map(function (g) { return recentGameHtml(g, t.zh, color, t.abbr); }).join("")
+      : '<p class="rc-sum">' + t.zh + " 還沒有已完賽的比賽</p>";
+    $("recent-card").innerHTML = foldHtml("recent", "最近五場戰績", seg + body);
+  }
+
+  function renderRecent(a, h, aColor, hColor) {
+    var card = $("recent-card"), R = SCHEDULE && SCHEDULE.recent;
+    if (!R || (!(R[a.abbr] || []).length && !(R[h.abbr] || []).length)) { card.hidden = true; return; }  // 舊版資料檔沒有 recent 欄位就不顯示
+    recentCtx = { a: a, h: h, aColor: aColor, hColor: hColor };
+    var key = a.abbr + "|" + h.abbr;
+    if (key !== recentKey) { recentKey = key; recentSide = "a"; }
+    drawRecent();
     card.hidden = false;
   }
 
@@ -1910,6 +2002,20 @@
       if (e.target.classList && e.target.classList.contains("cm-input")) e.target.closest("form").querySelector(".cm-count").textContent = e.target.value.length + " / " + COMMENT_MAX;
     });
     $("comment-card").addEventListener("submit", function (e) { e.preventDefault(); sendComment(e.target); });
+    // 本季輪替陣容球員卡片：點客隊 / 主隊按鈕切換要看哪一隊（已完賽頁的「本場得分前三球員」沒有按鈕）
+    $("players-card").addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("[data-pl]") : null;
+      if (!b || !playersCtx) return;
+      playersSide = b.getAttribute("data-pl") === "h" ? "h" : "a";
+      drawPlayers();
+    });
+    // 最近五場戰績卡片：點 A / B 隊按鈕切換要看哪一隊（卡片內容是 JS 畫的，事件掛在卡片上）
+    $("recent-card").addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("[data-rc]") : null;
+      if (!b || !recentCtx) return;
+      recentSide = b.getAttribute("data-rc") === "h" ? "h" : "a";
+      drawRecent();
+    });
     $("st-east").addEventListener("click", function () { stConf = "E"; renderStandings(); });
     $("st-west").addEventListener("click", function () { stConf = "W"; renderStandings(); });
     $("inj-home").addEventListener("toggle", function () { if (this.open) renderInjHome(); });  // 點開才去 ESPN 抓傷病
