@@ -1376,9 +1376,9 @@
     var ph = Math.round(normCdf((p.home - p.away) / 13.5) * 100);
     return probBar(100 - ph, ph, a, h, "我們預測的勝率：客隊 ", "模型勝率");
   }
-  function marketBar(g, a, h) {  // 賭盤預估勝率（去抽水）；還沒有賭盤的比賽不放。g.mq = 主隊勝率（%），build_data.py 用「目前」勝負盤賠率算
+  function marketBar(g, a, h, caption) {  // 賭盤預估勝率（去抽水）；還沒有賭盤的比賽不放。g.mq = 主隊勝率（%），build_data.py 用「目前」勝負盤賠率算；caption 預設「賭盤勝率」（比賽進行中傳「賭盤勝率（賽前）」）
     if (typeof g.mq !== "number" || !a || !h) return "";
-    return probBar(100 - g.mq, g.mq, a, h, "賭盤預估勝率（去抽水）：客隊 ", "賭盤勝率");
+    return probBar(100 - g.mq, g.mq, a, h, "賭盤預估勝率（去抽水）：客隊 ", caption || "賭盤勝率");
   }
   // 隊徽上面的小行（固定 19px 高；兩隊都留這一行，隊徽、隊名才會對齊）：
   //   streak：undefined = 沒有這一行；字串 = 這一行的內容（連勝 / 連敗的字；什麼都沒有就是空字串，留空白）
@@ -1632,7 +1632,8 @@
             return;
           }
         }
-        var html = liveMid(e);
+        var gmk = (gamesByDate[date] || []).filter(function (x) { return x.a === k[0] && x.h === k[1]; })[0];
+        var html = liveMid(e) + (gmk ? marketBar(gmk, T[ABBR[k[0]]], T[ABBR[k[1]]], "賭盤勝率（賽前）") : "");  // 即時比分下面也放賭盤勝率（開賽前記下的賠率，不隨比賽變動）
         liveMidCache[date + "|" + k[0] + "|" + k[1]] = html;
         if (view === "home" && el.parentNode) {  // 首頁簡版原本中間是預測比分、下面只有信心：改成跟賽程一樣（中間即時比分、下面賽前預測比分），所以整張重畫
           var gh = (gamesByDate[date] || []).filter(function (x) { return x.a === k[0] && x.h === k[1]; })[0];
