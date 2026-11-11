@@ -101,12 +101,16 @@
           <div class="seg" role="group" aria-label="選擇分區">
             <button type="button" class="seg-btn" id="st-east" aria-pressed="true">東區</button>
             <button type="button" class="seg-btn" id="st-west" aria-pressed="false">西區</button>
+            <button type="button" class="seg-btn" id="st-all" aria-pressed="false">全聯盟</button>
           </div>
         </div>
-        <table class="st-table">
-          <thead><tr><th>#</th><th>球隊</th><th>勝</th><th>敗</th><th>勝差</th><th>近況</th></tr></thead>
-          <tbody id="st-body"></tbody>
-        </table>
+        <div class="st-scroll">  <!-- 全聯盟欄位多，手機上可以左右滑（球隊那一欄固定在左邊） -->
+          <table class="st-table" id="st-table">
+            <thead id="st-head"></thead>
+            <tbody id="st-body"></tbody>
+          </table>
+        </div>
+        <p class="st-hint" id="st-hint" hidden>左右滑動看更多欄位；點欄位標題可以排序</p>
       </div>
     </section>
 

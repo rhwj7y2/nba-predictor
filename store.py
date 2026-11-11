@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS team_box (
 );
 CREATE TABLE IF NOT EXISTS player_box (
     game_id TEXT NOT NULL, team TEXT NOT NULL, player_id TEXT NOT NULL, name TEXT, minutes INTEGER, pts INTEGER, reb INTEGER, ast INTEGER, pm INTEGER,
-    ord INTEGER, fgm INTEGER, fga INTEGER, tpm INTEGER, tpa INTEGER,  -- 投籃命中 / 出手、三分命中 / 出手（舊資料是 NULL，fetch_espn_games.py 下次更新會補）
+    ord INTEGER, fgm INTEGER, fga INTEGER, tpm INTEGER, tpa INTEGER, blk INTEGER,  -- 投籃命中 / 出手、三分命中 / 出手、阻攻（舊資料是 NULL，fetch_espn_games.py 下次更新會補）
     PRIMARY KEY (game_id, player_id)
 );
 CREATE TABLE IF NOT EXISTS odds (
@@ -73,7 +73,7 @@ def connect(path=None):
     if "ret" not in [r[1] for r in conn.execute("PRAGMA table_info(injury_snapshots)")]:  # 舊資料庫：補上「預計回歸日」欄位
         conn.execute("ALTER TABLE injury_snapshots ADD COLUMN ret TEXT DEFAULT ''")
     have = [r[1] for r in conn.execute("PRAGMA table_info(player_box)")]
-    for col in ("fgm", "fga", "tpm", "tpa"):  # 舊資料庫：補上球員投籃、三分的命中與出手欄位
+    for col in ("fgm", "fga", "tpm", "tpa", "blk"):  # 舊資料庫：補上球員投籃、三分的命中與出手、阻攻欄位
         if col not in have:
             conn.execute(f"ALTER TABLE player_box ADD COLUMN {col} INTEGER")
     return conn
@@ -99,10 +99,10 @@ def save_team_box(conn, game_id, stats):
 
 
 def save_player_box(conn, game_id, players):
-    """players: {隊名: [[球員編號, 名字, 上場分鐘, 得分, 籃板, 助攻, 正負值, 投籃命中, 投籃出手, 三分命中, 三分出手], ...]}（後四個可以省略）"""
-    conn.executemany("INSERT OR REPLACE INTO player_box (game_id, team, player_id, name, minutes, pts, reb, ast, pm, ord, fgm, fga, tpm, tpa) "
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                     [(game_id, team, r[0], r[1], r[2], r[3], r[4], r[5], r[6], i, *(list(r[7:11]) + [None] * 4)[:4])
+    """players: {隊名: [[球員編號, 名字, 上場分鐘, 得分, 籃板, 助攻, 正負值, 投籃命中, 投籃出手, 三分命中, 三分出手, 阻攻], ...]}（後五個可以省略）"""
+    conn.executemany("INSERT OR REPLACE INTO player_box (game_id, team, player_id, name, minutes, pts, reb, ast, pm, ord, fgm, fga, tpm, tpa, blk) "
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                     [(game_id, team, r[0], r[1], r[2], r[3], r[4], r[5], r[6], i, *(list(r[7:12]) + [None] * 5)[:5])
                       for team, rows in players.items() for i, r in enumerate(rows)])
 
 
@@ -165,14 +165,14 @@ def read_boxes(conn):
 
 
 def read_players(conn):
-    """{事件編號: {date, away, home, p: {隊名: [[球員編號, 名字, 上場分鐘, 得分, 籃板, 助攻, 正負值, 投籃命中, 投籃出手, 三分命中, 三分出手], ...]}}}（後四個還沒補的舊資料是 None）"""
+    """{事件編號: {date, away, home, p: {隊名: [[球員編號, 名字, 上場分鐘, 得分, 籃板, 助攻, 正負值, 投籃命中, 投籃出手, 三分命中, 三分出手, 阻攻], ...]}}}（後五個還沒補的舊資料是 None）"""
     out = {}
     for g in conn.execute("SELECT g.id, g.date, g.away, g.home FROM games g WHERE g.id IN (SELECT game_id FROM player_box) ORDER BY g.date, g.id"):
         out[g["id"]] = {"date": g["date"], "away": g["away"], "home": g["home"], "p": {g["away"]: [], g["home"]: []}}
     for r in conn.execute("SELECT * FROM player_box ORDER BY game_id, team, ord"):
         if r["game_id"] in out:
             out[r["game_id"]]["p"][r["team"]].append([r["player_id"], r["name"], r["minutes"], r["pts"], r["reb"], r["ast"], r["pm"],
-                                                      r["fgm"], r["fga"], r["tpm"], r["tpa"]])
+                                                      r["fgm"], r["fga"], r["tpm"], r["tpa"], r["blk"]])
     return out
 
 

@@ -317,6 +317,48 @@ def team_paces(conn, games):
     return ({t: pace_of(per[t]) for t in TEAMS}, {t: pace_of(per[t][-10:]) for t in TEAMS}, {t: pace_of(per[t][-5:]) for t in TEAMS}, {t: rtg_of(per[t]) for t in TEAMS})
 
 
+def team_extras(conn, games):
+    """全聯盟表要用的場均數據：{隊名: {"orb": 進攻籃板, "drb": 防守籃板, "ast": 助攻, "blk": 阻攻, "tov": 失誤, "tpa": 三分出手, "tpp": 三分命中率（%）}}（小數 1 位）。
+
+    進攻籃板、防守籃板、失誤 = 每場 team_box 的數字；助攻、阻攻、三分出手 / 命中 = 把每場上場球員的數字加總（player_box；
+    舊紀錄還沒補三分、阻攻數據的場次，整隊的三分和阻攻數字就都不算，輸出 None）。命中率 = 總命中 ÷ 總出手，不是每場命中率的平均。
+    沒有 boxscore 的比賽不會發生（team_paces 會先擋）。
+    """
+    boxes = store.read_boxes(conn)
+    players = store.read_players(conn) or {}
+    box_by = {(datetime.fromisoformat(v["date"]), v["away"], v["home"]): v for v in boxes.values()}
+    pl_by = {(datetime.fromisoformat(v["date"]), v["away"], v["home"]): v for v in players.values()}
+    acc = defaultdict(lambda: {"n": 0, "orb": 0, "drb": 0, "tov": 0, "ast": 0, "blk": 0, "tpm": 0, "tpa": 0, "noshot": 0})
+    for d, vis, _, home, _ in games:
+        box, pl = box_by.get((d, vis, home)), pl_by.get((d, vis, home))
+        for team in (vis, home):
+            a = acc[team]
+            a["n"] += 1
+            if box:
+                st = box["stats"][team]
+                a["orb"] += st["orb"]
+                a["drb"] += st["drb"]
+                a["tov"] += st["tov"]
+            rows = pl["p"][team] if pl else []
+            if not rows or any(r[9] is None or r[10] is None or r[11] is None for r in rows):
+                a["noshot"] += 1
+            else:
+                a["ast"] += sum(r[5] for r in rows)
+                a["blk"] += sum(r[11] for r in rows)
+                a["tpm"] += sum(r[9] for r in rows)
+                a["tpa"] += sum(r[10] for r in rows)
+    out = {}
+    for t in TEAMS:
+        a = acc[t]
+        ok = a["n"] and not a["noshot"] and a["tpa"]
+        full = a["n"] and not a["noshot"]
+        per = lambda k: round(a[k] / a["n"], 1) if a["n"] else None
+        out[t] = {"orb": per("orb"), "drb": per("drb"), "tov": per("tov"),
+                  "ast": per("ast") if full else None, "blk": per("blk") if full else None, "tpa": per("tpa") if full else None,
+                  "tpp": round(a["tpm"] / a["tpa"] * 100, 1) if ok else None}
+    return out
+
+
 def season_pace(conn, games):
     """本季累積 PACE（{隊名: PACE}）；算法見 team_paces。"""
     return team_paces(conn, games)[0]
@@ -341,7 +383,7 @@ def _player_totals(conn, games):
             continue
         for team in (vis, home):
             team_gp[team] += 1
-            for pid, name, mins, pts, reb, ast, pm, fgm, fga, tpm, tpa in rec["p"][team]:
+            for pid, name, mins, pts, reb, ast, pm, fgm, fga, tpm, tpa, _blk in rec["p"][team]:
                 p = tot[team].setdefault(pid, {"id": pid, "n": name, "gp": 0, "min": 0, "pts": 0, "reb": 0, "ast": 0, "pm": 0,
                                                "fgm": 0, "fga": 0, "tpm": 0, "tpa": 0, "noshot": 0})
                 p["gp"] += 1
@@ -865,7 +907,7 @@ def build_h2h_history(conn):
     return out
 
 
-def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=None, pace5=None, rtg=None):
+def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=None, pace5=None, rtg=None, extra=None):
     """每隊的場數、戰績、場均得失分、近10場、PACE（球季進行中另外加預測模型用的淨勝分 net / net10，
     有給 prior 時再加 SRS 球隊評分 rating）。"""
     log = build_log(games)
@@ -909,6 +951,9 @@ def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=N
             out[en]["l10pace"] = pace10.get(en) if pace10 else None  # 近 10 場 PACE（沒有就是 null，網頁就不顯示這一列）
             out[en]["l5pace"] = pace5.get(en) if pace5 else None     # 近 5 場 PACE
             out[en]["ortg"], out[en]["drtg"] = rtg[en] if rtg else (None, None)  # 進攻 / 防守效率（每 100 回合得失分）
+            if extra:  # 全聯盟表用：場均進攻籃板、防守籃板、助攻、阻攻、失誤、三分出手、三分命中率（只有目前的球隊數據要，賽前快照不放）
+                for k in ("orb", "drb", "ast", "blk", "tov", "tpa", "tpp"):
+                    out[en][k] = extra[en][k]
             if ratings is not None:  # SRS 球隊評分（預測分差用）；0 場的球隊是 null
                 out[en]["rating"] = round(ratings[en], 2) if n else None
     return out
@@ -1007,7 +1052,8 @@ def main(db_path, target, complete, backfill_injuries=False):
     # SRS 球隊評分要用的開季起點（上季評分）和中立場地清單（只有球季進行中才用）
     prior = None if complete else srs_prior(conn)
     neutral = frozenset() if complete else neutral_games(conn)
-    out = team_rows(games, pace, with_model=not complete, prior=prior, neutral=neutral, pace10=None if complete else pace10, pace5=None if complete else pace5, rtg=None if complete else rtgs_now)
+    out = team_rows(games, pace, with_model=not complete, prior=prior, neutral=neutral, pace10=None if complete else pace10, pace5=None if complete else pace5, rtg=None if complete else rtgs_now,
+                    extra=None if complete else team_extras(conn, games))
 
     h2h = build_h2h(games)
     if complete:

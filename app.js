@@ -1728,7 +1728,7 @@
   }
 
   // ---------- 首頁：賽程卡片顯示下一個比賽日，準確率卡片顯示目前戰績 ----------
-  var stConf = "E";  // 排名現在看哪一區：E 東區、W 西區
+  var stConf = "E";  // 排名現在看哪一區：E 東區、W 西區、A 全聯盟
 
   function renderHome() {
     var nd = nextUpcomingDate(), t = gameDayTW(), tr = todayTW();  // t = 首頁換日用的「今天」（台灣中午換日）；tr = 台灣真正的今天（賽果有打完就馬上算今日賽果）
@@ -1786,9 +1786,32 @@
     });
   }
 
+  // 全聯盟：30 隊一張表，欄位 勝 / 敗 / ORTG / DRTG / PACE / 場均進攻籃板 / 防守籃板 / 助攻 / 阻攻 / 三分出手 / 三分命中率 / 場均失誤；點欄位標題可以排序（再點一次反過來）。
+  // 預設照勝率高到低。每欄第一次點的方向 = 比較好的在前（敗、DRTG、失誤是越小越好，其他越大越好）；沒有數字的隊排最後
+  var stSort = { key: "pct", dir: -1 };
+  var ST_COLS = [
+    { key: "pct", label: "勝", get: function (t) { return t.w + t.l ? t.w / (t.w + t.l) : null; }, show: function (t) { return t.w; }, dir: -1 },
+    { key: "l", label: "敗", get: function (t) { return t.l; }, show: function (t) { return t.l; }, dir: 1 },
+    { key: "ortg", label: "ORTG", get: function (t) { return t.ortg; }, show: function (t) { return f1(t.ortg); }, dir: -1 },
+    { key: "drtg", label: "DRTG", get: function (t) { return t.drtg; }, show: function (t) { return f1(t.drtg); }, dir: 1 },
+    { key: "pace", label: "PACE", get: function (t) { return t.pace; }, show: function (t) { return f1(t.pace); }, dir: -1 },
+    { key: "orb", label: "進攻籃板", get: function (t) { return t.orb; }, show: function (t) { return f1(t.orb); }, dir: -1 },
+    { key: "drb", label: "防守籃板", get: function (t) { return t.drb; }, show: function (t) { return f1(t.drb); }, dir: -1 },
+    { key: "ast", label: "助攻", get: function (t) { return t.ast; }, show: function (t) { return f1(t.ast); }, dir: -1 },
+    { key: "blk", label: "阻攻", get: function (t) { return t.blk; }, show: function (t) { return f1(t.blk); }, dir: -1 },
+    { key: "tpa", label: "三分出手", get: function (t) { return t.tpa; }, show: function (t) { return f1(t.tpa); }, dir: -1 },
+    { key: "tpp", label: "三分%", get: function (t) { return t.tpp; }, show: function (t) { return f1(t.tpp); }, dir: -1 },
+    { key: "tov", label: "失誤", get: function (t) { return t.tov; }, show: function (t) { return f1(t.tov); }, dir: 1 }
+  ];
+
   function renderStandings() {
     $("st-east").setAttribute("aria-pressed", stConf === "E" ? "true" : "false");
     $("st-west").setAttribute("aria-pressed", stConf === "W" ? "true" : "false");
+    $("st-all").setAttribute("aria-pressed", stConf === "A" ? "true" : "false");
+    $("st-table").className = "st-table" + (stConf === "A" ? " st-league" : "");
+    $("st-hint").hidden = stConf !== "A";
+    if (stConf === "A") { renderLeague(); return; }
+    $("st-head").innerHTML = "<tr><th>#</th><th>球隊</th><th>勝</th><th>敗</th><th>勝差</th><th>近況</th></tr>";
     var list = confKeys(stConf).map(function (k) { return T[k]; });
     var lead = list[0];
     $("st-body").innerHTML = list.map(function (t, i) {
@@ -1797,6 +1820,25 @@
       return "<tr" + (i === 5 || i === 9 ? ' class="st-cut"' : i >= 10 ? ' class="st-out"' : "") + "><td>" + (i + 1) + "</td>" +
         '<td><div class="st-team">' + miniBadge(t) + "<span>" + t.zh + "</span></div></td>" +
         "<td>" + t.w + "</td><td>" + t.l + "</td><td>" + (i === 0 ? "—" : String(gb)) + "</td><td>" + run + "</td></tr>";
+    }).join("");
+  }
+
+  function renderLeague() {
+    var col = ST_COLS.filter(function (c) { return c.key === stSort.key; })[0] || ST_COLS[0];
+    var tie = function (a, b) { return b.w - a.w || a.zh.localeCompare(b.zh, "zh-Hant"); };
+    var list = Object.keys(T).map(function (k) { return T[k]; }).sort(function (a, b) {
+      var x = col.get(a), y = col.get(b);
+      if (x == null || y == null) return x == null && y == null ? tie(a, b) : x == null ? 1 : -1;  // 沒有數字的隊排最後
+      return (x - y) * stSort.dir || tie(a, b);
+    });
+    $("st-head").innerHTML = "<tr><th>球隊</th>" + ST_COLS.map(function (c) {
+      var on = c.key === stSort.key;
+      return '<th class="st-sort' + (on ? " on" : "") + '" data-sort="' + c.key + '" aria-sort="' + (on ? (stSort.dir < 0 ? "descending" : "ascending") : "none") + '">' +
+        c.label + (on ? (stSort.dir < 0 ? " ▼" : " ▲") : "") + "</th>";
+    }).join("") + "</tr>";
+    $("st-body").innerHTML = list.map(function (t, i) {
+      return '<tr><td><div class="st-team"><span class="st-rk">' + (i + 1) + "</span>" + miniBadge(t) + "<span>" + t.zh + "</span></div></td>" +
+        ST_COLS.map(function (c) { var v = c.get(t); return "<td>" + (v == null ? "—" : c.show(t)) + "</td>"; }).join("") + "</tr>";
     }).join("");
   }
 
@@ -2054,6 +2096,14 @@
     });
     $("st-east").addEventListener("click", function () { stConf = "E"; renderStandings(); });
     $("st-west").addEventListener("click", function () { stConf = "W"; renderStandings(); });
+    $("st-all").addEventListener("click", function () { stConf = "A"; renderStandings(); });
+    $("st-head").addEventListener("click", function (e) {  // 全聯盟表：點欄位標題排序，再點同一欄就反過來
+      var th = e.target.closest ? e.target.closest("[data-sort]") : null;
+      if (!th) return;
+      var key = th.getAttribute("data-sort"), c = ST_COLS.filter(function (x) { return x.key === key; })[0];
+      stSort = key === stSort.key ? { key: key, dir: -stSort.dir } : { key: key, dir: c.dir };
+      renderStandings();
+    });
     $("inj-home").addEventListener("toggle", function () { if (this.open) renderInjHome(); });  // 點開才去 ESPN 抓傷病
     $("inj-east").addEventListener("click", function () { injConf = "E"; renderInjHome(); });
     $("inj-west").addEventListener("click", function () { injConf = "W"; renderInjHome(); });

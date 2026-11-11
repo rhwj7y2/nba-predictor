@@ -362,7 +362,7 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .inj-t .inj-none { padding: 0 2px 10px; }
 
 /* 排名 */
-.standings { margin-bottom: 0; }
+.standings { margin-bottom: 0; min-width: 0; }  /* 首頁是 grid：不加 min-width: 0，全聯盟那張寬表會把整張卡片和整個首頁撐寬 */
 .st-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .st-head h2 { margin: 0; }
 .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; }
@@ -380,6 +380,17 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 :root[data-theme="dark"] .st-table tr.st-out td, :root[data-theme="black"] .st-table tr.st-out td { background: rgba(0, 0, 0, .28); }
 :root[data-theme="dark"] .st-table .st-w { color: var(--win); font-weight: 800; }
 .st-table .st-l { color: var(--bad); font-weight: 800; }
+/* 全聯盟：欄位多，手機上整張表可以左右滑，球隊那一欄固定在左邊；欄位標題可以點（排序） */
+.st-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.st-league { width: max-content; min-width: 100%; }  /* 照內容寬度排，不夠卡片寬就撐滿；太寬就在 .st-scroll 裡左右滑（球隊那欄不要被多餘寬度撐大） */
+.st-league th, .st-league td { padding: 7px 5px; font-size: .85rem; white-space: nowrap; }
+.st-hint { margin: 8px 0 0; color: var(--muted); font-size: .72rem; text-align: center; }
+.st-league th:first-child, .st-league td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; color: var(--text); }
+.st-league th:nth-child(2), .st-league td:nth-child(2) { text-align: center; }  /* 全聯盟第 2 欄是「勝」，不是球隊，不要靠左 */
+.st-league .st-team { gap: 6px; }
+.st-league .st-rk { min-width: 1.2em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.st-league th.st-sort { cursor: pointer; user-select: none; }
+.st-league th.st-sort.on { color: var(--text); }
 
 /* 準確率頁 */
 .acc-big { text-align: center; }
