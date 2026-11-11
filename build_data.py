@@ -14,7 +14,6 @@
 """
 import argparse
 import json
-import math
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -98,11 +97,6 @@ HISTORY_SEASONS = [
 #   prevWeight：上季評分當起點時打幾折
 MODEL = {"shrinkK": 5, "homeAdv": 2, "recentWeight": 0.5}
 SRS = {"lam": 5, "halfLife": 60, "prevWeight": 0.5}
-
-# 開盤冷門觀察名單（實驗功能）規則 v1：凍結，上線後不准改；要改就開 v2、重新計算，不要動這個。
-#   minOdds：被選那隊「目前」的小數賠率至少多少；minEdge：模型勝率 - 市場去抽水勝率至少多少；
-#   sigma：模型分差換成勝率用的標準差（勝率 = Φ(分差 / sigma)）；horizonHours：只看未來幾小時內要開打的比賽
-UPSET_RULE = {"version": "v1", "minOdds": 2.0, "minEdge": 0.06, "sigma": 13.5, "horizonHours": 48}
 
 # 英文隊名 -> (縮寫, 中文名, 分區, 代表色)
 TEAMS = {
@@ -549,110 +543,6 @@ def fair_probs(d_home, d_away):
     return ih / (ih + ia), ia / (ih + ia)
 
 
-def norm_cdf(z):
-    """標準常態累積分布 Φ(z)（不用 numpy）"""
-    return 0.5 * (1 + math.erf(z / math.sqrt(2)))
-
-
-def model_margin(item, ratings):
-    """這場的模型預測分差（主隊領先幾分），和網頁 app.js predictSeason 一致：
-    評分差 + 主場優勢（中立場地 0）- (主隊傷病扣分 + 主隊連兩天扣分) + (客隊傷病扣分 + 客隊連兩天扣分)"""
-    b = item.get("b", "")
-    ha = 0 if item["n"] else MODEL["homeAdv"]
-    ja = (item.get("ja") or 0) + (B2B_DEDUCT if "a" in b else 0)
-    jh = (item.get("jh") or 0) + (B2B_DEDUCT if "h" in b else 0)
-    return ratings[item["h"]] - ratings[item["a"]] + ha - (jh - ja)
-
-
-def find_upset(item, rec, ratings, gp):
-    """規則 v1：這場有沒有符合的「冷門」。item = 賽程裡的這場（已有傷病扣分）、rec = odds 資料表這場的紀錄、
-    ratings = {縮寫: SRS 評分}、gp = {縮寫: 本季已打場數}。符合回傳 dict，否則 None。
-    條件：兩隊都已決定且本季打過、兩隊都不是連兩天、盤口紀錄是賽前（st = pre）且主客隊的 moneyline 都有；
-    被選那隊「目前」小數賠率 >= minOdds，而且 模型勝率 - 市場去抽水勝率 >= minEdge。一場最多選一隊。"""
-    if not item["a"] or not item["h"] or item.get("b"):
-        return None
-    if not gp.get(item["a"]) or not gp.get(item["h"]) or ratings.get(item["a"]) is None or ratings.get(item["h"]) is None:
-        return None
-    ml = (rec or {}).get("moneyline") or {}
-    if rec.get("st") != "pre" or len(ml.get("home") or []) < 2 or len(ml.get("away") or []) < 2:
-        return None
-    dh_now, da_now = american_to_decimal(ml["home"][1]), american_to_decimal(ml["away"][1])
-    dh_open, da_open = american_to_decimal(ml["home"][0]), american_to_decimal(ml["away"][0])
-    qh_now, qa_now = fair_probs(dh_now, da_now)
-    qh_open, qa_open = fair_probs(dh_open, da_open)
-    m = model_margin(item, ratings)
-    ph = norm_cdf(m / UPSET_RULE["sigma"])
-    for side, p, d, q, d0, q0 in (("h", ph, dh_now, qh_now, dh_open, qh_open), ("a", 1 - ph, da_now, qa_now, da_open, qa_open)):
-        if d >= UPSET_RULE["minOdds"] and p - q >= UPSET_RULE["minEdge"]:
-            return {"side": side, "margin": m, "model_prob": p, "odds_pick": d, "fair_pick": q, "odds_open": d0, "fair_open": q0,
-                    "provider": rec.get("provider")}
-    return None
-
-
-def update_upset_log(conn, schedule, team_rows_now):
-    """每次 build：對「未來 horizonHours 小時內要開打」的比賽套規則 v1，第一次符合就寫進資料表 upset_log（只新增、不修改）。
-    不回補上線之前的比賽：過去比賽「選的當下」的賠率已經不存在了。回傳這次新增幾筆。"""
-    if not schedule:
-        return 0
-    ratings = {r["abbr"]: r["rating"] for r in team_rows_now.values() if r.get("rating") is not None}
-    gp = {r["abbr"]: r["gp"] for r in team_rows_now.values()}
-    odds = store.read_odds(conn)
-    odds_st = store.read_odds_status(conn)
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    horizon = now + timedelta(hours=UPSET_RULE["horizonHours"])
-    by_key = {(g["d"], g["a"], g["h"]): g for g in schedule["games"] if g["a"] and g["h"]}
-    n_new = 0
-    for g in store.read_schedule(conn):
-        if g["status"] != "STATUS_SCHEDULED" or not g["utc"] or not g["away"] or not g["home"] or g["id"] not in odds:
-            continue
-        start = datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ")
-        if not (now < start <= horizon):
-            continue
-        tw = (start + timedelta(hours=8)).strftime("%Y-%m-%d")
-        item = by_key.get((tw, TEAMS[g["away"]][0], TEAMS[g["home"]][0]))
-        if item is None or item["s"] != "S":
-            continue
-        hit = find_upset(item, dict(odds[g["id"]], st=odds_st[g["id"]]), ratings, gp)
-        if hit:
-            team = g["home"] if hit["side"] == "h" else g["away"]
-            row = {"game_id": g["id"], "version": UPSET_RULE["version"], "picked_at": now.strftime("%Y-%m-%dT%H:%MZ"), "team": team, **hit}
-            if store.insert_upset(conn, row):
-                n_new += 1
-                print(f"冷門觀察：{tw} {TEAMS[g['away']][1]} @ {TEAMS[g['home']][1]} 選 {TEAMS[team][1]}（賠率 {hit['odds_pick']:.2f}，模型 {hit['model_prob']:.1%} 對市場 {hit['fair_pick']:.1%}）")
-    conn.commit()
-    return n_new
-
-
-def build_upsets(conn):
-    """輸出給網頁的冷門觀察名單：資料表 upset_log 每一筆，打完的再現算收盤去抽水勝率、CLV、勝負。
-    CLV（收盤價值）= 被選那隊「收盤去抽水勝率」- 選的當下的去抽水勝率；正數 = 選的時候買到比收盤便宜。
-    收盤用 odds 資料表 st = final 那筆的 moneyline 收盤；查不到收盤的不給 qc / clv（網頁顯示「無收盤」）。"""
-    odds = store.read_odds(conn)
-    odds_st = store.read_odds_status(conn)
-    games = {g["id"]: g for g in store.read_schedule(conn)}
-    picks = []
-    for u in store.read_upsets(conn):
-        g = games.get(u["game_id"])
-        if not g or not g["utc"]:
-            continue
-        tw = datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") + timedelta(hours=8)
-        item = {"d": tw.strftime("%Y-%m-%d"), "t": tw.strftime("%H:%M"), "a": TEAMS[g["away"]][0], "h": TEAMS[g["home"]][0],
-                "side": u["side"], "od": round(u["odds_pick"], 2), "mp": round(u["model_prob"], 3), "qp": round(u["fair_pick"], 3)}
-        if g["status"] == "STATUS_FINAL" and g["home_pts"] is not None and g["away_pts"] is not None:
-            won = (g["home_pts"] > g["away_pts"]) == (u["side"] == "h")
-            item["w"] = 1 if won else 0
-            rec = odds.get(u["game_id"])
-            ml = (rec or {}).get("moneyline") or {}
-            if rec and odds_st.get(u["game_id"]) == "final" and len(ml.get("home") or []) >= 2 and len(ml.get("away") or []) >= 2:
-                qh, qa = fair_probs(american_to_decimal(ml["home"][1]), american_to_decimal(ml["away"][1]))
-                qc = qh if u["side"] == "h" else qa
-                item["qc"] = round(qc, 3)
-                item["clv"] = round((qc - u["fair_pick"]) * 100, 2)  # 百分點
-        picks.append(item)
-    picks.sort(key=lambda x: (x["d"], x["t"], x["a"]))
-    return {"rule": UPSET_RULE, "picks": picks}
-
-
 def backfill_injury_adj(conn, games, schedule):
     """事後回補：2026-11-08 以前已完賽的比賽（當時還沒有傷病扣分），照現行規則補算一份，標記 bf = 1。
 
@@ -1078,8 +968,6 @@ def main(db_path, target, complete, backfill_injuries=False):
         apply_injury_adj(conn, schedule, tiers, games if backfill_injuries else None)
     if schedule:
         apply_h2h_pace_adj(conn, schedule)
-    if schedule and not complete:  # 開盤冷門觀察名單：要在傷病扣分之後才算分差；只新增不修改
-        update_upset_log(conn, schedule, out)
 
     # 球季進行中：附上預測模型參數，以及上季交手紀錄（只供顯示，不進預測）
     if not complete:
@@ -1114,17 +1002,6 @@ def main(db_path, target, complete, backfill_injuries=False):
     )
     if schedule:
         print(f"賽程：{len(schedule['games'])} 場（台灣時間）-> {schedule_target}")
-
-    # 開盤冷門觀察名單（只有球季進行中才有；網頁沒有這個檔也不會壞）
-    if not complete:
-        upsets = build_upsets(conn)
-        upsets_target = target.parent / "upsets.js"
-        upsets_target.write_text(
-            "// 由 build_data.py 自動產生，請勿手改\nwindow.NBA_UPSETS = "
-            + json.dumps(upsets, ensure_ascii=False, separators=(",", ":")).replace('},{"d"', '},\n{"d"') + ";\n",
-            encoding="utf-8",
-        )
-        print(f"冷門觀察：累計 {len(upsets['picks'])} 筆 -> {upsets_target}")
 
     # 每隊得分前三高的球員（只有球季進行中才有；沒有球員數據檔就寫 null，網頁就不會顯示這張卡片）
     players = None if complete else build_players(conn, games)

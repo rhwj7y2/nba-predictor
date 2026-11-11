@@ -483,10 +483,8 @@ a.game:hover { border-color: var(--accent); }
 .gm-qn-a { left: -10px; }
 .gm-qn-h { right: -10px; }
 .gm-rec { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
-.gm-topl { height: 19px; line-height: 19px; font-size: .7rem; font-weight: 700; color: var(--accent); white-space: nowrap; }  /* 隊徽上面的小行：連勝 / 連敗、冷門觀察標籤（每行固定 19px，兩隊的隊徽才對得齊） */
+.gm-topl { height: 19px; line-height: 19px; font-size: .7rem; font-weight: 700; color: var(--accent); white-space: nowrap; }  /* 隊徽上面的小行：連勝 / 連敗（每行固定 19px，兩隊的隊徽才對得齊） */
 .gm-topl .cold { color: var(--cold); }
-.gm-up { display: block; width: fit-content; margin: 1px auto; padding: 0 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: .68rem; font-weight: 700; line-height: 15px; }  /* 冷門觀察名單選的那隊：隊徽上面的小標籤 */
-.gm-up-gap { visibility: hidden; }  /* 對手：同樣高度的看不見空位，兩隊才會對齊 */
 .gm-wp { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px; position: relative; }  /* 預測勝率條：客隊% | 條 | 主隊%（信心下面） */
 .gm-wc { color: var(--muted); font-size: .6rem; line-height: 1.2; text-align: center; margin-top: 1px; }  /* 勝率條下面的小字：賭盤勝率 / 模型勝率 */
 .gm-wbar { display: flex; width: calc(var(--gm-mid) - 3.6rem); height: 5px; border-radius: 999px; overflow: hidden; background: var(--line); gap: 1px; }

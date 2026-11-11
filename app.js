@@ -12,10 +12,6 @@
   // 球季進行中：資料帶有模型參數時，預測只用本季已打的比賽（不用上季表現；參數見 build_data.py 的 MODEL）
   var MODEL = D.mode === "in_season" && D.model ? D.model : null;
 
-  // 開盤冷門觀察名單（實驗功能，build_data.py 規則 v1 往後記錄；檔案不存在就是空的，網頁照常）：每筆 { d 台灣日期, t, a, h, side "a"/"h" 被選那隊, od 賠率, mp 模型勝率, qp 市場勝率, w 勝負, qc 收盤市場勝率, clv }
-  var UPSETS = window.NBA_UPSETS && window.NBA_UPSETS.picks ? window.NBA_UPSETS.picks : [];
-  var UPSET_BY = {};
-  UPSETS.forEach(function (u) { UPSET_BY[u.d + "|" + u.a + "|" + u.h] = u; });
   var SCHEDULE = window.NBA_SCHEDULE || null;  // 賽程（球季進行中才有，build_data.py 產生；日期與時間都是台灣時間）
   var ABBR = {};  // 縮寫 -> 球隊 key；網址和賽程都用縮寫
   Object.keys(T).forEach(function (k) { ABBR[T[k].abbr] = k; });
@@ -386,6 +382,43 @@
     if (d && d.dataset && d.dataset.fold) foldOpen[d.dataset.fold] = d.open;
   }, true);
 
+  // 預測頁最上面的小字（已納入傷病 / 未納入傷病 / back-to-back，各一行；沒有內容的行不顯示）
+  var injNoteState = { inj: "", unc: "", b2b: "" }, uncToken = 0;
+  function drawInjNote() {
+    var el = $("inj-adj-note"), lines = [injNoteState.inj, injNoteState.unc, injNoteState.b2b].filter(Boolean);
+    el.textContent = "";
+    lines.forEach(function (t, i) {  // 隊名、球員名是文字，用文字節點塞進去
+      if (i) el.appendChild(document.createElement("br"));
+      el.appendChild(document.createTextNode(t));
+    });
+    el.hidden = !lines.length;
+  }
+
+  // 「未納入傷病」：出賽成疑的人（模型沒扣分，所以另外列出來，寫明原因）。只列「缺陣時模型會扣分」的球員——本季至少出賽 3 場、場均得分有等級（不是板凳）：
+  //   ・每日觀察（Day-To-Day）：模型只扣「缺陣（Out）」，每日觀察不算
+  //   ・預計這場回歸（缺陣但回歸日剛好是這場或前一天）：模型不扣（見 backForNextGame）
+  // 資料是打開頁面時從 ESPN 即時抓的（和傷病名單卡片同一份）；板凳、確定缺陣但這場沒扣的人不在這裡
+  function uncertainOf(res, key, t) {
+    var out = [];
+    (res.by[key] || []).forEach(function (x) {
+      var m = /\/id\/(\d+)\//.exec(JSON.stringify((x.athlete && x.athlete.links) || []));
+      var p = m ? playerStat(m[1]) : null;
+      if (!p || p.gp < 3 || p.t > 4) return;
+      var why = x.status === "Day-To-Day" ? "每日觀察，出賽成疑" : backForNextGame(x, t.abbr) ? "預計回歸，出賽成疑" : "";
+      if (why) out.push({ t: t, n: (x.athlete && x.athlete.displayName) || "?", why: why, pts: p.pts });
+    });
+    return out;
+  }
+  function loadUncertain(aKey, hKey, a, h) {
+    var token = uncToken;
+    fetchInjuries().then(function (res) {
+      if (token !== uncToken) return;
+      var list = uncertainOf(res, aKey, a).concat(uncertainOf(res, hKey, h)).sort(function (x, y) { return y.pts - x.pts; });
+      injNoteState.unc = list.length ? "未納入傷病：" + list.map(function (u) { return u.t.zh + " " + u.n + "（" + u.why + "）"; }).join("、") : "";
+      drawInjNote();
+    }, function () { /* 抓不到就不顯示這一行 */ });
+  }
+
   function render() {
     foldOpen = {};
     // 卡片順序與預設展開：已完賽 = 得分前三（展開）、數據對照（收起）；還沒開賽 = 數據對照（展開）、傷病名單、得分前三（收起）。其他卡片都預設收起
@@ -433,13 +466,12 @@
     var adjGame = !MODEL ? null : pregame ? finalGame : upcomingGameOf(a.abbr, h.abbr);  // 傷病扣分來自這場比賽的賽程資料；沒有對應賽程（自選）就用兩隊現在的缺陣
     var cmp = MODEL ? compareModels(a, h, neutral, adjGame ? gameAdj(adjGame) : matchAdj(a, h)) : null;
     var injText = MODEL ? adjNote(a, h, adjGame) : "";
-    var noteEl = $("inj-adj-note"), b2bText = MODEL ? b2bNote(a, h, adjGame) : "";
-    noteEl.textContent = injText ? (adjGame && adjGame.jb ? "事後回補傷病：" : "已納入傷病：") + injText : "";
-    if (b2bText) {  // 連兩天另起一行（隊名是固定的中文名，用文字節點塞進去）
-      if (injText) noteEl.appendChild(document.createElement("br"));
-      noteEl.appendChild(document.createTextNode("back-to-back：" + b2bText));
-    }
-    noteEl.hidden = !injText && !b2bText;
+    var b2bText = MODEL ? b2bNote(a, h, adjGame) : "";
+    // 預測頁最上面的小字，由上到下：已納入傷病 / 未納入傷病（出賽成疑的人，要等 ESPN 傷病名單回來才有）/ back-to-back
+    injNoteState = { inj: injText ? (adjGame && adjGame.jb ? "事後回補傷病：" : "已納入傷病：") + injText : "", unc: "", b2b: b2bText ? "back-to-back：" + b2bText : "" };
+    drawInjNote();
+    uncToken++;  // 換比賽時，上一場還沒回來的名單不要再畫上來
+    if (MODEL && !pregame) loadUncertain(aKey, hKey, a, h);  // 已完賽的固定頁面沒有「那天」的名單，不顯示未納入
     var pace = MODEL ? cmp.p1 : predictPace(a, h, neutral ? 0 : null);
     var wPace = winnerOf(pace);
 
@@ -1313,7 +1345,7 @@
 
   // 一邊的球隊：隊徽、隊名、戰績（沒決定的隊伍顯示「待定」）
   // 預測勝率條（信心下面）：模型預測分差 M（主隊 - 客隊，已含傷病、連兩天）換成主隊勝率 = Φ(M / 13.5)，Φ 是標準常態累積分布
-  // 13.5 和冷門觀察規則 v1 用的 sigma 一樣；三季回測（3,643 場）各勝率區間的預測和實際大致吻合
+  // 13.5 是分差換成勝率用的標準差；三季回測（3,643 場）各勝率區間的預測和實際大致吻合
   function normCdf(z) {  // Φ(z)，用 erf 的近似公式（誤差 < 1.5e-7）
     var x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.3275911 * x);
     var e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
@@ -1338,11 +1370,9 @@
     return probBar(100 - g.mq, g.mq, a, h, "賭盤預估勝率（去抽水）：客隊 ", "賭盤勝率");
   }
   // 隊徽上面的小行（固定 19px 高；兩隊都留這一行，隊徽、隊名才會對齊）：
-  //   streak：undefined = 沒有這一行；字串 = 這一行的內容（連勝 / 連敗的字，或「冷門觀察」小標籤；什麼都沒有就是空字串，留空白）
-  //   tag：舊的用法（「show」/「space」，隊徽上面另外一行小標籤），賽程卡片已經改成放在 streak 那一行，這裡保留給其他地方
-  function teamCell(t, tag, streak) {
-    var top = (streak !== undefined ? '<div class="gm-topl">' + streak + "</div>" : "") +
-      (tag ? '<div class="gm-topl"><div class="gm-up' + (tag === "space" ? " gm-up-gap" : "") + '">冷門觀察</div></div>' : "");
+  //   streak：undefined = 沒有這一行；字串 = 這一行的內容（連勝 / 連敗的字；什麼都沒有就是空字串，留空白）
+  function teamCell(t, streak) {
+    var top = streak !== undefined ? '<div class="gm-topl">' + streak + "</div>" : "";
     if (!t) return '<div class="gm-team">' + top + '<span class="mini-badge tbd">?</span><div class="gm-name">待定</div></div>';
     return '<div class="gm-team">' + top + miniBadge(t) + '<div class="gm-name">' + t.zh + '</div><div class="gm-rec">' +
       t.w + "-" + t.l + "</div></div>";
@@ -1355,14 +1385,10 @@
     var a = g.a ? T[ABBR[g.a]] : null;
     var h = g.h ? T[ABBR[g.h]] : null;
     var pi = MODEL ? preGameInfo(g) : null;
-    var up = a && h ? UPSET_BY[date + "|" + g.a + "|" + g.h] : null;  // 這場有沒有冷門觀察
     // 還沒開打的比賽：隊徽上面標連勝 / 連敗（3 場起；是「現在」的連勝連敗，已完賽的卡片不標）；任一隊有就兩隊都留一行
     var upcoming = (g.s === "S" || g.s === "L") && a && h && MODEL;
     var stA = upcoming ? streakText(a) : "", stH = upcoming ? streakText(h) : "";
-    // 隊徽上面只有一行：被「冷門觀察」選到的那隊放小標籤（優先，蓋過它的連勝連敗），另一隊放自己的連勝連敗
-    var tagHtml = '<div class="gm-up">冷門觀察</div>';
-    var lineA = up && up.side === "a" ? tagHtml : stA, lineH = up && up.side === "h" ? tagHtml : stH;
-    var hasTop = !!(up || stA || stH), nTop = hasTop ? 1 : 0;
+    var hasTop = !!(stA || stH), nTop = hasTop ? 1 : 0;  // 隊徽上面那一行：任一隊有連勝 / 連敗，兩隊都留一行
     // 首頁簡版：還沒開打的顯示預測比分；開打後已經抓到即時比分的，就跟賽程一樣顯示即時比分
     var homePred = mode === "home" && MODEL && a && h && (g.s === "S" || g.s === "L") && !liveMidCache[date + "|" + g.a + "|" + g.h] ? compareModels(a, h, g.n, gameAdj(g)) : null;
     var past = date < todayTW();
@@ -1430,8 +1456,8 @@
       ? '<div class="gm-head' + (tags ? "" : " solo") + '"><div class="gm-head-l">' + tags + '</div><span class="gm-res ' + (pi.ok1 ? "ok" : "bad") + '">' + (pi.ok1 ? "預測正確" : "預測失敗") + '</span></div>'
       : tags ? '<div class="gm-tags">' + tags + "</div>" : "";
     el.innerHTML = head +
-      '<div class="gm-row"' + (nTop ? ' style="--gm-top:' + nTop * 19 + 'px"' : "") + ">" + teamCell(a, null, hasTop ? lineA : undefined) +
-      '<div class="gm-mid">' + mid + "</div>" + teamCell(h, null, hasTop ? lineH : undefined) + "</div>" +
+      '<div class="gm-row"' + (nTop ? ' style="--gm-top:' + nTop * 19 + 'px"' : "") + ">" + teamCell(a, hasTop ? stA : undefined) +
+      '<div class="gm-mid">' + mid + "</div>" + teamCell(h, hasTop ? stH : undefined) + "</div>" +
       (line ? '<div class="game-pred">' + line + "</div>" : "");
     if ((g.s === "S" || g.s === "L") && a && h) {  // 超級球星出賽成疑：球隊戰績下面補一行（資料來自 ESPN 傷病名單，抓回來之後補；已經抓到就直接補）
       el.setAttribute("data-gk", date + "|" + g.a + "|" + g.h);
