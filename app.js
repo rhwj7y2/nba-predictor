@@ -209,6 +209,17 @@
     return '<span class="rate">' + (total ? (w / total * 100).toFixed(1) + "%" : "—") + "</span>";
   }
 
+  // 聯盟排名小字「聯盟第 N」：在全部 30 隊裡比 key 這個欄位（dir = -1 越大越前面，1 越小越前面）；比我好的隊數 + 1，同分並列；沒有這欄的隊不參與
+  function leagueRank(key, t, dir) {
+    var better = 0;
+    Object.keys(T).forEach(function (k) {
+      var v = T[k][key];
+      if (v == null) return;
+      if (dir < 0 ? v > t[key] : v < t[key]) better++;
+    });
+    return '<span class="rate">聯盟第 ' + (better + 1) + "</span>";
+  }
+
   // 一格數據：數字（隊色）+ 較優的加一顆星 + 小字；較優的一邊也用粗體，另一邊維持原樣；平手兩邊都一樣
   // left = true：左邊那隊的格子，星星掛在數字左邊；右邊那隊掛在右邊。星星是浮在數字旁邊（不佔位置），所以每一格的數字都固定置中、上下對齊
   function statCell(main, sub, better, color, left) {
@@ -530,8 +541,8 @@
     rows.push(rec("主場戰績", a.home, h.home));
     rows.push(rec("客場戰績", a.road, h.road));
     if (MODEL && a.ortg != null && h.ortg != null) {  // 每百回合得分 / 失分（也就是 ORTG / DRTG，把節奏拿掉的進攻 / 防守效率）；沒有這兩個欄位的舊資料檔就不顯示
-      rows.push(["每百回合得分", f1(a.ortg), "", f1(h.ortg), "", betterHigh(a.ortg, h.ortg)]);
-      rows.push(["每百回合失分", f1(a.drtg), "", f1(h.drtg), "", betterLow(a.drtg, h.drtg)]);  // 失分越少越好
+      rows.push(["每百回合得分", f1(a.ortg), leagueRank("ortg", a, -1), f1(h.ortg), leagueRank("ortg", h, -1), betterHigh(a.ortg, h.ortg)]);
+      rows.push(["每百回合失分", f1(a.drtg), leagueRank("drtg", a, 1), f1(h.drtg), leagueRank("drtg", h, 1), betterLow(a.drtg, h.drtg)]);  // 失分越少越好
     }
     rows.push(["場均得分", f1(a.off), "", f1(h.off), "", betterHigh(a.off, h.off)]);
     rows.push(["場均失分", f1(a.def), "", f1(h.def), "", betterLow(a.def, h.def)]);  // 失分越少越好
@@ -1409,7 +1420,7 @@
       var hw = homePred.w1 === "home";
       mid = '<div class="gm-score"><span class="gm-pts pred ' + (hw ? "lose" : "win") + '">' + f1(homePred.p1.away) + "</span>" +
         '<span class="gm-final"><b>' + (hw ? "▶" : "◀") + "</b>預測</span>" +
-        '<span class="gm-pts pred ' + (hw ? "win" : "lose") + '">' + f1(homePred.p1.home) + "</span></div>";
+        '<span class="gm-pts pred ' + (hw ? "win" : "lose") + '">' + f1(homePred.p1.home) + "</span></div>" + marketBar(g, a, h);  // 預測比分下面放賭盤勝率（和賽程頁一樣：賭盤在中間、模型在下面）
     } else if (g.s === "F" && a && h) {
       var homeWon = g.hs > g.as;
       mid = '<div class="gm-score"><span class="gm-pts ' + (homeWon ? "lose" : "win") + '">' + g.as + "</span>" +
@@ -1812,7 +1823,7 @@
     });
   }
 
-  // 全聯盟：30 隊一張表，欄位 勝 / 敗 / ORTG / DRTG / PACE / 場均進攻籃板 / 防守籃板 / 助攻 / 阻攻 / 三分出手 / 三分命中率 / 場均失誤；點欄位標題可以排序（再點一次反過來）。
+  // 全聯盟：30 隊一張表，欄位 勝 / 敗 / ORTG / DRTG / 場均得分 / 場均失分 / PACE / 場均進攻籃板 / 防守籃板 / 助攻 / 阻攻 / 三分出手 / 三分命中率 / 場均失誤；點欄位標題可以排序（再點一次反過來）。
   // 預設照勝率高到低。每欄第一次點的方向 = 比較好的在前（敗、DRTG、失誤是越小越好，其他越大越好）；沒有數字的隊排最後
   var stSort = { key: "pct", dir: -1 };
   var ST_COLS = [
@@ -1820,6 +1831,8 @@
     { key: "l", label: "敗", get: function (t) { return t.l; }, show: function (t) { return t.l; }, dir: 1 },
     { key: "ortg", label: "ORTG", get: function (t) { return t.ortg; }, show: function (t) { return f1(t.ortg); }, dir: -1 },
     { key: "drtg", label: "DRTG", get: function (t) { return t.drtg; }, show: function (t) { return f1(t.drtg); }, dir: 1 },
+    { key: "off", label: "得分", get: function (t) { return t.off; }, show: function (t) { return f1(t.off); }, dir: -1 },
+    { key: "def", label: "失分", get: function (t) { return t.def; }, show: function (t) { return f1(t.def); }, dir: 1 },
     { key: "pace", label: "PACE", get: function (t) { return t.pace; }, show: function (t) { return f1(t.pace); }, dir: -1 },
     { key: "orb", label: "進攻籃板", get: function (t) { return t.orb; }, show: function (t) { return f1(t.orb); }, dir: -1 },
     { key: "drb", label: "防守籃板", get: function (t) { return t.drb; }, show: function (t) { return f1(t.drb); }, dir: -1 },

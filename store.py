@@ -72,6 +72,7 @@ def connect(path=None):
     for col in ("fgm", "fga", "tpm", "tpa", "blk"):  # 舊資料庫：補上球員投籃、三分的命中與出手、阻攻欄位
         if col not in have:
             conn.execute(f"ALTER TABLE player_box ADD COLUMN {col} INTEGER")
+    conn.execute("DROP TABLE IF EXISTS upset_log")  # 已移除的「冷門觀察」功能留下的資料表：刪掉（舊資料庫第一次打開時刪一次，之後這行什麼都不做）
     return conn
 
 
