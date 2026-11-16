@@ -1663,7 +1663,8 @@
   var COMMENT_MAX = 200;      // 一則最多幾個字
   var COMMENT_SHOW = 50;      // 每場最多顯示最新的幾則
   var COMMENT_GAP = 15000;    // 同一支瀏覽器兩則留言至少隔幾毫秒（擋連續洗版；只是前端的基本防護）
-  var cmt = { key: null, state: "loading", list: [] };  // 目前這場的留言：state = loading / ok / err
+  var cmt = { key: null, state: "loading", list: [], card: "comment-card", title: "💬 留言" };  // 目前畫面上那張留言卡的內容（比賽頁的留言卡或首頁的交流區，同一時間只會看到其中一張）：state = loading / ok / err
+  var BOARD_KEY = "0000-00-00_BBS_ALL";  // 首頁交流區用的固定編號：長得像「日期_客隊_主隊」，這樣 Firebase 規則（firebase_rules.json）不用改就能存
 
   function commentKey(g) { return g.d + "_" + g.a + "_" + g.h; }  // 台灣日期_客隊縮寫_主隊縮寫，例如 2026-11-10_LAL_ATL
   function commentUrl(key, query) { return COMMENT_DB.replace(/\/+$/, "") + "/comments/" + key + ".json" + (query || ""); }
@@ -1675,10 +1676,22 @@
   // 一張留言卡片：標題 + 輸入框 + 留言列表。輸入框只建一次，之後只更新列表，不會因為讀到新留言就把你打到一半的字洗掉
   function showComments(g) {
     var card = $("comment-card");
-    if (!COMMENT_DB || !g || !g.a || !g.d || !g.h) { card.hidden = true; cmt.key = null; return; }
-    var key = commentKey(g);
-    cmt = { key: key, state: "loading", list: [] };
-    card.innerHTML = foldHtml("comment", "💬 留言",
+    if (!COMMENT_DB || !g || !g.a || !g.d || !g.h) { card.hidden = true; if (cmt.card === "comment-card") cmt.key = null; return; }
+    openComments("comment-card", commentKey(g), "comment", "💬 留言");
+  }
+
+  // 首頁交流區：不屬於哪一場比賽、大家都能留言的一串（用固定編號 BOARD_KEY）。重畫首頁時如果已經在畫面上就只更新列表，不會洗掉打到一半的字
+  function showBoard() {
+    var card = $("board-card");
+    if (!COMMENT_DB) { card.hidden = true; return; }
+    if (cmt.key === BOARD_KEY && cmt.card === "board-card" && card.querySelector(".cm-form")) { loadComments(BOARD_KEY); return; }
+    openComments("board-card", BOARD_KEY, "board", "💬 意見交流區");
+  }
+
+  function openComments(cardId, key, foldId, title) {
+    var card = $(cardId);
+    cmt = { key: key, state: "loading", list: [], card: cardId, title: title };
+    card.innerHTML = foldHtml(foldId, title,
       '<form class="cm-form" autocomplete="off"><textarea class="cm-input" maxlength="' + COMMENT_MAX + '" rows="3" placeholder="說點什麼吧（匿名，最多 ' + COMMENT_MAX + ' 字）"></textarea>' +
       '<div class="cm-bar"><span class="cm-count">0 / ' + COMMENT_MAX + '</span><button type="submit" class="cm-send">送出</button></div></form>' +
       '<p class="cm-msg" role="alert" hidden></p><ul class="cm-list"></ul>');
@@ -1688,16 +1701,16 @@
   }
 
   function setCommentMsg(text) {
-    var m = $("comment-card").querySelector(".cm-msg");
+    var m = $(cmt.card).querySelector(".cm-msg");
     if (!m) return;
     m.hidden = !text;
     m.textContent = text || "";
   }
 
   function drawComments() {  // 只更新標題的則數和列表；留言一律用 textContent 放進畫面（不會被當成 HTML 執行）
-    var card = $("comment-card"), ul = card.querySelector(".cm-list"), sum = card.querySelector("summary");
+    var card = $(cmt.card), ul = card.querySelector(".cm-list"), sum = card.querySelector("summary");
     if (!ul || !sum) return;
-    sum.textContent = "💬 留言" + (cmt.state === "ok" && cmt.list.length ? "（" + cmt.list.length + (cmt.list.length >= COMMENT_SHOW ? "+" : "") + "）" : "");
+    sum.textContent = cmt.title + (cmt.state === "ok" && cmt.list.length ? "（" + cmt.list.length + (cmt.list.length >= COMMENT_SHOW ? "+" : "") + "）" : "");
     ul.textContent = "";
     if (cmt.state === "err") return;  // 讀不到就不顯示任何字（輸入框還是在；送出失敗會另外提示）
     if (cmt.state !== "ok" || !cmt.list.length) {
@@ -1807,6 +1820,7 @@
     }
     drawHomeStats();
     renderStandings();
+    showBoard();  // 首頁交流區
   }
 
   function drawHomeStats() {
@@ -2116,10 +2130,12 @@
     });
     $("tab-home").addEventListener("click", function () { location.hash = hashOf({ tab: "home" }); });
     // 留言卡片（比賽頁）：輸入框的字數、送出（卡片內容是 JS 畫的，事件掛在卡片上）
-    $("comment-card").addEventListener("input", function (e) {
-      if (e.target.classList && e.target.classList.contains("cm-input")) e.target.closest("form").querySelector(".cm-count").textContent = e.target.value.length + " / " + COMMENT_MAX;
+    ["comment-card", "board-card"].forEach(function (id) {  // 比賽頁的留言卡、首頁的交流區用同一套
+      $(id).addEventListener("input", function (e) {
+        if (e.target.classList && e.target.classList.contains("cm-input")) e.target.closest("form").querySelector(".cm-count").textContent = e.target.value.length + " / " + COMMENT_MAX;
+      });
+      $(id).addEventListener("submit", function (e) { e.preventDefault(); sendComment(e.target); });
     });
-    $("comment-card").addEventListener("submit", function (e) { e.preventDefault(); sendComment(e.target); });
     // 本季輪替陣容球員卡片：點客隊 / 主隊按鈕切換要看哪一隊（已完賽頁的「本場得分前三球員」沒有按鈕）
     $("players-card").addEventListener("click", function (e) {
       var b = e.target.closest ? e.target.closest("[data-pl]") : null;
