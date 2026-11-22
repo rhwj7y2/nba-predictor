@@ -1944,7 +1944,8 @@
       }).join("") + "</tbody></table></div>";
 
     // 警語（2026-11-22 使用者拿掉「各個玩法準確率」那張表，改成這句）：預測分數對盤口的命中率三季回測都在 50% 上下，別拿來賭
-    html += '<div class="card acc-warn"><span>⚠️</span> <span>別拿網站預測分數去賭分數，你會很慘</span></div>';
+    var mae = teamScoreMae();
+    html += '<div class="card acc-warn"><span>⚠️</span> <span>別拿網站預測分數去賭分數，你會很慘' + (mae == null ? "" : "，因為單隊平均誤差為" + mae.toFixed(1) + "分") + "</span></div>";
 
     box.innerHTML = html;
   }
