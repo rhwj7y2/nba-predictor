@@ -418,6 +418,8 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .acc-note { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
 #stats-page .card h2, #stats-page .acc-note { text-align: center; }
 .acc-warn { text-align: center; font-weight: 700; color: var(--bad); }  /* 準確率頁最下面的警語 */
+.nb { white-space: nowrap; }  /* 警語的每一段不斷行（手機上只在段與段之間換行） */
+html[lang="en"] .nb1::after { content: " "; }  /* 英文翻譯會把結尾空格去掉，用這個補回段與段之間的空格 */
 .foot-warn { font-weight: 700; color: var(--bad); }  /* 頁尾「數據來源與說明」最後一行的警語 */
 body[data-view="stats"] .foot-warn, body[data-view="matchup"] .foot-warn { display: none; }  /* 準確率頁（警語卡）、對戰頁（最上面一排）已經有警語，頁尾不重複 */
 .acc-details summary {

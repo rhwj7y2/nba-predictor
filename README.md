@@ -128,7 +128,7 @@ python build_data.py           # 從資料庫整理成網頁用的資料 data/*.
 
 ## 資料來源
 
-2026-27：ESPN 公開計分板。2025-26 及更早：[Basketball-Reference.com](https://www.basketball-reference.com/)。僅供學習與興趣參考。
+2026-27（本季數據、賭盤、傷病名單）和 2023-24、2024-25 的比分：ESPN 公開計分板。2025-26 整季比分：[Basketball-Reference.com](https://www.basketball-reference.com/)（網頁只拿它算上季交手紀錄和開季評分起點）。僅供學習與興趣參考。
 
 ---
 

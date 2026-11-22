@@ -45,7 +45,7 @@
       recLabel: "本季戰績",
       l10note: "",
       h2hTitle: D.season + " 例行賽對戰 ",
-      sources: ["ESPN"].concat(D.h2hPrev || D.h2hHist ? ["Basketball-Reference.com"] : []),
+      sources: ["ESPN（本季數據、賭盤、傷病）"].concat(D.h2hPrev || D.h2hHist ? ["Basketball-Reference.com（僅上季整季比分）"] : []),
       foot: "整理自 " + D.season + " 例行賽已完成的 " + N_GAMES + " 場"
     }
   }[MODE];
@@ -1165,7 +1165,9 @@
   var retroLine = SCHEDULE && SCHEDULE.retro ? md(SCHEDULE.retro[0]) + "~" + md(SCHEDULE.retro[1]) + " 比賽在" + md(SCHEDULE.retro[1]) + "賽後更新納入傷病<br>新的PACE、球隊評分算法<br>因此比分與之前有所差異" : null;  // 斷句固定成三行
   // 頁尾警語：單隊平均誤差 = 本季已完賽的比賽，賽前預測的兩隊比分和實際比分差多少分的平均（沒有已完賽的比賽就不寫「因為…」）
   var maeTeam = teamScoreMae();
-  var footWarn = "⚠️ 別拿網站預測分數去賭分數，你會很慘" + (maeTeam == null ? "" : "，因為單隊平均誤差為" + maeTeam.toFixed(1) + "分");
+  var footWarn = warnHtml(maeTeam);
+  var backWarn = document.querySelector(".backrow-warn");  // 對戰頁最上面一排的警語（index.html 裡先放了不帶數字的版本）
+  if (backWarn) backWarn.innerHTML = footWarn;
   $("foot-text").innerHTML = COPY.sources.concat([COPY.foot], retroLine ? [retroLine] : [], ["僅供興趣參考，非投注建議!!"]).join("<br>") + '<span class="foot-warn"><br>' + footWarn + '</span>';  // 準確率頁、對戰頁自己有警語，頁尾那行在這兩頁不顯示（見 style.css .foot-warn）
 
   fillSelect(awaySel);
@@ -1902,6 +1904,11 @@
     return rows;
   }
 
+  // 警語（頁尾、準確率頁、對戰頁共用）：「⚠️ 別拿預測比分去賭分數：單隊平均誤差 9.5 分」。分成兩段、每段不斷行（nb），手機上只會在兩段之間換行，不會把一句話從中間切開
+  function warnHtml(mae) {
+    return '<span class="nb nb1">⚠️ 別拿預測比分去賭分數' + (mae == null ? "" : "：") + "</span>" +
+      (mae == null ? "" : '<wbr><span class="nb">單隊平均誤差 ' + mae.toFixed(1) + " 分</span>");
+  }
   // 單隊平均誤差：本季已完賽、有賽前數據的比賽，賽前預測的客隊、主隊比分和實際比分差的絕對值，每隊算一次取平均；沒有比賽回傳 null
   function teamScoreMae() {
     if (!MODEL || !SCHEDULE) return null;
@@ -1945,7 +1952,7 @@
 
     // 警語（2026-11-22 使用者拿掉「各個玩法準確率」那張表，改成這句）：預測分數對盤口的命中率三季回測都在 50% 上下，別拿來賭
     var mae = teamScoreMae();
-    html += '<div class="card acc-warn"><span>⚠️</span> <span>別拿網站預測分數去賭分數，你會很慘' + (mae == null ? "" : "，因為單隊平均誤差為" + mae.toFixed(1) + "分") + "</span></div>";
+    html += '<div class="card acc-warn">' + warnHtml(mae) + "</div>";
 
     box.innerHTML = html;
   }
