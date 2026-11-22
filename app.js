@@ -98,12 +98,12 @@
   }
 
   // ---------- 新版總和分數預測（只顯示在「數據對照」最下面一列；不進預測勝負、不進準確率統計；2026-11-22 照使用者的想法做，還沒有回測） ----------
-  // 想法：看兩隊「最近 5 場比近 10 場更快或更慢多少」，推測這場會打多快，再用每百回合得失分算兩隊得分。
-  //   預估節奏 = 兩隊本季 PACE 的平均 +（客隊近 5 場 PACE - 客隊近 10 場 PACE）+（主隊近 5 場 PACE - 主隊近 10 場 PACE）
+  // 想法：看兩隊「最近 10 場比整季更快或更慢多少」，推測這場會打多快，再用每百回合得失分算兩隊得分。（2026-11-22 照使用者要求，從「近 5 場 - 近 10 場」改成「近 10 場 - 本季」）
+  //   預估節奏 = 兩隊本季 PACE 的平均 +（客隊近 10 場 PACE - 客隊本季 PACE）+（主隊近 10 場 PACE - 主隊本季 PACE）
   //   客隊得分 =（客隊每百回合得分 + 主隊每百回合失分）/ 2 × 預估節奏 / 100
   //   主隊得分 =（主隊每百回合得分 + 客隊每百回合失分）/ 2 × 預估節奏 / 100
   // 主場優勢：和主預測一樣，分差加 MODEL.homeAdv（2 分），主隊 +1、客隊 -1（總分不變）；中立場地不加（ha = 0）
-  // 例：公鹿 @ 七六人，99.3 +（101.4 - 97.4）+（97.2 - 97.6）= 102.9，公鹿 =（108.6 + 112.7）/ 2 × 1.029 - 1 = 112.9，七六人 = 123.0
+  // 例：公鹿 @ 七六人，99.3 +（97.4 - 99.6）+（97.6 - 99.0）= 95.7，公鹿 =（108.6 + 112.7）/ 2 × 0.957 - 1，七六人 =（115.6 + 121.6）/ 2 × 0.957 + 1（再扣校正偏差）
   // 校正偏差（2026-11-22）：新版總分今年平均比原模型低約 3.5 分（網站的 PACE 用 48 分鐘換算、不含延長賽，加上其他還沒查清楚的原因），
   //   不校正的話「作者猜賭盤」會幾乎都是小小小。校正 = 這個球季已完賽的比賽，新版總分 - 原模型總分 的平均，從每場新版總分扣掉（兩隊各扣一半）；
   //   已完賽不到 20 場不校正。這樣新版總分平均和原模型一樣，大小才不會一面倒（命中率沒有因此變好，只是不再單邊偏小）
@@ -130,9 +130,9 @@
     return { pace: r.pace, away: r.away - b / 2, home: r.home - b / 2, bias: b };
   }
   function paceRaw(a, h, ha) {
-    var ok = function (t) { return typeof t.pace === "number" && typeof t.l5pace === "number" && typeof t.l10pace === "number" && typeof t.ortg === "number" && typeof t.drtg === "number"; };
+    var ok = function (t) { return typeof t.pace === "number" && typeof t.l10pace === "number" && typeof t.ortg === "number" && typeof t.drtg === "number"; };
     if (!ok(a) || !ok(h)) return null;
-    var pace = (a.pace + h.pace) / 2 + (a.l5pace - a.l10pace) + (h.l5pace - h.l10pace);
+    var pace = (a.pace + h.pace) / 2 + (a.l10pace - a.pace) + (h.l10pace - h.pace);
     var adv = (ha == null ? MODEL.homeAdv : ha) / 2;
     return { pace: pace, away: (a.ortg + h.drtg) / 2 * pace / 100 - adv, home: (h.ortg + a.drtg) / 2 * pace / 100 + adv };
   }
