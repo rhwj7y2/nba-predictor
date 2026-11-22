@@ -1163,7 +1163,10 @@
   // 11/1~11/8 的比賽：賽後（11/8）才把傷病、連兩天、新的對戰節奏、球隊評分算法補進預測，所以比分和當時不一樣：頁尾註明（日期範圍來自賽程資料的 retro）
   var md = function (d) { return Number(d.slice(5, 7)) + "/" + Number(d.slice(8)); };
   var retroLine = SCHEDULE && SCHEDULE.retro ? md(SCHEDULE.retro[0]) + "~" + md(SCHEDULE.retro[1]) + " 比賽在" + md(SCHEDULE.retro[1]) + "賽後更新納入傷病<br>新的PACE、球隊評分算法<br>因此比分與之前有所差異" : null;  // 斷句固定成三行
-  $("foot-text").innerHTML = COPY.sources.concat([COPY.foot], retroLine ? [retroLine] : [], ["僅供興趣參考，非投注建議!!"]).join("<br>");
+  // 頁尾警語：單隊平均誤差 = 本季已完賽的比賽，賽前預測的兩隊比分和實際比分差多少分的平均（沒有已完賽的比賽就不寫「因為…」）
+  var maeTeam = teamScoreMae();
+  var footWarn = "⚠️ 別拿網站預測分數去賭分數，你會很慘" + (maeTeam == null ? "" : "，因為單隊平均誤差為" + maeTeam.toFixed(1) + "分");
+  $("foot-text").innerHTML = COPY.sources.concat([COPY.foot], retroLine ? [retroLine] : [], ["僅供興趣參考，非投注建議!!"]).join("<br>") + '<span class="foot-warn"><br>' + footWarn + '</span>';  // 準確率頁、對戰頁自己有警語，頁尾那行在這兩頁不顯示（見 style.css .foot-warn）
 
   fillSelect(awaySel);
   fillSelect(homeSel);
@@ -1722,6 +1725,7 @@
 
   // 四個畫面：home 首頁、schedule 賽程、matchup 自選對戰（含賽程點進去的單場頁）、stats 準確率
   function showTab(name) {
+    document.body.dataset.view = name;  // 目前在哪個畫面（CSS 用：準確率頁不顯示頁尾警語）
     ["home", "schedule", "matchup", "stats"].forEach(function (v) {
       $("view-" + v).hidden = v !== name;
       $("tab-" + v).setAttribute("aria-current", v === name ? "page" : "false");
@@ -1886,10 +1890,6 @@
   // 新球隊評分（SRS＋上季當開季起點）、信心用上面的門檻（3.5 / 8.0）：低 657/1171、中 763/1159、高 1083/1313、全部 2503/3643
   // （2023-24 的上季起點用 2022-23 整季）
   var BACKTEST = { all: "68.7%", low: "56.1%", mid: "65.8%", high: "82.5%" };
-  // 各個玩法三季回測勝率（2023-24～2025-26，用現在的模型逐場往前推：含傷病、連兩天、對戰節奏調整；盤口只用有開盤的場次，打平盤與預測剛好等於盤口的不算）：
-  // 新球隊評分：不讓分 2503 / 3643、讓分 1838 / 3579、客隊單隊大小 1835 / 3607、主隊單隊大小 1766 / 3586、總分大小 1817 / 3595
-  // 單隊大小 = 客隊 + 主隊合併：(1835 + 1766) / (3607 + 3586) = 3601 / 7193
-  var BET_BACKTEST = { ml: "68.7%", sp: "51.4%", tt: "50.1%", tot: "50.5%" };
   function accuracyRows() {
     var rows = [];
     if (!MODEL || !SCHEDULE) return rows;
@@ -1902,31 +1902,20 @@
     return rows;
   }
 
-  function pct(a, b) { return b ? (a * 100 / b).toFixed(1) + "%" : "—"; }
-
-  // 盤口勝率：已完賽、有記下開賽前盤口的比賽，賽前預測比分對著盤口選的邊，猜中幾次。
-  // 規則和賽後頁面的 ✅ ❌ 一樣：預測剛好等於盤口的不選、實際剛好打平盤的不算輸贏。
-  // 回傳 { ml, sp, tt, tot }，每項 [猜中, 總次數]；單隊大小（tt）客隊、主隊各算一次，合併成同一列
-  function betStats() {
-    var s = { ml: [0, 0], sp: [0, 0], tt: [0, 0], tot: [0, 0] };
-    if (!MODEL || !SCHEDULE) return s;
+  // 單隊平均誤差：本季已完賽、有賽前數據的比賽，賽前預測的客隊、主隊比分和實際比分差的絕對值，每隊算一次取平均；沒有比賽回傳 null
+  function teamScoreMae() {
+    if (!MODEL || !SCHEDULE) return null;
+    var sum = 0, n = 0;
     SCHEDULE.games.forEach(function (g0) {
-      var g = withLive(g0);
-      var pi = g.s === "F" && g.sp != null && g.ou != null ? preGameInfo(g) : null;
+      var g = withLive(g0), pi = g.s === "F" && g.as != null ? preGameInfo(g) : null;
       if (!pi) return;
-      var pa = Number(f1(pi.c.p1.away)), ph = Number(f1(pi.c.p1.home));
-      s.ml[1]++; if (pi.ok1) s.ml[0]++;
-      var cover = g.hs - g.as + g.sp, pick = ph - pa + g.sp;
-      if (pick !== 0 && cover !== 0) { s.sp[1]++; if ((cover > 0) === (pick > 0)) s.sp[0]++; }      var ou = function (box, pred, line, actual) {
-        if (pred === line || actual === line) return;
-        box[1]++; if ((actual > line) === (pred > line)) box[0]++;
-      };
-      ou(s.tt, pa,Number(half(g.ou / 2 + g.sp / 2)), g.as);
-      ou(s.tt, ph,Number(half(g.ou / 2 - g.sp / 2)), g.hs);
-      ou(s.tot, pa + ph, g.ou, g.as + g.hs);
+      sum += Math.abs(pi.c.p1.away - g.as) + Math.abs(pi.c.p1.home - g.hs);
+      n += 2;
     });
-    return s;
+    return n ? sum / n : null;
   }
+
+  function pct(a, b) { return b ? (a * 100 / b).toFixed(1) + "%" : "—"; }
 
   function renderStats() {
     var rows = accuracyRows();
@@ -1954,14 +1943,8 @@
           '</td><td class="muted">' + BACKTEST[x[0]] + "</td></tr>";
       }).join("") + "</tbody></table></div>";
 
-    // 對盤口的勝率：只算有記下開賽前盤口的比賽
-    var bs = betStats();
-    if (bs.ml[1]) {
-      html += '<div class="card"><h2>各個玩法準確率</h2><table class="acc-table"><thead><tr><th>項目</th><th>猜中</th><th>勝率</th><th>三季回測</th></tr></thead><tbody>' +
-        [["ml", "不讓分"], ["sp", "讓分"], ["tt", "單隊大小"],["tot", "總分大小"]].map(function (x) {
-          return "<tr><td>" + x[1] + "</td><td>" + bs[x[0]][0] + " / " + bs[x[0]][1] + "</td><td>" + pct(bs[x[0]][0], bs[x[0]][1]) + '</td><td class="muted">' + BET_BACKTEST[x[0]] + "</td></tr>";
-        }).join("") + '</tbody></table><p class="acc-note">以準確率來看，不讓分值得參考，其他太看運氣啦</p></div>';
-    }
+    // 警語（2026-11-22 使用者拿掉「各個玩法準確率」那張表，改成這句）：預測分數對盤口的命中率三季回測都在 50% 上下，別拿來賭
+    html += '<div class="card acc-warn"><span>⚠️</span> <span>別拿網站預測分數去賭分數，你會很慘</span></div>';
 
     box.innerHTML = html;
   }

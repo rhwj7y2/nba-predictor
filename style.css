@@ -268,7 +268,6 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .home-main .home-title { font-size: 1.8rem; font-weight: 900; }
 .home-desc { display: block; margin-top: 6px; color: var(--muted); font-size: .88rem; }
 .home-main .home-desc { color: var(--accent); font-weight: 700; font-size: .95rem; }
-.home-note { display: block; margin-top: 8px; font-size: .8rem; font-weight: 400; color: var(--muted); }  /* 準確率卡片最下面的一句話 */
 .home-sub { display: block; margin-top: 10px; font-size: .9rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .home-games { margin-top: 14px; }
 .home-games summary {
@@ -418,6 +417,9 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .acc-num small { margin-left: 8px; font-size: 1.1rem; font-weight: 700; color: var(--accent); }
 .acc-note { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
 #stats-page .card h2, #stats-page .acc-note { text-align: center; }
+.acc-warn { text-align: center; font-weight: 700; color: var(--bad); }  /* 準確率頁最下面的警語 */
+.foot-warn { font-weight: 700; color: var(--bad); }  /* 頁尾「數據來源與說明」最後一行的警語 */
+body[data-view="stats"] .foot-warn, body[data-view="matchup"] .foot-warn { display: none; }  /* 準確率頁（警語卡）、對戰頁（最上面一排）已經有警語，頁尾不重複 */
 .acc-details summary {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   cursor: pointer; list-style: none; font-size: 1.05rem; font-weight: 700;
@@ -566,6 +568,14 @@ a.game:hover { border-color: var(--accent); }
 .game-empty p { margin: 0 0 12px; }
 .ok { color: var(--win); font-weight: 600; }
 .bad { color: var(--bad); font-weight: 600; }
+.backrow { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+.backrow .back { margin: 0; flex: none; }
+.backrow-warn { margin: 0; flex: 1; text-align: center; font-size: .78rem; font-weight: 700; color: var(--bad); line-height: 1.4; }  /* 對戰頁：警語放在「回到賽程」右邊、在剩下的空間裡置中 */
+@media (min-width: 640px) {  /* 寬螢幕：警語在整排正中間（和下面「第 1 / 6 場」同一條中線），「回到賽程」靠左；窄螢幕才退回「右邊剩下的空間裡置中」 */
+  .backrow { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .backrow .back { grid-column: 1; }
+  .backrow-warn { grid-column: 2; flex: none; max-width: 15rem; }  /* 最寬 15rem，英文比較長就換成兩行 */
+}
 .back { margin: 0 0 12px; font-size: .9rem; }
 .back a { color: var(--accent); font-weight: 600; text-decoration: none; }
 

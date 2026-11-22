@@ -76,7 +76,6 @@
           <span class="home-title">🎯 準確率</span>
           <span class="home-desc">📊 統計數據</span>
           <span class="home-sub" id="home-stats-sub"></span>
-          <span class="home-note">以準確率來看，不讓分值得參考，<br>其他的你自己看吧🙂</span>
         </a>
       </div>
 
@@ -142,7 +141,11 @@
     <!-- 第一層：自選兩支球隊 -->
     <div id="view-matchup">
 
-    <p class="back" id="back" hidden><a id="back-link" href="#">← 回到賽程</a></p>
+    <!-- 最上面一排：左邊「← 回到賽程」，右邊（剩下的空間裡置中）= 警語；有警語就不用在頁尾再顯示（見 style.css） -->
+    <div class="backrow">
+      <p class="back" id="back" hidden><a id="back-link" href="#">← 回到賽程</a></p>
+      <p class="backrow-warn">⚠️ 別拿網站預測分數去賭分數，你會很慘</p>
+    </div>
 
     <!-- 從賽程點進來時：同一天的比賽之間切換 -->
     <div class="gamenav" id="gamenav" hidden>

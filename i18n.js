@@ -41,6 +41,7 @@
     "整理自": "Compiled from",
     "例行賽": "regular season",
     "僅供興趣參考，非投注建議!!": "For fun and reference only. Not betting advice!!",
+    "⚠️ 別拿網站預測分數去賭分數，你會很慘": "⚠️ Don't bet on this site's predicted scores, you'll lose badly",
     "非投注建議，娛樂參考 !": "Not betting advice. For entertainment only!",
     "比賽在": "Games on ",
     "賽後更新納入傷病": " were re-run after injuries were added",
@@ -271,11 +272,8 @@
     "三季回測": "3-season backtest",
     "個比賽日）": " game days)",
     "日期（台灣）": "Date (Taiwan)",
-    "各個玩法準確率": "Accuracy by bet type",
     "依信心": "By confidence",
-    "以準確率來看，不讓分值得參考，其他太看運氣啦": "By accuracy, only the moneyline pick is worth a look; the rest is mostly luck",
-    "以準確率來看，不讓分值得參考，": "By accuracy, only the moneyline pick is worth a look; ",
-    "其他的你自己看吧🙂": "the rest is up to you🙂",
+    "別拿網站預測分數去賭分數，你會很慘": "Don't bet on this site's predicted scores, you'll lose badly",
     "項目": "Item",
     "猜中": "Hits",
     "猜對": "Correct",
@@ -322,6 +320,7 @@
     [/統計三季（([^）]+)）/, "Last three seasons ($1)"],
     [/第\s*(\d+)\s*節/g, "Q$1"],
     [/每天（(\d+) 個比賽日）/, "By day ($1 game days)"],
+    [/⚠️ 別拿網站預測分數去賭分數，你會很慘，因為單隊平均誤差為([\d.]+)分/, "⚠️ Don't bet on this site's predicted scores, you'll lose badly, because the average error per team score is $1 points"],
     [/([\d\/]+~[\d\/]+) 比賽在([\d\/]+)賽後更新納入傷病/, "Games $1 were re-predicted after $2 with injuries factored in"]
   ];
   // 詞組表套完之後，剩下的「數字＋單位」
