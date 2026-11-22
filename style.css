@@ -257,6 +257,8 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
   :root:not([data-theme]) .home-result { box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
 }
 @media (max-width: 420px) { .home-btns { top: 20px; right: 14px; gap: 6px; } .home-result { padding: 6px 10px; font-size: .78rem; } }  /* 手機：兩顆按鈕縮小，才不會貼到左邊的「賽程」 */
+/* 英文版按鈕的字比較長，在手機會蓋到標題：改成不浮在右上角，排在標題上面一行、靠右 */
+@media (max-width: 560px) { html[lang="en"] .home-btns { position: static; justify-content: flex-end; margin: 0 0 10px; } }
 .home-result:hover, .home-result:focus-visible { transform: translateY(-1px); outline: 3px solid var(--accent); outline-offset: 2px; }
 .home-link { display: block; color: inherit; text-decoration: none; }
 .home-title { display: block; font-size: 1.1rem; font-weight: 800; }
