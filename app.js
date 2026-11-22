@@ -97,46 +97,6 @@
     return { away: total / 2 - margin / 2, home: total / 2 + margin / 2 };
   }
 
-  // ---------- 新版總和分數預測（只顯示在「數據對照」最下面一列；不進預測勝負、不進準確率統計；2026-11-22 照使用者的想法做，還沒有回測） ----------
-  // 想法：看兩隊「最近 10 場比整季更快或更慢多少」，推測這場會打多快，再用每百回合得失分算兩隊得分。（2026-11-22 照使用者要求，從「近 5 場 - 近 10 場」改成「近 10 場 - 本季」）
-  //   預估節奏 = 兩隊本季 PACE 的平均 +（客隊近 10 場 PACE - 客隊本季 PACE）+（主隊近 10 場 PACE - 主隊本季 PACE）
-  //   客隊得分 =（客隊每百回合得分 + 主隊每百回合失分）/ 2 × 預估節奏 / 100
-  //   主隊得分 =（主隊每百回合得分 + 客隊每百回合失分）/ 2 × 預估節奏 / 100
-  // 主場優勢：和主預測一樣，分差加 MODEL.homeAdv（2 分），主隊 +1、客隊 -1（總分不變）；中立場地不加（ha = 0）
-  // 例：公鹿 @ 七六人，99.3 +（97.4 - 99.6）+（97.6 - 99.0）= 95.7，公鹿 =（108.6 + 112.7）/ 2 × 0.957 - 1，七六人 =（115.6 + 121.6）/ 2 × 0.957 + 1（再扣校正偏差）
-  // 校正偏差（2026-11-22）：新版總分今年平均比原模型低約 3.5 分（網站的 PACE 用 48 分鐘換算、不含延長賽，加上其他還沒查清楚的原因），
-  //   不校正的話「作者猜賭盤」會幾乎都是小小小。校正 = 這個球季已完賽的比賽，新版總分 - 原模型總分 的平均，從每場新版總分扣掉（兩隊各扣一半）；
-  //   已完賽不到 20 場不校正。這樣新版總分平均和原模型一樣，大小才不會一面倒（命中率沒有因此變好，只是不再單邊偏小）
-  var newForecast = null;  // 這場的新版總和分數預測 { away, home }（render 算好放這裡；賭盤變化卡片的「作者猜賭盤」用）
-  var paceBiasCache = { n: -1, v: 0 };
-  function paceBias() {
-    if (!SCHEDULE || !MODEL || !PRE) return 0;
-    var fin = SCHEDULE.games.map(withLive).filter(function (g) { return g.s === "F"; });
-    if (paceBiasCache.n === fin.length) return paceBiasCache.v;
-    var sum = 0, n = 0;
-    fin.forEach(function (g) {
-      var pi = preGameInfo(g), r = pi ? paceRaw(pi.a, pi.h, g.n ? 0 : null) : null;
-      if (!r) return;
-      sum += (r.away + r.home) - (pi.c.p1.away + pi.c.p1.home);
-      n++;
-    });
-    paceBiasCache = { n: fin.length, v: n >= 20 ? sum / n : 0 };
-    return paceBiasCache.v;
-  }
-  function paceTotal(a, h, ha) {
-    var r = paceRaw(a, h, ha);
-    if (!r) return null;
-    var b = paceBias();
-    return { pace: r.pace, away: r.away - b / 2, home: r.home - b / 2, bias: b };
-  }
-  function paceRaw(a, h, ha) {
-    var ok = function (t) { return typeof t.pace === "number" && typeof t.l10pace === "number" && typeof t.ortg === "number" && typeof t.drtg === "number"; };
-    if (!ok(a) || !ok(h)) return null;
-    var pace = (a.pace + h.pace) / 2 + (a.l10pace - a.pace) + (h.l10pace - h.pace);
-    var adv = (ha == null ? MODEL.homeAdv : ha) / 2;
-    return { pace: pace, away: (a.ortg + h.drtg) / 2 * pace / 100 - adv, home: (h.ortg + a.drtg) / 2 * pace / 100 + adv };
-  }
-
   // ---------- 下拉選單 ----------
   function fillSelect(sel) {
     var groups = { E: "東區", W: "西區" };
@@ -597,14 +557,6 @@
     }
     if (MODEL && a.l5pace != null && h.l5pace != null) rows.push(["近 5 場 PACE", f1(a.l5pace), "", f1(h.l5pace), "", null]);  // 近 5 場的節奏（不滿 5 場就是已打的場數）
     rows.push([MODEL ? "PACE（本季）" : "PACE", f1(a.pace), "", f1(h.pace), "", null]);  // 整季的 PACE 放在最下面一列；節奏快慢沒有好壞
-    var fixed = MODEL ? paceTotal(a, h, neutral ? 0 : null) : null;
-    newForecast = fixed;  // PACE 下面一列：新版總和分數預測（小字 = 原本的預測比分）
-    // 兩隊「近 5 場 PACE − 本季 PACE」的平均（作者猜賭盤的總分規則要用；兩隊都要打滿 5 場，不然算不準）
-    // 近 5 場版 vs 整季版的預估得分差（作者猜賭盤「中間」那段用）：(自己得分 + 對手失分) / 2，近 5 場用 l5off / l5def、整季用 off / def
-    if (fixed) fixed.l5 = ["l5off", "l5def", "off", "def"].every(function (k) { return typeof a[k] === "number" && typeof h[k] === "number"; }) && a.gp >= 5 && h.gp >= 5 ?
-      { away: (a.l5off + h.l5def) / 2 - (a.off + h.def) / 2, home: (h.l5off + a.l5def) / 2 - (h.off + a.def) / 2 } : null;
-    if (fixed) fixed.pdiff =typeof a.l5pace === "number" && typeof h.l5pace === "number" && a.gp >= 5 && h.gp >= 5 ? ((a.l5pace - a.pace) + (h.l5pace - h.pace)) / 2 : null;
-    if (fixed) rows.push(["新版總和分數預測", f1(fixed.away), '<span class="rate">原預測 ' + f1(cmp.p1.away) + "</span>", f1(fixed.home), '<span class="rate">原預測 ' + f1(cmp.p1.home) + "</span>", null]);
     $("stats-body").innerHTML = rows.map(function (r) {
       return "<tr>" + statCell(r[1], r[2], r[5] === "a", aColor, true) + "<td>" + r[0] + "</td>" +
         statCell(r[3], r[4], r[5] === "h", hColor) + "</tr>";
@@ -751,30 +703,6 @@
       };
       html += '<div class="ot-sec">勝率</div><div class="ot-wr ot-wlg"><span></span><span class="ot-wp"><span style="color:' + aColor + '">' + a.zh +
         '</span><span style="color:' + hColor + '">' + h.zh + "</span></span></div>" + bar("初始", od.q && od.q[0]) + bar("最終", od.q && od.q[1]) + bar("模型", mq);
-    }
-    // 作者猜賭盤（新版總和分數預測 vs 原模型；規則是使用者定的，11 月回測看起來可行、前三季回測約 50%，還在追蹤）：
-    //   只留分數大小（2026-11-22 使用者說拿掉不讓分和讓分）：單隊總分、總分 = 新版比原模型高 -> 大、低 -> 小（盤口用「最終」那欄）。
-    //   已完賽的比賽（賽前頁）後面加 ✅ / ❌（打平盤的不算），排版和「賭盤結果」一樣：球隊 | 內容 | 對錯
-    if (newForecast && p1 && od.sp[1] != null && od.t[1] != null) {
-      var nf = newForecast;
-      var fin = pregame && finalGame && finalGame.as != null ? finalGame : null;  // 已完賽才有實際比分可以對
-      var mk = function (ok) { return !fin || ok === null ? "" : ok ? "✅" : "❌"; };
-      var pr = [];
-      // 單隊總分：新版比原模型高 -> 大、低 -> 小（單隊總分的新規則使用者還在測試，先不動）
-      [[a, nf.away - p1.away, tt(1, true), fin && fin.as], [h, nf.home - p1.home, tt(1, false), fin && fin.hs]].forEach(function (x) {
-        if (x[1] === 0 || x[2] === "") return;
-        pr.push([x[0].zh, x[2] + (x[1] > 0 ? " 大" : " 小"), fin ? mk(x[3] === x[2] ? null : (x[3] > x[2]) === (x[1] > 0)) : ""]);
-      });
-      // 總分的 PACE 規則（2026-11-22 使用者定，三季回測約 52%、還在追蹤）：兩隊近 5 場 PACE 比本季慢超過 2.5 -> 一律猜大；快超過 1 -> 一律猜小；
-      // 在這之間（「中間」）看「近 5 場版比整季版高 -> 大、低 -> 小」：每隊預估得分 = (自己得分 + 對手失分) / 2，近 5 場版 vs 整季版，兩隊差加起來；
-      // 沒有近 5 場資料就照原本「新版比原模型」。單隊總分不受這條規則影響
-      var dTot = nf.l5 && nf.pdiff != null && nf.pdiff >= -2.5 && nf.pdiff <= 1 ? nf.l5.away + nf.l5.home : (nf.away + nf.home) - (p1.away + p1.home);
-      if (nf.pdiff != null && nf.pdiff < -2.5) dTot = 1;
-      else if (nf.pdiff != null && nf.pdiff > 1) dTot = -1;
-      if (dTot !== 0) pr.push(["總分", od.t[1] + (dTot > 0 ? " 大" : " 小"), fin ? mk(fin.as + fin.hs === od.t[1] ? null : (fin.as + fin.hs > od.t[1]) === (dTot > 0)) : ""]);
-      if (pr.length) html += '<div class="ot-sec">作者猜賭盤</div><div class="odds-picks">' + pr.map(function (r) {
-        return '<span class="op-n">' + r[0] + '</span><span class="op-v">' + r[1] + '</span><span class="op-m">' + r[2] + "</span>";
-      }).join("") + "</div>";
     }
     html += "</div>";
     return '<details class="ot-details"><summary>賭盤變化</summary>' + html +
