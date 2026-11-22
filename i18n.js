@@ -382,10 +382,15 @@
     var el = n.nodeType === 3 ? n.parentNode : n;
     return !el || !el.closest || !!el.closest(skipSel);
   }
+  var SHORT_CONF = { "低信心": "Low conf.", "中信心": "Med. conf.", "高信心": "High conf." };  // 卡片右下角空間小，用縮寫（不然會和勝率條下面的小字重疊）
   function doText(n) {
     var v = n.nodeValue;
     if (!HAN.test(v) || skip(n)) return;
+    var sc = SHORT_CONF[v.trim()];
+    if (sc && n.parentNode.closest && n.parentNode.closest(".gm-conf-c")) { n.nodeValue = sc; return; }
     var t = translate(v, n.parentNode && n.parentNode.nodeName);
+    // 手機上隊名欄很窄：最長的 Timberwolves 在 Timber / wolves 中間給一個可以換行的位置（零寬空格，看不到）
+    if (t.trim() === "Timberwolves" && n.parentNode.closest && n.parentNode.closest(".gm-name")) t = "Timber\u200bwolves";
     if (t !== v) n.nodeValue = t;
     if (HAN.test(t)) left[t] = 1;
   }
