@@ -36,6 +36,10 @@ jobs:
         with:
           path: .
 
+      # 打包檔上傳後，GitHub 要過幾秒才查得到；太快去部署會報 "No artifacts named github-pages"（2026-11-22 連續失敗），所以先等一下
+      - name: Wait for the artifact to register
+        run: sleep 30
+
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
