@@ -18,12 +18,16 @@
   meta            (key)             雜項：傷病名單最後一次抓取時間等
 
 read_* 函式回傳的資料形狀，和以前 raw/*.json 的內容一模一樣，所以 build_data.py 的計算邏輯不用改。
+
+另外有一個獨立的資料庫 db/history.db（三季歷史回測用的逐場 box score、球員上場時間、盤口；不會再變，機器人不會動它，由 make_history_db.py 產生），
+用 connect_history() 唯讀打開、read_hist_games() 讀比分。它的資料表（hist_*）不在上面的 SCHEMA 裡。
 """
 import json
 import sqlite3
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "db" / "nba.db"
+HISTORY_PATH = Path(__file__).parent / "db" / "history.db"  # 三季歷史回測資料（獨立檔，不在每天自動更新裡）
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS games (
@@ -73,6 +77,16 @@ def connect(path=None):
         if col not in have:
             conn.execute(f"ALTER TABLE player_box ADD COLUMN {col} INTEGER")
     conn.execute("DROP TABLE IF EXISTS upset_log")  # 已移除的「冷門觀察」功能留下的資料表：刪掉（舊資料庫第一次打開時刪一次，之後這行什麼都不做）
+    return conn
+
+
+def connect_history(path=None):
+    """唯讀連線到 db/history.db（三季歷史回測資料）；檔案不存在就直接報錯，不會偷偷建一個空的。"""
+    path = Path(path or HISTORY_PATH)
+    if not path.is_file():
+        raise FileNotFoundError(f"找不到 {path}，請先執行 python make_history_db.py")
+    conn = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
     return conn
 
 
@@ -180,6 +194,13 @@ def read_season_games(conn, season):
     """前幾季的比分：[(日期字串, 客隊, 客隊得分, 主隊, 主隊得分)]"""
     return [(r["date"], r["away"], r["away_pts"], r["home"], r["home_pts"]) for r in conn.execute(
         "SELECT date, away, away_pts, home, home_pts FROM season_games WHERE season = ? ORDER BY date, seq", (season,))]
+
+
+def read_hist_games(conn, season):
+    """三季歷史資料（db/history.db）某球季的比分，格式和 read_season_games 一樣：[(日期字串, 客隊, 客隊得分, 主隊, 主隊得分)]。
+    含盃賽決賽、附加賽等（不分例行賽）；同一天依事件編號排序。conn 用 connect_history()。"""
+    return [(r["date"], r["away"], r["away_pts"], r["home"], r["home_pts"]) for r in conn.execute(
+        "SELECT date, away, away_pts, home, home_pts FROM hist_games WHERE season = ? ORDER BY date, event_id", (season,))]
 
 
 def read_odds(conn):

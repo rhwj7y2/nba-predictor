@@ -73,7 +73,7 @@
 
 後端資料放在 **SQLite 資料庫 `db/nba.db`**（Python 內建、一個檔案、不用架伺服器）：ESPN → `fetch_espn_games.py` 寫進資料庫 → `build_data.py` 讀資料庫、算預測用的數字 → 輸出 `data/*.js` 給網頁。好處：可以用 SQL 查（例如 `SELECT * FROM games WHERE home = 'Boston Celtics'`），而且傷病名單每次有變就多存一份快照，賽前的名單不會被覆蓋掉，之後可以拿來誠實回測。
 
-- 資料庫是二進位檔，**由機器人負責 commit**；你在本機 commit 時只加程式碼，不要加 `db/`、`data/`（不然會和機器人的版本衝突）。
+- 資料庫是二進位檔，**由機器人負責 commit**；你在本機 commit 時只加程式碼，不要加 `db/`、`data/`（不然會和機器人的版本衝突）。例外是 `db/history.db`（三季歷史回測用的另一個資料庫，不會再變、機器人不會動它），可以手動 commit 一次。
 - 想自己查資料：`python -c "import sqlite3; print(sqlite3.connect('db/nba.db').execute('SELECT COUNT(*) FROM games').fetchone())"`，或用 DB Browser for SQLite 打開 `db/nba.db`。
 - 網站會把整個資料夾發布出去，所以 `db/nba.db` 也是公開可下載的（裡面都是 ESPN 公開資料）。
 
@@ -119,9 +119,11 @@ python build_data.py           # 從資料庫整理成網頁用的資料 data/*.
 | `fetch_espn_games.py` | 從 ESPN 抓本季資料，寫進資料庫 `db/nba.db` |
 | `load_old_seasons.py` | 一次性：把 2023-24、2024-25 兩季每場比分從 ESPN 抓進資料庫的 `season_games`（交手紀錄下拉選單用，已經跑過，不會再變） |
 | `make_h2h_pace_history.py` | 一次性：抓過去三季每場的回合數，算每組兩隊的歷史對戰節奏，寫進資料庫的 `h2h_pace` 資料表（不在每天自動更新裡） |
+| `make_history_db.py` | 一次性：把 2023-24～2025-26 三季的逐場 box score、球員上場時間、盤口（從 jsonl 檔）存成獨立的 `db/history.db`；三季歷史回測用，可以重跑（整個重建） |
 | `.github/workflows/update-data.yml` | 每天自動跑 fetch + build、有變動就 commit 並發布（見「更新資料」） |
 | `.github/workflows/pages.yml` | 把網站發布到 GitHub Pages（push 到 main 或被 update-data 叫起來時跑） |
 | `db/nba.db` | **後端資料庫（SQLite，一個檔案）**，機器人每天更新：`games`（每場比賽的賽程、比分、各節得分、備註）、`team_box`（每場每隊的出手／罰球／籃板／失誤，算 PACE）、`player_box`（每場每位球員數據）、`odds`（每場完賽後存下 DraftKings 的開盤與收盤讓分、總分、賠率）、`injury_snapshots`（ESPN 傷病名單的歷史快照，名單有變才新增）、`injury_adj`（每場比賽凍結的傷病扣分）、`h2h_pace`（過去三季兩隊對戰節奏）、`season_games`（上季比分）。網頁不直接讀資料庫，仍然讀 `build_data.py` 產生的 `data/*.js`，前端和以前一模一樣 |
+| `db/history.db` | **三季歷史回測資料庫（SQLite，獨立檔）**，不會再變、機器人不會動它：`hist_games`（三季每場的美東日期、比分、節數，含盃賽決賽、附加賽、季後賽）、`hist_team_box`（每場每隊的出手／罰球／籃板／失誤）、`hist_player_min`（每場每位球員的上場分鐘、得分）、`hist_odds`（每場的讓分、總分，優先 DraftKings，沒有才用備用莊家）、`hist_meta`（建立時間與各表筆數）。由 `make_history_db.py` 產生，用 `store.connect_history()`、`store.read_hist_games()` 讀 |
 | `raw/pace_2025-26.txt` | 只有「整季完成」模式（賽季前預測）用的上季 PACE |
 
 ## 資料來源
