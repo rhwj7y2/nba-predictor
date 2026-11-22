@@ -248,8 +248,8 @@
       return '<div class="h2h-game"><span' + (ap > hp ? ' class="h2h-win"' : "") + ">" + a.zh + " " + ap + "</span> : <span" +
         (hp > ap ? ' class="h2h-win"' : "") + ">" + hp + " " + h.zh + "</span></div>";
     });
-    return '<div class="h2h-block"><div class="h2h-title">' + title + meetings.length + " 場：" + a.zh + " " +
-      awayWins + " 勝 " + (meetings.length - awayWins) + " 敗</div>" + lines.join("") + "</div>";
+    return '<div class="h2h-block"><div class="h2h-title">' + title + meetings.length + " 場：" + '<span class="h2h-rec">' + a.zh + " " +
+      awayWins + " 勝 " + (meetings.length - awayWins) + " 敗</span></div>" + lines.join("") + "</div>";
   }
 
   // 交手紀錄的球季來源（新到舊）：本季，加上球季進行中才有的歷史球季（新版資料 h2hHist；舊版資料只有上季 h2hPrev）
@@ -1438,7 +1438,7 @@
     var line = "";
     if (g.s === "F") {
       if (pi) {  // 賽前預測（大比分那個算法）vs 實際結果
-        line = "賽前預測比分：" + pi.an.zh + " " + f1(pi.c.p1.away) + " : " + f1(pi.c.p1.home) + " " + pi.hn.zh +
+        line = '<span class="ps-lbl">賽前預測比分：</span>' + pi.an.zh + " " + f1(pi.c.p1.away) + " : " + f1(pi.c.p1.home) + " " + pi.hn.zh +
           winBar(pi.c.p1, a, h) + confCorner(pi.c.p1);
       }
     } else if (g.s === "X") {
@@ -1452,7 +1452,7 @@
     } else if (MODEL && canPredict(g, date)) {  // 下一個比賽日、或兩隊都已沒有未打完比賽的隔天，才顯示預測和信心；更後面的日子先不顯示
       var c = compareModels(a, h, g.n, gameAdj(g));
       var wn = c.w1 === "home" ? h.zh : a.zh;  // 預測會贏的那隊
-      line = "賽前預測比分：" + a.zh + " " + f1(c.p1.away) + " : " + f1(c.p1.home) + " " + h.zh + "<br>預測 <b>" + wn + "</b> 勝";
+      line = '<span class="ps-lbl">賽前預測比分：</span>' + a.zh + " " + f1(c.p1.away) + " : " + f1(c.p1.home) + " " + h.zh + "<br>預測 <b>" + wn + "</b> 勝";
       if (timeMid) {  // 信心程度移到開賽時間下面（置中）；已經開打、中間換成即時比分的，就還是接在下面那行
         mid += marketBar(g, a, h);  // 開賽時間下面放賭盤預估勝率
         line += winBar(c.p1, a, h) + confCorner(c.p1);  // 「預測 X 勝」下面放我們預測的勝率，信心放在卡片右下角
@@ -1662,6 +1662,7 @@
   var COMMENT_DB = "https://nba-predictor-c0fb5-default-rtdb.asia-southeast1.firebasedatabase.app";
   var COMMENT_MAX = 200;      // 一則最多幾個字
   var COMMENT_SHOW = 50;      // 每場最多顯示最新的幾則
+  var BOARD_SHOW = 3;         // 首頁交流區直接顯示幾則，其餘收進下拉選單
   var COMMENT_GAP = 15000;    // 同一支瀏覽器兩則留言至少隔幾毫秒（擋連續洗版；只是前端的基本防護）
   var cmt = { key: null, state: "loading", list: [], card: "comment-card", title: "💬 留言" };  // 目前畫面上那張留言卡的內容（比賽頁的留言卡或首頁的交流區，同一時間只會看到其中一張）：state = loading / ok / err
   var BOARD_KEY = "0000-00-00_BBS_ALL";  // 首頁交流區用的固定編號：長得像「日期_客隊_主隊」，這樣 Firebase 規則（firebase_rules.json）不用改就能存
@@ -1711,6 +1712,7 @@
     var card = $(cmt.card), ul = card.querySelector(".cm-list"), sum = card.querySelector("summary");
     if (!ul || !sum) return;
     sum.textContent = cmt.title + (cmt.state === "ok" && cmt.list.length ? "（" + cmt.list.length + (cmt.list.length >= COMMENT_SHOW ? "+" : "") + "）" : "");
+    var oldOpen = ul.querySelector(".cm-older"), olderOpen = !!(oldOpen && oldOpen.open);  // 重畫列表時，已經點開的「更早的留言」維持打開
     ul.textContent = "";
     if (cmt.state === "err") return;  // 讀不到就不顯示任何字（輸入框還是在；送出失敗會另外提示）
     if (cmt.state !== "ok" || !cmt.list.length) {
@@ -1720,7 +1722,9 @@
       ul.appendChild(empty);
       return;
     }
-    cmt.list.forEach(function (c) {
+    // 首頁交流區：只直接顯示最新 BOARD_SHOW 則，更早的收進「更早的留言」下拉選單（比賽頁的留言照舊全列出來）
+    var more = null;
+    cmt.list.forEach(function (c, i) {
       var li = document.createElement("li"), t = document.createElement("span"), p = document.createElement("p");
       t.className = "cm-t";
       t.textContent = commentTime(c.t);
@@ -1728,7 +1732,23 @@
       p.textContent = c.m;
       li.appendChild(t);
       li.appendChild(p);
-      ul.appendChild(li);
+      if (cmt.card === "board-card" && i >= BOARD_SHOW) {
+        if (!more) {
+          var wrap = document.createElement("li"), sm = document.createElement("summary");
+          more = document.createElement("details");
+          more.className = "cm-older";
+          more.open = olderOpen;
+          sm.textContent = "更早的留言（" + (cmt.list.length - BOARD_SHOW) + (cmt.list.length >= COMMENT_SHOW ? "+" : "") + "）";
+          more.appendChild(sm);
+          more.appendChild(document.createElement("ul"));
+          wrap.className = "cm-older-li";
+          wrap.appendChild(more);
+          ul.appendChild(wrap);
+        }
+        more.lastChild.appendChild(li);
+      } else {
+        ul.appendChild(li);
+      }
     });
   }
 
