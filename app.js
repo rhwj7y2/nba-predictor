@@ -590,10 +590,17 @@
     rows.push(["近 10 場得分" + l10note, f1(a.l10off), "", f1(h.l10off), "", betterHigh(a.l10off, h.l10off)]);
     rows.push(["近 10 場失分" + l10note, f1(a.l10def), "", f1(h.l10def), "", betterLow(a.l10def, h.l10def)]);
     if (MODEL && a.l10pace != null && h.l10pace != null) rows.push(["近 10 場 PACE" + l10note, f1(a.l10pace), "", f1(h.l10pace), "", null]);  // 近 10 場的節奏（沒有這個欄位的舊資料檔就不顯示）；節奏快慢沒有好壞
+    if (a.l5rec != null && h.l5rec != null) {  // 近 5 場的戰績、得分、失分（沒有這幾個欄位的舊資料檔就不顯示；不滿 5 場就是已打的場數）
+      rows.push(rec("近 5 場戰績", a.l5rec, h.l5rec));
+      rows.push(["近 5 場得分", f1(a.l5off), "", f1(h.l5off), "", betterHigh(a.l5off, h.l5off)]);
+      rows.push(["近 5 場失分", f1(a.l5def), "", f1(h.l5def), "", betterLow(a.l5def, h.l5def)]);  // 失分越少越好
+    }
     if (MODEL && a.l5pace != null && h.l5pace != null) rows.push(["近 5 場 PACE", f1(a.l5pace), "", f1(h.l5pace), "", null]);  // 近 5 場的節奏（不滿 5 場就是已打的場數）
     rows.push([MODEL ? "PACE（本季）" : "PACE", f1(a.pace), "", f1(h.pace), "", null]);  // 整季的 PACE 放在最下面一列；節奏快慢沒有好壞
     var fixed = MODEL ? paceTotal(a, h, neutral ? 0 : null) : null;
     newForecast = fixed;  // PACE 下面一列：新版總和分數預測（小字 = 原本的預測比分）
+    // 兩隊「近 5 場 PACE − 本季 PACE」的平均（作者猜賭盤的總分規則要用；兩隊都要打滿 5 場，不然算不準）
+    if (fixed) fixed.pdiff = typeof a.l5pace === "number" && typeof h.l5pace === "number" && a.gp >= 5 && h.gp >= 5 ? ((a.l5pace - a.pace) + (h.l5pace - h.pace)) / 2 : null;
     if (fixed) rows.push(["新版總和分數預測", f1(fixed.away), '<span class="rate">原預測 ' + f1(cmp.p1.away) + "</span>", f1(fixed.home), '<span class="rate">原預測 ' + f1(cmp.p1.home) + "</span>", null]);
     $("stats-body").innerHTML = rows.map(function (r) {
       return "<tr>" + statCell(r[1], r[2], r[5] === "a", aColor, true) + "<td>" + r[0] + "</td>" +
@@ -755,6 +762,10 @@
         pr.push([x[0].zh, x[2] + (x[1] > 0 ? " 大" : " 小"), fin ? mk(x[3] === x[2] ? null : (x[3] > x[2]) === (x[1] > 0)) : ""]);
       });
       var dTot = (nf.away + nf.home) - (p1.away + p1.home);
+      // 總分的 PACE 規則（2026-11-22 使用者定，三季回測約 56%、還在追蹤）：兩隊近 5 場 PACE 比本季慢超過 2.5 -> 一律猜大；快超過 2 -> 一律猜小；
+      // 在這之間就照上面「新版比原模型高 -> 大、低 -> 小」。單隊總分不受這條規則影響
+      if (nf.pdiff != null && nf.pdiff < -2.5) dTot = 1;
+      else if (nf.pdiff != null && nf.pdiff > 2) dTot = -1;
       if (dTot !== 0) pr.push(["總分", od.t[1] + (dTot > 0 ? " 大" : " 小"), fin ? mk(fin.as + fin.hs === od.t[1] ? null : (fin.as + fin.hs > od.t[1]) === (dTot > 0)) : ""]);
       if (pr.length) html += '<div class="ot-sec">作者猜賭盤</div><div class="odds-picks">' + pr.map(function (r) {
         return '<span class="op-n">' + r[0] + '</span><span class="op-v">' + r[1] + '</span><span class="op-m">' + r[2] + "</span>";

@@ -808,6 +808,8 @@ def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=N
         n = len(g)
         last10 = g[-10:]
         n10 = len(last10)  # 球隊還沒打滿 10 場時，分母是實際場數
+        last5 = g[-5:]
+        n5 = len(last5)  # 近 5 場同理（不滿 5 場就是已打的場數）
         wins = sum(1 for p, o, _ in g if p > o)
         hw = sum(1 for p, o, h in g if h and p > o)
         hn = sum(1 for _, _, h in g if h)
@@ -834,6 +836,9 @@ def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=N
             "l10off": round(sum(p for p, _, _ in last10) / n10, 1) if n10 else None,
             "l10def": round(sum(o for _, o, _ in last10) / n10, 1) if n10 else None,
             "l10rec": f"{sum(1 for p, o, _ in last10 if p > o)}-{sum(1 for p, o, _ in last10 if p < o)}",
+            "l5off": round(sum(p for p, _, _ in last5) / n5, 1) if n5 else None,
+            "l5def": round(sum(o for _, o, _ in last5) / n5, 1) if n5 else None,
+            "l5rec": f"{sum(1 for p, o, _ in last5 if p > o)}-{sum(1 for p, o, _ in last5 if p < o)}",
         }
         if with_model:  # 預測模型要用的淨勝分（整季至今、近10場），多留一位小數（0 場的球隊是 null）
             out[en]["net"] = round(sum(p - o for p, o, _ in g) / n, 2) if n else None
@@ -908,7 +913,7 @@ def build_pre_days(conn, games, schedule, latest, prior, neutral):
     days = sorted({g["d"] for g in schedule["games"]
                    if g["s"] == "F" and g["a"] and g["h"] and SCHEDULE_SHOW_FROM <= g["d"] < latest})
     # 預測公式要用的欄位，加上對戰頁「本季數據對照」表要用的戰績欄位（已完賽的固定頁面顯示那天賽前的數據）
-    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "net", "net10", "rating", "l10pace", "l5pace", "ortg", "drtg")
+    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "l5rec", "l5off", "l5def", "net", "net10", "rating", "l10pace", "l5pace", "ortg", "drtg")
     out = {}
     for d in days:
         pre_games = games_before_tw_day(games, schedule, date.fromisoformat(d))
