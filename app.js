@@ -224,7 +224,7 @@
 
   // 一格數據：數字（隊色）+ 較優的加一顆星 + 小字；較優的一邊也用粗體，另一邊維持原樣；平手兩邊都一樣
   // left = true：左邊那隊的格子，星星掛在數字左邊；右邊那隊掛在右邊。星星是浮在數字旁邊（不佔位置），所以每一格的數字都固定置中、上下對齊
-  // trend = "up" / "down" / 空：近 5 場跟近 10 場比，變好 ▲（紅）、變差 ▼（綠）（掛在數字的另一邊：星星在左邊的那隊掛右邊，反過來也一樣）
+  // trend = "up" / "down" / 空：近 5 場 ORTG、DRTG 跟近 10 場比，變好 ▲（紅）、變差 ▼（綠）（掛在數字的另一邊：星星在左邊的那隊掛右邊，反過來也一樣）
   function statCell(main, sub, better, color, left, trend) {
     var star = better ? '<span class="best ' + (left ? "best-l" : "best-r") + '" role="img" aria-label="較優" title="較優">⭐</span>' : "";
     var tr = trend ? '<span class="trend trend-' + trend + " " + (left ? "trend-r" : "trend-l") + '" role="img" aria-label="' + (trend === "up" ? "比近 10 場變好" : "比近 10 場變差") + '" title="' +
@@ -235,10 +235,6 @@
   function trendOf(v5, v10, hiGood) {
     if (v5 == null || v10 == null || isNaN(v5) || isNaN(v10) || v5 === v10) return null;
     return (v5 > v10) === hiGood ? "up" : "down";
-  }
-  function winPct(rec) {  // "8-2" -> 0.8；沒打過回傳 null
-    var p = String(rec || "").split("-").map(Number), n = p[0] + p[1];
-    return n ? p[0] / n : null;
   }
 
   // 實力評分格："+8.4" 加一行小字「已打 8 場」
@@ -571,9 +567,7 @@
     }
     if (MODEL && a.l10pace != null && h.l10pace != null) rows.push(["近 10 場 PACE" + l10note, f1(a.l10pace), "", f1(h.l10pace), "", null]);  // 近 10 場的節奏（沒有這個欄位的舊資料檔就不顯示）；節奏快慢沒有好壞
     if (a.l5rec != null && h.l5rec != null) {  // 近 5 場的戰績、得分、失分（沒有這幾個欄位的舊資料檔就不顯示；不滿 5 場就是已打的場數）
-      var r5 = rec("近 5 場戰績", a.l5rec, h.l5rec);
-      r5.push([trendOf(winPct(a.l5rec), winPct(a.l10rec), true), trendOf(winPct(h.l5rec), winPct(h.l10rec), true)]);  // 近 5 場勝率比近 10 場高 -> ▲、低 -> ▼
-      rows.push(r5);
+      rows.push(rec("近 5 場戰績", a.l5rec, h.l5rec));
       if (MODEL && a.l5ortg != null && h.l5ortg != null) {  // 近 5 場 ORTG / DRTG + 小字「(聯盟第 N)」；舊資料檔沒有就退回場均得分 / 失分
         // 最後一格 [客隊, 主隊] = 近 5 場和近 10 場比的趨勢（四捨五入到畫面上的 0.1 再比）：ORTG 變高、DRTG 變低都算變好
         var tn = function (k5, k10, hiGood) { return [trendOf(Number(f1(a[k5])), Number(f1(a[k10])), hiGood), trendOf(Number(f1(h[k5])), Number(f1(h[k10])), hiGood)]; };
