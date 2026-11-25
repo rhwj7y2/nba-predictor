@@ -210,14 +210,16 @@
   }
 
   // 聯盟排名小字「聯盟第 N」：在全部 30 隊裡比 key 這個欄位（dir = -1 越大越前面，1 越小越前面）；比我好的隊數 + 1，同分並列；沒有這欄的隊不參與
-  function leagueRank(key, t, dir) {
+  // pool = 拿哪一份球隊總表來比（不給就用現在的 T；已完賽的固定頁面要用「那天賽前」的總表）；paren = true 就寫成「(聯盟第 N)」
+  function leagueRank(key, t, dir, pool, paren) {
     var better = 0;
-    Object.keys(T).forEach(function (k) {
-      var v = T[k][key];
+    pool = pool || T;
+    Object.keys(pool).forEach(function (k) {
+      var v = pool[k][key];
       if (v == null) return;
       if (dir < 0 ? v > t[key] : v < t[key]) better++;
     });
-    return '<span class="rate">聯盟第 ' + (better + 1) + "</span>";
+    return '<span class="rate">' + (paren ? "(" : "") + "聯盟第 " + (better + 1) + (paren ? ")" : "") + "</span>";
   }
 
   // 一格數據：數字（隊色）+ 較優的加一顆星 + 小字；較優的一邊也用粗體，另一邊維持原樣；平手兩邊都一樣
@@ -547,13 +549,24 @@
     rows.push(["場均得分", f1(a.off), "", f1(h.off), "", betterHigh(a.off, h.off)]);
     rows.push(["場均失分", f1(a.def), "", f1(h.def), "", betterLow(a.def, h.def)]);  // 失分越少越好
     rows.push(rec("近 10 場戰績" + l10note, a.l10rec, h.l10rec));
-    rows.push(["近 10 場得分" + l10note, f1(a.l10off), "", f1(h.l10off), "", betterHigh(a.l10off, h.l10off)]);
-    rows.push(["近 10 場失分" + l10note, f1(a.l10def), "", f1(h.l10def), "", betterLow(a.l10def, h.l10def)]);
+    var pool = snap || T;  // 排名拿「這一頁數據的那份球隊總表」來比（已完賽的固定頁面是賽前那天的）
+    if (MODEL && a.l10ortg != null && h.l10ortg != null) {  // 近 10 場每百回合得分 / 失分（ORTG / DRTG）+ 小字「(聯盟第 N)」；舊資料檔沒有這幾欄就退回場均得分 / 失分
+      rows.push(["近 10 場 ORTG" + l10note, f1(a.l10ortg), leagueRank("l10ortg", a, -1, pool, true), f1(h.l10ortg), leagueRank("l10ortg", h, -1, pool, true), betterHigh(a.l10ortg, h.l10ortg)]);
+      rows.push(["近 10 場 DRTG" + l10note, f1(a.l10drtg), leagueRank("l10drtg", a, 1, pool, true), f1(h.l10drtg), leagueRank("l10drtg", h, 1, pool, true), betterLow(a.l10drtg, h.l10drtg)]);  // 失分越少越好
+    } else {
+      rows.push(["近 10 場得分" + l10note, f1(a.l10off), "", f1(h.l10off), "", betterHigh(a.l10off, h.l10off)]);
+      rows.push(["近 10 場失分" + l10note, f1(a.l10def), "", f1(h.l10def), "", betterLow(a.l10def, h.l10def)]);
+    }
     if (MODEL && a.l10pace != null && h.l10pace != null) rows.push(["近 10 場 PACE" + l10note, f1(a.l10pace), "", f1(h.l10pace), "", null]);  // 近 10 場的節奏（沒有這個欄位的舊資料檔就不顯示）；節奏快慢沒有好壞
     if (a.l5rec != null && h.l5rec != null) {  // 近 5 場的戰績、得分、失分（沒有這幾個欄位的舊資料檔就不顯示；不滿 5 場就是已打的場數）
       rows.push(rec("近 5 場戰績", a.l5rec, h.l5rec));
-      rows.push(["近 5 場得分", f1(a.l5off), "", f1(h.l5off), "", betterHigh(a.l5off, h.l5off)]);
-      rows.push(["近 5 場失分", f1(a.l5def), "", f1(h.l5def), "", betterLow(a.l5def, h.l5def)]);  // 失分越少越好
+      if (MODEL && a.l5ortg != null && h.l5ortg != null) {  // 近 5 場 ORTG / DRTG + 小字「(聯盟第 N)」；舊資料檔沒有就退回場均得分 / 失分
+        rows.push(["近 5 場 ORTG", f1(a.l5ortg), leagueRank("l5ortg", a, -1, pool, true), f1(h.l5ortg), leagueRank("l5ortg", h, -1, pool, true), betterHigh(a.l5ortg, h.l5ortg)]);
+        rows.push(["近 5 場 DRTG", f1(a.l5drtg), leagueRank("l5drtg", a, 1, pool, true), f1(h.l5drtg), leagueRank("l5drtg", h, 1, pool, true), betterLow(a.l5drtg, h.l5drtg)]);  // 失分越少越好
+      } else {
+        rows.push(["近 5 場得分", f1(a.l5off), "", f1(h.l5off), "", betterHigh(a.l5off, h.l5off)]);
+        rows.push(["近 5 場失分", f1(a.l5def), "", f1(h.l5def), "", betterLow(a.l5def, h.l5def)]);  // 失分越少越好
+      }
     }
     if (MODEL && a.l5pace != null && h.l5pace != null) rows.push(["近 5 場 PACE", f1(a.l5pace), "", f1(h.l5pace), "", null]);  // 近 5 場的節奏（不滿 5 場就是已打的場數）
     rows.push([MODEL ? "PACE（本季）" : "PACE", f1(a.pace), "", f1(h.pace), "", null]);  // 整季的 PACE 放在最下面一列；節奏快慢沒有好壞
@@ -665,7 +678,7 @@
   // 賭盤變化卡片（另一張卡片、預設折疊；已完賽和還沒開賽的比賽都有）：不讓分只放賠率（小數賠率），讓分、總分、單隊總分只放盤口；客隊在上、主隊在下
   // od：{ sp 主隊讓分, so 讓分賠率 [主, 客], t 總分, to 總分賠率 [大, 小], ml 勝負盤賠率 [主, 客] }，每項都是 [開盤, 收盤]
   // 單隊總分查不到莊家實際開的盤口，用「讓分 + 總分」推算（客隊 = 總分/2 + 主隊讓分/2，主隊 = 總分/2 - 主隊讓分/2，調成 .5 結尾），所以沒有賠率
-  function oddsTableHtml(a, h, aColor, hColor, od, when, p1, label) {  // when = 「最終」那一欄的時間（台灣時間，字串），label = 時間前面的字（預設「最新資訊更新時間」，即時抓的寫「即時抓取」）；p1 = 我們的預測比分 { away, home }（算最下面「模型」那一條勝率）
+  function oddsTableHtml(a, h, aColor, hColor, od, when, p1, label, dg) {  // when = 「最終」那一欄的時間（台灣時間，字串），label = 時間前面的字（預設「最新資訊更新時間」，即時抓的寫「即時抓取」）；p1 = 我們的預測比分 { away, home }（算最下面「模型」那一條勝率）；dg = 賽程裡這場的 dg 旗標（"a" / "h" / "ah"：哪隊防守一段比一段好、近 5 場至少贏 3 場；見 dog_rule.py）
     if (!od) return "";
     var d = function (x) { return x == null ? "" : x.toFixed(2); };
     var line = function (x) { return x == null ? "" : sgn(x); };
@@ -703,6 +716,11 @@
       };
       html += '<div class="ot-sec">勝率</div><div class="ot-wr ot-wlg"><span></span><span class="ot-wp"><span style="color:' + aColor + '">' + a.zh +
         '</span><span style="color:' + hColor + '">' + h.zh + "</span></span></div>" + bar("初始", od.q && od.q[0]) + bar("最終", od.q && od.q[1]) + bar("模型", mq);
+      // 「模型」勝率條下面置中：受讓隊防守一段比一段好、近 5 場至少贏 3 場，而且目前受讓 0 ~ 8.5 分，就寫「○○有機會倒打」（規則和三季回測見 dog_rule.py）
+      var dogHome = od.sp[1] > 0;
+      if (dg && od.sp[1] != null && od.sp[1] !== 0 && Math.abs(od.sp[1]) <= 8.5 && dg.indexOf(dogHome ? "h" : "a") >= 0) {
+        html += '<div class="ot-upset"><span style="color:' + (dogHome ? hColor : aColor) + '">' + (dogHome ? h.zh : a.zh) + "</span> <span>有機會倒打</span></div>";
+      }
     }
     html += "</div>";
     return '<details class="ot-details"><summary>賭盤變化</summary>' + html +
@@ -721,7 +739,7 @@
     }
     $("odds-body").hidden = false;
     $("odds-body").innerHTML = foldHtml("oddsres", "賭盤結果", '<div class="odds-picks">' + betPicksHtml(a, h, p1, g) + "</div>");  // 預設收起來
-    var hist = $("odds-hist"), tbl = oddsTableHtml(a, h, aColor, hColor, g.od, tipText(g), p1);
+    var hist = $("odds-hist"), tbl = oddsTableHtml(a, h, aColor, hColor, g.od, tipText(g), p1, null, g.dg);
     hist.innerHTML = tbl;
     hist.hidden = !tbl;
     $("odds-note").innerHTML = "經 ESPN 取得 DraftKings 的賭盤概況，開賽前最後的盤口<br>非投注建議，娛樂參考 !";
@@ -765,7 +783,7 @@
     if (!g) { card.hidden = true; return; }
     var show = function (od, when, note, label) {
       body.hidden = true;
-      hist.innerHTML = oddsTableHtml(a, h, aColor, hColor, od, when, p1, label);
+      hist.innerHTML = oddsTableHtml(a, h, aColor, hColor, od, when, p1, label, g.dg);
       hist.hidden = false;
       $("odds-note").innerHTML = note + "<br>非投注建議，娛樂參考 !";
       card.hidden = false;

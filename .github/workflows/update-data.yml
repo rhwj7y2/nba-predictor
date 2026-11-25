@@ -62,6 +62,13 @@ jobs:
         if: steps.window.outputs.skip != 'true'
         run: python build_data.py
 
+      # 記錄「防守進步的受讓隊」符合規則的比賽、打完補結果（只能新增，見 dog_log.py）；寫進 db/dog_log.db，下面 commit 時一起帶上
+      # 這步壞了不要擋住資料更新，所以失敗也繼續
+      - name: Record qualifying underdog games
+        if: steps.window.outputs.skip != 'true'
+        continue-on-error: true
+        run: python dog_log.py
+
       - name: Commit changes
         id: commit
         if: steps.window.outputs.skip != 'true'

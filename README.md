@@ -120,10 +120,13 @@ python build_data.py           # 從資料庫整理成網頁用的資料 data/*.
 | `load_old_seasons.py` | 一次性：把 2023-24、2024-25 兩季每場比分從 ESPN 抓進資料庫的 `season_games`（交手紀錄下拉選單用，已經跑過，不會再變） |
 | `make_h2h_pace_history.py` | 一次性：抓過去三季每場的回合數，算每組兩隊的歷史對戰節奏，寫進資料庫的 `h2h_pace` 資料表（不在每天自動更新裡） |
 | `make_history_db.py` | 一次性：把 2023-24～2025-26 三季的逐場 box score、球員上場時間、盤口（從 jsonl 檔）存成獨立的 `db/history.db`；三季歷史回測用，可以重跑（整個重建） |
+| `dog_rule.py` | 「防守一直變好、近況勝多敗少的受讓隊，有機會倒打」規則（四個條件、三季回測都寫在檔頭）；`build_data.py` 用它算每場比賽的 `dg` 旗標，網頁在賭盤變化的「模型」勝率條下面寫「○○有機會倒打」。`python dog_rule.py` 核對三季數字，`python dog_rule.py --list` 列出還沒打而且符合的比賽 |
+| `dog_log.py` | 紀錄簿：從 2026-11-25（美東日期）起，每一場符合規則的比賽都記進 `db/dog_log.db`，打完補結果；機器人每次更新資料時跑（見 update-data.yml）。`python dog_log.py --report` 看累計 |
 | `.github/workflows/update-data.yml` | 每天自動跑 fetch + build、有變動就 commit 並發布（見「更新資料」） |
 | `.github/workflows/pages.yml` | 把網站發布到 GitHub Pages（push 到 main 或被 update-data 叫起來時跑） |
 | `db/nba.db` | **後端資料庫（SQLite，一個檔案）**，機器人每天更新：`games`（每場比賽的賽程、比分、各節得分、備註）、`team_box`（每場每隊的出手／罰球／籃板／失誤，算 PACE）、`player_box`（每場每位球員數據）、`odds`（每場完賽後存下 DraftKings 的開盤與收盤讓分、總分、賠率）、`injury_snapshots`（ESPN 傷病名單的歷史快照，名單有變才新增）、`injury_adj`（每場比賽凍結的傷病扣分）、`h2h_pace`（過去三季兩隊對戰節奏）、`season_games`（上季比分）。網頁不直接讀資料庫，仍然讀 `build_data.py` 產生的 `data/*.js`，前端和以前一模一樣 |
 | `db/history.db` | **三季歷史回測資料庫（SQLite，獨立檔）**，不會再變、機器人不會動它：`hist_games`（三季每場的美東日期、比分、節數，含盃賽決賽、附加賽、季後賽）、`hist_team_box`（每場每隊的出手／罰球／籃板／失誤）、`hist_player_min`（每場每位球員的上場分鐘、得分）、`hist_odds`（每場的讓分、總分，優先 DraftKings，沒有才用備用莊家）、`hist_meta`（建立時間與各表筆數）。由 `make_history_db.py` 產生，用 `store.connect_history()`、`store.read_hist_games()` 讀 |
+| `db/dog_log.db` | 「防守進步的受讓隊」紀錄簿（SQLite，獨立檔），機器人更新資料時由 `dog_log.py` 寫入、一起 commit；資料庫裡用觸發器擋住刪除和修改，只能新增，結果欄只能從空的補一次 |
 | `raw/pace_2025-26.txt` | 只有「整季完成」模式（賽季前預測）用的上季 PACE |
 
 ## 資料來源

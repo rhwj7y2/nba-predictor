@@ -739,6 +739,7 @@ td:first-child, th:first-child { text-align: left; }
 .ot-wbar > span { display: block; height: 100%; }
 .ot-wbar > span:last-child { flex: 1; }
 .ot-wlg .ot-wp { justify-content: space-between; font-size: .82rem; font-weight: 700; padding: 0 2px; }  /* 條上面標出左右各是哪一隊 */
+.ot-upset { margin: 8px 0 0; text-align: center; font-size: .9rem; font-weight: 700; }  /* 「模型」勝率條下面置中：○○有機會倒打 */
 .ot-note { margin: 8px 0 0; text-align: center; color: var(--muted); font-size: .72rem; }
 .odds-title { margin: 0 0 8px; text-align: center; font-weight: 700; }
 .odds-msg { margin: 0; text-align: center; color: var(--muted); font-size: .9rem; }

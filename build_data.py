@@ -19,6 +19,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from collections import defaultdict
 
+import dog_rule
 import store
 
 ROOT = Path(__file__).parent
@@ -272,7 +273,7 @@ def load_pace(raw_dir):
 
 
 def team_paces(conn, games):
-    """球季進行中：每隊的 PACE（每 48 分鐘的回合數），由 boxscore 算出。回傳 (本季累積, 近 10 場, 近 5 場, 效率值)，前三個是 {隊名: PACE}，效率值是 {隊名: (ORTG, DRTG)}。
+    """球季進行中：每隊的 PACE（每 48 分鐘的回合數），由 boxscore 算出。回傳 (本季累積, 近 10 場, 近 5 場, 效率值)，前三個是 {隊名: PACE}，效率值是 {隊名: (整季 ORTG, 整季 DRTG, 近 10 場 ORTG, 近 10 場 DRTG, 近 5 場 ORTG, 近 5 場 DRTG)}。
 
     回合數公式同 Basketball-Reference：
       估算回合 = 出手 + 0.4 x 罰球出手 - 1.07 x 進攻籃板率 x 投失次數 + 失誤，雙方各估一次取平均；
@@ -308,7 +309,9 @@ def team_paces(conn, games):
         poss = sum(r[0] for r in rows)
         return (round(100 * sum(r[2] for r in rows) / poss, 1), round(100 * sum(r[3] for r in rows) / poss, 1)) if poss else (None, None)
 
-    return ({t: pace_of(per[t]) for t in TEAMS}, {t: pace_of(per[t][-10:]) for t in TEAMS}, {t: pace_of(per[t][-5:]) for t in TEAMS}, {t: rtg_of(per[t]) for t in TEAMS})
+    # 效率值：(整季 ORTG, 整季 DRTG, 近 10 場 ORTG, 近 10 場 DRTG, 近 5 場 ORTG, 近 5 場 DRTG)
+    return ({t: pace_of(per[t]) for t in TEAMS}, {t: pace_of(per[t][-10:]) for t in TEAMS}, {t: pace_of(per[t][-5:]) for t in TEAMS},
+            {t: rtg_of(per[t]) + rtg_of(per[t][-10:]) + rtg_of(per[t][-5:]) for t in TEAMS})
 
 
 def team_extras(conn, games):
@@ -464,6 +467,7 @@ def build_schedule(conn):
         return None
     odds = store.read_odds(conn)
     box_players = store.read_players(conn)  # 逐場球員數據：已完賽的比賽附上「本場得分前三球員」
+    dog = dog_rule.dog_flags(raw_games, store.read_boxes(conn))  # 「有機會倒打」旗標：場次編號 -> "a" / "h" / "ah"（哪隊防守一直變好、近況勝多敗少；規則見 dog_rule.py）
     games = []
     # 連兩天（back-to-back）：這隊「前一個美東日期」也有比賽。美東日期 = UTC - 6 小時（NBA 開賽時間 12:00~22:30 ET 不管冬令夏令都落在同一天）
     et_day = lambda g: (datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") - timedelta(hours=6)).date()
@@ -495,6 +499,8 @@ def build_schedule(conn):
             b = ("a" if yday in played_days[g["away"]] else "") + ("h" if yday in played_days[g["home"]] else "")
             if b:
                 item["b"] = b
+        if g["id"] in dog:  # dg：這場客隊 / 主隊 / 兩隊符合「防守一段比一段好、近 5 場至少贏 3 場」（兩隊都打滿 7 場）；網頁再用目前的盤口（受讓 0~8.5 分）判斷要不要顯示「有機會倒打」
+            item["dg"] = dog[g["id"]]
         rec = odds.get(g["id"]) if s in ("F", "S", "L") else None
         if rec:  # 記下來的盤口：sp = 主隊讓分、ou = 總分（已完賽預測頁、已開賽的比賽顯示用，ESPN 開賽後就不給盤口了；開盤和賠率留在 raw/ 的紀錄檔）
             item["sp"], item["ou"] = rec["spread_home"][1], rec["total"][1]
@@ -845,7 +851,9 @@ def team_rows(games, pace, with_model, prior=None, neutral=frozenset(), pace10=N
             out[en]["net10"] = round(sum(p - o for p, o, _ in last10) / n10, 2) if n10 else None
             out[en]["l10pace"] = pace10.get(en) if pace10 else None  # 近 10 場 PACE（沒有就是 null，網頁就不顯示這一列）
             out[en]["l5pace"] = pace5.get(en) if pace5 else None     # 近 5 場 PACE
-            out[en]["ortg"], out[en]["drtg"] = rtg[en] if rtg else (None, None)  # 進攻 / 防守效率（每 100 回合得失分）
+            # 進攻 / 防守效率（每 100 回合得失分）：整季、近 10 場、近 5 場
+            (out[en]["ortg"], out[en]["drtg"], out[en]["l10ortg"], out[en]["l10drtg"],
+             out[en]["l5ortg"], out[en]["l5drtg"]) = rtg[en] if rtg else (None,) * 6
             if extra:  # 全聯盟表用：場均進攻籃板、防守籃板、助攻、阻攻、失誤、三分出手、三分命中率（只有目前的球隊數據要，賽前快照不放）
                 for k in ("orb", "drb", "ast", "blk", "tov", "tpa", "tpp"):
                     out[en][k] = extra[en][k]
@@ -913,7 +921,7 @@ def build_pre_days(conn, games, schedule, latest, prior, neutral):
     days = sorted({g["d"] for g in schedule["games"]
                    if g["s"] == "F" and g["a"] and g["h"] and SCHEDULE_SHOW_FROM <= g["d"] < latest})
     # 預測公式要用的欄位，加上對戰頁「本季數據對照」表要用的戰績欄位（已完賽的固定頁面顯示那天賽前的數據）
-    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "l5rec", "l5off", "l5def", "net", "net10", "rating", "l10pace", "l5pace", "ortg", "drtg")
+    keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "l5rec", "l5off", "l5def", "net", "net10", "rating", "l10pace", "l5pace", "ortg", "drtg", "l10ortg", "l10drtg", "l5ortg", "l5drtg")
     out = {}
     for d in days:
         pre_games = games_before_tw_day(games, schedule, date.fromisoformat(d))
