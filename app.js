@@ -224,9 +224,21 @@
 
   // 一格數據：數字（隊色）+ 較優的加一顆星 + 小字；較優的一邊也用粗體，另一邊維持原樣；平手兩邊都一樣
   // left = true：左邊那隊的格子，星星掛在數字左邊；右邊那隊掛在右邊。星星是浮在數字旁邊（不佔位置），所以每一格的數字都固定置中、上下對齊
-  function statCell(main, sub, better, color, left) {
+  // trend = "up" / "down" / 空：近 5 場跟近 10 場比，變好 ▲（紅）、變差 ▼（綠）（掛在數字的另一邊：星星在左邊的那隊掛右邊，反過來也一樣）
+  function statCell(main, sub, better, color, left, trend) {
     var star = better ? '<span class="best ' + (left ? "best-l" : "best-r") + '" role="img" aria-label="較優" title="較優">⭐</span>' : "";
-    return '<td class="' + (better ? "adv" : "") + '" style="color:' + color + '"><span class="sv">' + main + star + "</span>" + (sub || "") + "</td>";
+    var tr = trend ? '<span class="trend trend-' + trend + " " + (left ? "trend-r" : "trend-l") + '" role="img" aria-label="' + (trend === "up" ? "比近 10 場變好" : "比近 10 場變差") + '" title="' +
+      (trend === "up" ? "比近 10 場變好" : "比近 10 場變差") + '">' + (trend === "up" ? "▲" : "▼") + "</span>" : "";
+    return '<td class="' + (better ? "adv" : "") + '" style="color:' + color + '"><span class="sv">' + main + star + tr + "</span>" + (sub || "") + "</td>";
+  }
+  // 近 5 場和近 10 場比：回傳 "up"（變好）/ "down"（變差）/ null（一樣或沒有資料）。hiGood = true 越大越好（ORTG、勝率），false 越小越好（DRTG）
+  function trendOf(v5, v10, hiGood) {
+    if (v5 == null || v10 == null || isNaN(v5) || isNaN(v10) || v5 === v10) return null;
+    return (v5 > v10) === hiGood ? "up" : "down";
+  }
+  function winPct(rec) {  // "8-2" -> 0.8；沒打過回傳 null
+    var p = String(rec || "").split("-").map(Number), n = p[0] + p[1];
+    return n ? p[0] / n : null;
   }
 
   // 實力評分格："+8.4" 加一行小字「已打 8 場」
@@ -542,12 +554,12 @@
     rows.push(rec(COPY.recLabel, a.w + "-" + a.l, h.w + "-" + h.l));
     rows.push(rec("主場戰績", a.home, h.home));
     rows.push(rec("客場戰績", a.road, h.road));
-    if (MODEL && a.ortg != null && h.ortg != null) {  // 每百回合得分 / 失分（也就是 ORTG / DRTG，把節奏拿掉的進攻 / 防守效率）；沒有這兩個欄位的舊資料檔就不顯示
-      rows.push(["每百回合得分", f1(a.ortg), leagueRank("ortg", a, -1), f1(h.ortg), leagueRank("ortg", h, -1), betterHigh(a.ortg, h.ortg)]);
-      rows.push(["每百回合失分", f1(a.drtg), leagueRank("drtg", a, 1), f1(h.drtg), leagueRank("drtg", h, 1), betterLow(a.drtg, h.drtg)]);  // 失分越少越好
-    }
     rows.push(["場均得分", f1(a.off), "", f1(h.off), "", betterHigh(a.off, h.off)]);
     rows.push(["場均失分", f1(a.def), "", f1(h.def), "", betterLow(a.def, h.def)]);  // 失分越少越好
+    if (MODEL && a.ortg != null && h.ortg != null) {  // 每百回合得分 / 失分（也就是 ORTG / DRTG，把節奏拿掉的進攻 / 防守效率）；沒有這兩個欄位的舊資料檔就不顯示
+      rows.push(["每百回合得分<br>（ORTG）", f1(a.ortg), leagueRank("ortg", a, -1), f1(h.ortg), leagueRank("ortg", h, -1), betterHigh(a.ortg, h.ortg)]);
+      rows.push(["每百回合失分<br>（DRTG）", f1(a.drtg), leagueRank("drtg", a, 1), f1(h.drtg), leagueRank("drtg", h, 1), betterLow(a.drtg, h.drtg)]);  // 失分越少越好
+    }
     rows.push(rec("近 10 場戰績" + l10note, a.l10rec, h.l10rec));
     var pool = snap || T;  // 排名拿「這一頁數據的那份球隊總表」來比（已完賽的固定頁面是賽前那天的）
     if (MODEL && a.l10ortg != null && h.l10ortg != null) {  // 近 10 場每百回合得分 / 失分（ORTG / DRTG）+ 小字「(聯盟第 N)」；舊資料檔沒有這幾欄就退回場均得分 / 失分
@@ -559,10 +571,14 @@
     }
     if (MODEL && a.l10pace != null && h.l10pace != null) rows.push(["近 10 場 PACE" + l10note, f1(a.l10pace), "", f1(h.l10pace), "", null]);  // 近 10 場的節奏（沒有這個欄位的舊資料檔就不顯示）；節奏快慢沒有好壞
     if (a.l5rec != null && h.l5rec != null) {  // 近 5 場的戰績、得分、失分（沒有這幾個欄位的舊資料檔就不顯示；不滿 5 場就是已打的場數）
-      rows.push(rec("近 5 場戰績", a.l5rec, h.l5rec));
+      var r5 = rec("近 5 場戰績", a.l5rec, h.l5rec);
+      r5.push([trendOf(winPct(a.l5rec), winPct(a.l10rec), true), trendOf(winPct(h.l5rec), winPct(h.l10rec), true)]);  // 近 5 場勝率比近 10 場高 -> ▲、低 -> ▼
+      rows.push(r5);
       if (MODEL && a.l5ortg != null && h.l5ortg != null) {  // 近 5 場 ORTG / DRTG + 小字「(聯盟第 N)」；舊資料檔沒有就退回場均得分 / 失分
-        rows.push(["近 5 場 ORTG", f1(a.l5ortg), leagueRank("l5ortg", a, -1, pool, true), f1(h.l5ortg), leagueRank("l5ortg", h, -1, pool, true), betterHigh(a.l5ortg, h.l5ortg)]);
-        rows.push(["近 5 場 DRTG", f1(a.l5drtg), leagueRank("l5drtg", a, 1, pool, true), f1(h.l5drtg), leagueRank("l5drtg", h, 1, pool, true), betterLow(a.l5drtg, h.l5drtg)]);  // 失分越少越好
+        // 最後一格 [客隊, 主隊] = 近 5 場和近 10 場比的趨勢（四捨五入到畫面上的 0.1 再比）：ORTG 變高、DRTG 變低都算變好
+        var tn = function (k5, k10, hiGood) { return [trendOf(Number(f1(a[k5])), Number(f1(a[k10])), hiGood), trendOf(Number(f1(h[k5])), Number(f1(h[k10])), hiGood)]; };
+        rows.push(["近 5 場 ORTG", f1(a.l5ortg), leagueRank("l5ortg", a, -1, pool, true), f1(h.l5ortg), leagueRank("l5ortg", h, -1, pool, true), betterHigh(a.l5ortg, h.l5ortg), tn("l5ortg", "l10ortg", true)]);
+        rows.push(["近 5 場 DRTG", f1(a.l5drtg), leagueRank("l5drtg", a, 1, pool, true), f1(h.l5drtg), leagueRank("l5drtg", h, 1, pool, true), betterLow(a.l5drtg, h.l5drtg), tn("l5drtg", "l10drtg", false)]);  // 失分越少越好
       } else {
         rows.push(["近 5 場得分", f1(a.l5off), "", f1(h.l5off), "", betterHigh(a.l5off, h.l5off)]);
         rows.push(["近 5 場失分", f1(a.l5def), "", f1(h.l5def), "", betterLow(a.l5def, h.l5def)]);  // 失分越少越好
@@ -571,8 +587,8 @@
     if (MODEL && a.l5pace != null && h.l5pace != null) rows.push(["近 5 場 PACE", f1(a.l5pace), "", f1(h.l5pace), "", null]);  // 近 5 場的節奏（不滿 5 場就是已打的場數）
     rows.push([MODEL ? "PACE（本季）" : "PACE", f1(a.pace), "", f1(h.pace), "", null]);  // 整季的 PACE 放在最下面一列；節奏快慢沒有好壞
     $("stats-body").innerHTML = rows.map(function (r) {
-      return "<tr>" + statCell(r[1], r[2], r[5] === "a", aColor, true) + "<td>" + r[0] + "</td>" +
-        statCell(r[3], r[4], r[5] === "h", hColor) + "</tr>";
+      return "<tr>" + statCell(r[1], r[2], r[5] === "a", aColor, true, r[6] && r[6][0]) + "<td>" + r[0] + "</td>" +
+        statCell(r[3], r[4], r[5] === "h", hColor, false, r[6] && r[6][1]) + "</tr>";
     }).join("");
 
     result.hidden = false;

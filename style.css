@@ -666,6 +666,11 @@ td:first-child, th:first-child { text-align: left; }
 .best { position: absolute; top: 50%; transform: translateY(-50%); font-size: .85em; line-height: 1; }
 .best-l { right: 100%; margin-right: 4px; }
 .best-r { left: 100%; margin-left: 4px; }
+.trend { position: absolute; top: 50%; transform: translateY(-50%); font-size: .8em; line-height: 1; }  /* 近 5 場比近 10 場變好 ▲ / 變差 ▼，浮在數字旁（和星星不同邊） */
+.trend-up { color: var(--bad); }  /* 變好 = 紅色向上三角形 */
+.trend-down { color: var(--win); }  /* 變差 = 綠色向下三角形 */
+.trend-l { right: 100%; margin-right: 4px; }
+.trend-r { left: 100%; margin-left: 4px; }
 .stats td.adv { font-weight: 700; }  /* 數據對照：較優的一邊用粗體 */
 .row-note { display: block; font-size: .72rem; }
 .stats td:first-child, .stats th:first-child, .stats td:last-child, .stats th:last-child { text-align: center; }
