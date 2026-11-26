@@ -688,7 +688,7 @@
   // 賭盤變化卡片（另一張卡片、預設折疊；已完賽和還沒開賽的比賽都有）：不讓分只放賠率（小數賠率），讓分、總分、單隊總分只放盤口；客隊在上、主隊在下
   // od：{ sp 主隊讓分, so 讓分賠率 [主, 客], t 總分, to 總分賠率 [大, 小], ml 勝負盤賠率 [主, 客] }，每項都是 [開盤, 收盤]
   // 單隊總分查不到莊家實際開的盤口，用「讓分 + 總分」推算（客隊 = 總分/2 + 主隊讓分/2，主隊 = 總分/2 - 主隊讓分/2，調成 .5 結尾），所以沒有賠率
-  function oddsTableHtml(a, h, aColor, hColor, od, when, p1, label, dg) {  // when = 「最終」那一欄的時間（台灣時間，字串），label = 時間前面的字（預設「最新資訊更新時間」，即時抓的寫「即時抓取」）；p1 = 我們的預測比分 { away, home }（算最下面「模型」那一條勝率）；dg = 賽程裡這場的 dg 旗標（"a" / "h" / "ah"：哪隊防守一段比一段好、近 5 場至少贏 3 場；見 dog_rule.py）
+  function oddsTableHtml(a, h, aColor, hColor, od, when, p1, label, g) {  // when = 「最終」那一欄的時間（台灣時間，字串），label = 時間前面的字（預設「最新資訊更新時間」，即時抓的寫「即時抓取」）；p1 = 我們的預測比分 { away, home }（算最下面「模型」那一條勝率）；g = 賽程裡這場，用它的 dg（策略一）、dg2（策略二）旗標，值是 "a" / "h" / "ah"（哪隊如果受讓就符合；見 dog_rule.py）
     if (!od) return "";
     var d = function (x) { return x == null ? "" : x.toFixed(2); };
     var line = function (x) { return x == null ? "" : sgn(x); };
@@ -726,9 +726,9 @@
       };
       html += '<div class="ot-sec">勝率</div><div class="ot-wr ot-wlg"><span></span><span class="ot-wp"><span style="color:' + aColor + '">' + a.zh +
         '</span><span style="color:' + hColor + '">' + h.zh + "</span></span></div>" + bar("初始", od.q && od.q[0]) + bar("最終", od.q && od.q[1]) + bar("模型", mq);
-      // 「模型」勝率條下面置中：受讓隊防守一段比一段好、近 5 場至少贏 3 場，而且目前受讓 0 ~ 8.5 分，就寫「○○有機會倒打」（規則和三季回測見 dog_rule.py）
-      var dogHome = od.sp[1] > 0;
-      if (dg && od.sp[1] != null && od.sp[1] !== 0 && Math.abs(od.sp[1]) <= 8.5 && dg.indexOf(dogHome ? "h" : "a") >= 0) {
+      // 「模型」勝率條下面置中：目前的受讓隊符合任一個策略就寫「○○有機會倒打」。策略一受讓 0 ~ 8.5 分、策略二受讓 0 ~ 9.5 分（規則和三季回測見 dog_rule.py）
+      var dogSide = upsetSide(g, od.sp[1]), dogHome = dogSide === "h";
+      if (dogSide) {
         html += '<div class="ot-upset"><span style="color:' + (dogHome ? hColor : aColor) + '">' + (dogHome ? h.zh : a.zh) + "</span> <span>有機會倒打</span></div>";
       }
     }
@@ -749,7 +749,7 @@
     }
     $("odds-body").hidden = false;
     $("odds-body").innerHTML = foldHtml("oddsres", "賭盤結果", '<div class="odds-picks">' + betPicksHtml(a, h, p1, g) + "</div>");  // 預設收起來
-    var hist = $("odds-hist"), tbl = oddsTableHtml(a, h, aColor, hColor, g.od, tipText(g), p1, null, g.dg);
+    var hist = $("odds-hist"), tbl = oddsTableHtml(a, h, aColor, hColor, g.od, tipText(g), p1, null, g);
     hist.innerHTML = tbl;
     hist.hidden = !tbl;
     $("odds-note").innerHTML = "經 ESPN 取得 DraftKings 的賭盤概況，開賽前最後的盤口<br>非投注建議，娛樂參考 !";
@@ -793,7 +793,7 @@
     if (!g) { card.hidden = true; return; }
     var show = function (od, when, note, label) {
       body.hidden = true;
-      hist.innerHTML = oddsTableHtml(a, h, aColor, hColor, od, when, p1, label, g.dg);
+      hist.innerHTML = oddsTableHtml(a, h, aColor, hColor, od, when, p1, label, g);
       hist.hidden = false;
       $("odds-note").innerHTML = note + "<br>非投注建議，娛樂參考 !";
       card.hidden = false;
@@ -1339,8 +1339,21 @@
       '<span class="gm-wbar"><span style="width:' + pa + "%;background:" + a.color + '"></span><span style="background:' + h.color + '"></span></span>' +
       '<span class="gm-wn">' + ph + "%</span></div>" + '<div class="gm-wc">' + caption + "</div></div>";
   }
-  function confCorner(p) {  // 卡片右下角的信心程度（絕對定位在下半部那塊的右下角）
-    return '<div class="gm-conf-c">' + confHtml(p) + "</div>";
+  // 冷門策略：sp = 主隊讓分（正 = 主隊受讓）。目前的受讓隊符合任一個策略就回傳那一邊 "a" / "h"，沒有就是 null。
+  // 策略一（g.dg）受讓 0 ~ 8.5 分、策略二（g.dg2）受讓 0 ~ 9.5 分；規則和三季回測見 dog_rule.py
+  function upsetSide(g, sp) {
+    if (!g || sp == null || sp === 0) return null;
+    var side = sp > 0 ? "h" : "a";
+    var hit = function (flag, max) { return !!flag && Math.abs(sp) <= max && flag.indexOf(side) >= 0; };
+    return hit(g.dg, 8.5) || hit(g.dg2, 9.5) ? side : null;
+  }
+  function upsetIcon(g, a, h) {  // 賽程卡片信心字樣前面的 🚨 = 有機會倒打（盤口用資料檔記下的 g.sp）
+    var side = upsetSide(g, g.sp);
+    if (!side || !a || !h) return "";
+    return '<span class="gm-upset" title="' + (side === "h" ? h.zh : a.zh) + ' 有機會倒打">🚨</span>';
+  }
+  function confCorner(p, icon) {  // 卡片右下角的信心程度（絕對定位在下半部那塊的右下角）；icon = upsetIcon() 的結果
+    return '<div class="gm-conf-c">' + (icon || "") + confHtml(p) + "</div>";
   }
   function winBar(p, a, h) {  // 我們預測的勝率；p = 預測比分 { away, home }
     if (!p || !a || !h) return "";
@@ -1410,7 +1423,7 @@
     if (g.s === "F") {
       if (pi) {  // 賽前預測（大比分那個算法）vs 實際結果
         line = '<span class="ps-lbl">賽前預測比分：</span>' + pi.an.zh + " " + f1(pi.c.p1.away) + " : " + f1(pi.c.p1.home) + " " + pi.hn.zh +
-          winBar(pi.c.p1, a, h) + confCorner(pi.c.p1);
+          winBar(pi.c.p1, a, h) + confCorner(pi.c.p1, upsetIcon(g, a, h));
       }
     } else if (g.s === "X") {
       line = "";
@@ -1419,17 +1432,17 @@
     } else if (!(a && h)) {
       line = "兩隊要等前一輪打完才決定";
     } else if (homePred) {
-      line = confHtml(homePred.p1) + winBar(homePred.p1, a, h);
+      line = upsetIcon(g, a, h) + confHtml(homePred.p1) + winBar(homePred.p1, a, h);
     } else if (MODEL && canPredict(g, date)) {  // 下一個比賽日、或兩隊都已沒有未打完比賽的隔天，才顯示預測和信心；更後面的日子先不顯示
       var c = compareModels(a, h, g.n, gameAdj(g));
       var wn = c.w1 === "home" ? h.zh : a.zh;  // 預測會贏的那隊
       line = '<span class="ps-lbl">賽前預測比分：</span>' + a.zh + " " + f1(c.p1.away) + " : " + f1(c.p1.home) + " " + h.zh + "<br>預測 <b>" + wn + "</b> 勝";
       if (timeMid) {  // 信心程度移到開賽時間下面（置中）；已經開打、中間換成即時比分的，就還是接在下面那行
         mid += marketBar(g, a, h);  // 開賽時間下面放賭盤預估勝率
-        line += winBar(c.p1, a, h) + confCorner(c.p1);  // 「預測 X 勝」下面放我們預測的勝率，信心放在卡片右下角
+        line += winBar(c.p1, a, h) + confCorner(c.p1, upsetIcon(g, a, h));  // 「預測 X 勝」下面放我們預測的勝率，信心放在卡片右下角
         el.setAttribute("data-cm", "1");  // 記號：中間這塊含信心，即時比分來時整張卡重畫（不然信心會跟著時間一起被蓋掉）
       } else {
-        line += winBar(c.p1, a, h) + confCorner(c.p1);
+        line += winBar(c.p1, a, h) + confCorner(c.p1, upsetIcon(g, a, h));
       }
     }
 

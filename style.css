@@ -527,6 +527,8 @@ a.game:hover { border-color: var(--accent); }
 }
 .game-pred .gm-wp { margin-top: 9px; }
 .gm-conf-c { position: absolute; right: 0; bottom: 0; font-size: .85rem; line-height: 1.2; }  /* 信心：卡片右下角 */
+.gm-upset { margin-right: 4px; cursor: help; }  /* 🚨 = 有機會倒打，放在信心字樣前面 */
+@media (max-width: 360px) { .gm-upset { margin-right: 1px; font-size: .7rem; } }  /* 很窄的手機（英文版）：圖示縮小，才不會貼到勝率條下面的小字 */
 .game-pred .gm-wc { margin-top: 3px; font-size: .62rem; }
 .gm-sub { color: var(--muted); font-size: .75rem; }
 .gm-sub.live { color: var(--accent); font-weight: 600; }

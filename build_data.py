@@ -467,7 +467,9 @@ def build_schedule(conn):
         return None
     odds = store.read_odds(conn)
     box_players = store.read_players(conn)  # 逐場球員數據：已完賽的比賽附上「本場得分前三球員」
-    dog = dog_rule.dog_flags(raw_games, store.read_boxes(conn))  # 「有機會倒打」旗標：場次編號 -> "a" / "h" / "ah"（哪隊防守一直變好、近況勝多敗少；規則見 dog_rule.py）
+    boxes = store.read_boxes(conn)
+    dog = dog_rule.dog_flags(raw_games, boxes)  # 「有機會倒打」旗標：場次編號 -> "a" / "h" / "ah"（哪隊防守一直變好、近況勝多敗少；規則見 dog_rule.py）
+    dog2 = dog_rule.dog_flags2(raw_games, boxes)  # 策略二的旗標，格式相同（哪隊如果受讓就符合「近 5 場比近 10 場進步」）
     games = []
     # 連兩天（back-to-back）：這隊「前一個美東日期」也有比賽。美東日期 = UTC - 6 小時（NBA 開賽時間 12:00~22:30 ET 不管冬令夏令都落在同一天）
     et_day = lambda g: (datetime.strptime(g["utc"], "%Y-%m-%dT%H:%MZ") - timedelta(hours=6)).date()
@@ -501,6 +503,8 @@ def build_schedule(conn):
                 item["b"] = b
         if g["id"] in dog:  # dg：這場客隊 / 主隊 / 兩隊符合「防守一段比一段好、近 5 場至少贏 3 場」（兩隊都打滿 7 場）；網頁再用目前的盤口（受讓 0~8.5 分）判斷要不要顯示「有機會倒打」
             item["dg"] = dog[g["id"]]
+        if g["id"] in dog2:  # dg2：策略二，這場「客隊 / 主隊」如果是受讓隊就符合（兩隊都打滿 10 場）；網頁再用目前的盤口（受讓 0~9.5 分）判斷。dg、dg2 符合任一個就顯示
+            item["dg2"] = dog2[g["id"]]
         rec = odds.get(g["id"]) if s in ("F", "S", "L") else None
         if rec:  # 記下來的盤口：sp = 主隊讓分、ou = 總分（已完賽預測頁、已開賽的比賽顯示用，ESPN 開賽後就不給盤口了；開盤和賠率留在 raw/ 的紀錄檔）
             item["sp"], item["ou"] = rec["spread_home"][1], rec["total"][1]
