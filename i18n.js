@@ -236,7 +236,6 @@
     "經 ESPN 取得 DraftKings 的賭盤概況，這場已開賽，盤口定案在開賽前最後記錄的數字": "Betting overview from DraftKings via ESPN: the game has started, and the line is locked at the last number recorded before tip-off",
     "經 ESPN 取得 DraftKings 的賭盤概況，目前抓不到即時盤口，這是最近一次記錄的盤口": "Betting overview from DraftKings via ESPN: live lines can't be fetched right now, so this is the most recently recorded line",
     "經 ESPN 取得 DraftKings 的賭盤概況": "Betting overview from DraftKings via ESPN",
-    "賭鬼 這場目前沒抓到賭盤 請晚點再來!!": "No betting line found for this game yet. Please check back later!!",
     "盤口暫時抓不到，稍後重新整理再試。": "Can't load the betting line right now. Refresh in a bit to retry.",
     "即時抓取": "Live",
     // 球員

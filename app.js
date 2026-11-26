@@ -812,12 +812,15 @@
       show(rec, tipText(g), "經 ESPN 取得 DraftKings 的賭盤概況，這場已開賽，盤口定案在開賽前最後記錄的數字");
       return;
     }
-    msg("載入中…");
-    var fail = function (text) {
+    // 沒有記錄過盤口的比賽（多半是賭盤還沒開出來）：整張卡片先不顯示，抓到即時盤口才出現
+    if (rec) msg("載入中…");
+    else card.hidden = true;
+    var fail = function (text) {  // text = 沒有任何盤口可顯示時要寫的字；不給就整張卡片不顯示
       if (token !== oddsToken) return;
       // 即時盤口抓不到（還沒開出盤口、ESPN 暫時抓不到），有記下來的就先顯示那份
       if (rec) show(rec, "—", "經 ESPN 取得 DraftKings 的賭盤概況，目前抓不到即時盤口，這是最近一次記錄的盤口");
-      else msg(text);
+      else if (text) msg(text);
+      else card.hidden = true;
     };
     // 賽程日期是台灣日期，ESPN 用美東日期：台灣日期的前一天到當天一起抓，再用隊名對出這場
     Promise.all([fetchScoreboard(addDays(g.d, -1)), fetchScoreboard(g.d)]).then(function (days) {
@@ -836,7 +839,7 @@
       });
       var o = ev && ev.odds && ev.odds[0];
       var od = o && oddsFromEspn(o);
-      if (!od || (od.sp[1] == null && od.t[1] == null)) return fail("賭鬼 這場目前沒抓到賭盤 請晚點再來!!");
+      if (!od || (od.sp[1] == null && od.t[1] == null)) return fail();  // 賭盤還沒出來
       var n = new Date(Date.now() + 8 * 3600 * 1000).toISOString();  // 現在的台灣時間
       show(od, Number(n.slice(5, 7)) + "/" + Number(n.slice(8, 10)) + " " + n.slice(11, 16), "經 ESPN 取得 DraftKings 的賭盤概況", "即時抓取");
     }, function () { fail("盤口暫時抓不到，稍後重新整理再試。"); });
