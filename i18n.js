@@ -42,6 +42,8 @@
     "例行賽": "regular season",
     "僅供興趣參考，非投注建議!!": "For fun and reference only. Not betting advice!!",
     "有機會倒打": "could pull off an upset",
+    "🚨 有機會倒打勝率": "🚨 Upset pick win rate",
+    "受讓隊直接贏球才算": "A hit means the underdog won outright",
     "⚠️ 別拿預測比分去賭分數：": "⚠️ Don't bet on predicted scores:",
     "⚠️ 別拿預測比分去賭分數": "⚠️ Don't bet on predicted scores",
     "ESPN（本季數據、賭盤、傷病）": "ESPN (this season's data, odds, injuries)",

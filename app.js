@@ -1965,6 +1965,22 @@
 
   function pct(a, b) { return b ? (a * 100 / b).toFixed(1) + "%" : "—"; }
 
+  // 🚨 有機會倒打的勝率：受讓隊直接贏球才算成功。
+  // 三季回測（2023-24 ~ 2025-26）= 策略一（受讓 <= 8.5）或策略二（受讓 <= 9.5）符合的場次，兩個都符合只算一次（核對方式見 dog_rule.py）
+  var UPSET_BACKTEST = { win: 210, n: 488 };
+  function upsetRecord() {  // 本季：已完賽、卡片上有 🚨 的比賽（用收盤讓分 g.sp 判斷）-> { win, n }
+    var r = { win: 0, n: 0 };
+    if (!SCHEDULE) return r;
+    SCHEDULE.games.forEach(function (g0) {
+      var g = withLive(g0);  // ESPN 剛說打完、資料還沒更新的比賽也算
+      var side = g.s === "F" && g.as != null ? upsetSide(g, g.sp) : null;
+      if (!side) return;
+      r.n++;
+      if (side === "h" ? g.hs > g.as : g.as > g.hs) r.win++;
+    });
+    return r;
+  }
+
   function renderStats() {
     var rows = accuracyRows();
     var box = $("stats-page");
@@ -1990,6 +2006,11 @@
         return '<tr><td><span class="conf conf-' + x[0] + '">' + x[1] + "</span></td><td>" + ok + " / " + sub.length + "</td><td>" + pct(ok, sub.length) +
           '</td><td class="muted">' + BACKTEST[x[0]] + "</td></tr>";
       }).join("") + "</tbody></table></div>";
+
+    var up = upsetRecord();
+    html += '<div class="card acc-big"><div class="acc-label">🚨 有機會倒打勝率</div>' +
+      '<div class="acc-num">' + up.win + " / " + up.n + "<small>" + pct(up.win, up.n) + "</small></div>" +
+      '<p class="acc-note">三季回測 ' + pct(UPSET_BACKTEST.win, UPSET_BACKTEST.n) + "（" + UPSET_BACKTEST.win + " / " + UPSET_BACKTEST.n + "）<br>受讓隊直接贏球才算</p></div>";
 
     // 警語（2026-11-22 使用者拿掉「各個玩法準確率」那張表，改成這句）：預測分數對盤口的命中率三季回測都在 50% 上下，別拿來賭
     var mae = teamScoreMae();
