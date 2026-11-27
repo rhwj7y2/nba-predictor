@@ -60,7 +60,7 @@
     // 主題與導覽
     "選擇主題": "Choose theme",
     "主題": "Theme",
-    "白色": "White", "卡其": "Khaki", "粉色": "Pink", "藍綠": "Teal", "淺藍": "Light blue", "深色": "Dark", "黑色": "Black",
+    "白色": "White", "卡其": "Khaki", "粉色": "Pink", "藍綠": "Teal", "淺藍": "Light blue", "深色": "Dark", "黑色": "Black", "冬天": "Winter",
     "頁面切換": "Page navigation",
     "首頁": "Home",
     "自選對戰": "Custom matchup",

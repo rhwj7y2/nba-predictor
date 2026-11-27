@@ -1,5 +1,5 @@
-/* 七種主題：白色、卡其、粉色、藍綠、淺藍、深色、黑色。沒選過就跟著手機/電腦的淺色深色設定（淺色 = 卡其、深色 = 黑色）；
-   選過就用 <html data-theme="white|khaki|pink|teal|blue|dark|black"> 蓋過去（選擇記在瀏覽器 localStorage） */
+/* 八種主題：白色、卡其、粉色、藍綠、淺藍、深色、黑色、冬天。沒選過就跟著手機/電腦的淺色深色設定（淺色 = 卡其、深色 = 黑色）；
+   選過就用 <html data-theme="white|khaki|pink|teal|blue|dark|black|winter"> 蓋過去（選擇記在瀏覽器 localStorage） */
 :root {
   --radius: 14px;
   /* 卡其（預設淺色） */
@@ -89,6 +89,20 @@
   --glow-rgb: 255, 255, 255;
   color-scheme: dark;
 }
+/* 冬天：深藍夜色底、冰藍重點色，背景下雪（雪花畫在 theme.js 的 canvas #snow） */
+:root[data-theme="winter"] {
+  --bg: #0a1424; --surface: #122036; --text: #eaf3ff; --muted: #9db2c9; --line: #25405f;
+  --accent: #9ad4ff; --accent-soft: #19324f; --accent2: #5fa8dd; --cold: #8fd3ff; --win: #5fdb9a; --bad: #ff8080;
+  --btn-a: #2c4a6e; --btn-b: #4a76a6; --btn-text: #f1f8ff;  /* 按鈕：冰湖藍 */
+  --glow-rgb: 154, 212, 255;
+  color-scheme: dark;
+}
+:root[data-theme="winter"] body { background: linear-gradient(180deg, #071020 0%, #0a1424 45%, #112442 100%) fixed; }
+/* 卡片稍微透明，手機上卡片佔滿畫面時才看得到後面的雪 */
+:root[data-theme="winter"] .card, :root[data-theme="winter"] .game, :root[data-theme="winter"] .home-card { background: rgba(18, 32, 54, .8); }
+:root[data-theme="winter"] .home-main { border-color: var(--accent2); }
+/* 下雪的畫布：固定鋪滿整個畫面、在內容後面、不擋點擊 */
+#snow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
 /* 主題選擇：標題下面一排四個小按鈕，每個前面一顆該主題底色的小圓點 */
 .theme-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 22px; }
@@ -111,17 +125,21 @@ html[lang="en"] .gm-name { overflow-wrap: break-word; }
 @media (max-width: 480px) { html[lang="en"] .gm-name { font-size: .72rem; letter-spacing: -.01em; } html[lang="en"] .game { --gm-mid: 8.4rem; } html[lang="en"] .gm-row { grid-template-columns: minmax(0, 1fr) 8.4rem minmax(0, 1fr); } }  /* 中間欄縮窄一點，隊名欄才放得下 Mavericks */
 .lang-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .tp-dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(128, 128, 128, .55); }
-@media (max-width: 500px) {  /* 手機：七個按鈕要擠在同一排，圓點改放在字的上面（按鈕變窄），間距也縮小 */
+@media (max-width: 719px) {  /* 手機和窄視窗：八個按鈕要擠在同一排，圓點改放在字的上面（按鈕變窄），中英切換移到標題右上角 */
+  .hero { position: relative; }
+  .lang-btn { position: absolute; top: 4px; right: 0; margin: 0; }
   .theme-pick { gap: 4px; }
   .theme-pick .tp-label { margin-right: 0; font-size: .8rem; }
   .tp-btn { flex-direction: column; gap: 3px; font-size: .78rem; line-height: 1.1; padding: 6px 8px 5px; border-radius: 16px; }
   .tp-dot { width: 14px; height: 14px; }
 }
-@media (max-width: 380px) {  /* 更窄的手機（360 寬）：按鈕再縮一點，七個才擠得進同一排 */
+@media (max-width: 500px) { .tp-btn { padding: 6px 5px 5px; } }
+@media (max-width: 400px) {  /* 更窄的手機（360 寬）：拿掉「主題」兩個字、按鈕再縮一點，八個才擠得進同一排 */
   .theme-pick { gap: 3px; }
-  .theme-pick .tp-label { font-size: .74rem; }
-  .tp-btn { padding: 6px 5px 5px; font-size: .74rem; border-radius: 14px; }
+  .theme-pick .tp-label { display: none; }
+  .tp-btn { padding: 6px 4px 5px; font-size: .74rem; border-radius: 14px; }
 }
+@media (max-width: 340px) { .tp-btn { padding: 6px 2px 5px; } }
 .tp-btn[data-t="white"] .tp-dot { background: #ffffff; }
 .tp-btn[data-t="khaki"] .tp-dot { background: #e9e4d4; }
 .tp-btn[data-t="pink"] .tp-dot { background: #f7dbe5; }  /* 小圓點比實際底色再深一點點，才看得出是粉色 */
@@ -129,6 +147,7 @@ html[lang="en"] .gm-name { overflow-wrap: break-word; }
 .tp-btn[data-t="blue"] .tp-dot { background: #cfe3f5; }
 .tp-btn[data-t="dark"] .tp-dot { background: #181c25; }
 .tp-btn[data-t="black"] .tp-dot { background: #06080b; }
+.tp-btn[data-t="winter"] .tp-dot { background: radial-gradient(circle, #ffffff 0 28%, #12355c 34%); }  /* 深藍夜裡一顆雪 */
 
 * { box-sizing: border-box; }
 
@@ -142,6 +161,7 @@ body {
 }
 
 .wrap {
+  position: relative; z-index: 1;  /* 內容永遠蓋在雪上面 */
   max-width: 720px;
   margin: 0 auto;
   padding: 24px 16px 48px;
