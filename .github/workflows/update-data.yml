@@ -65,9 +65,14 @@ jobs:
       # 記錄「防守進步的受讓隊」符合規則的比賽、打完補結果（只能新增，見 dog_log.py）；寫進 db/dog_log.db，下面 commit 時一起帶上
       # 這步壞了不要擋住資料更新，所以失敗也繼續
       - name: Record qualifying underdog games
+        id: doglog
         if: steps.window.outputs.skip != 'true'
         continue-on-error: true
         run: python dog_log.py
+
+      - name: Warn if the underdog log failed
+        if: steps.doglog.outcome == 'failure'
+        run: echo "::warning::冷門紀錄簿（dog_log.py）這次執行失敗，其他資料照常更新"
 
       - name: Commit changes
         id: commit
@@ -75,6 +80,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 更新資料的這幾分鐘裡如果有人 push 了新的程式：改用新程式重新產生一次，不拿舊程式的結果蓋上去
+          git fetch -q origin main
+          if ! git diff --quiet HEAD origin/main -- '*.py'; then
+            echo "::warning::更新途中程式有新版本，用新版重新產生網頁資料"
+            git checkout -q -- data
+            stashed=""
+            if ! git diff --quiet -- db; then git stash push -q -- db; stashed=1; fi
+            git merge -q --ff-only origin/main
+            if [ -n "$stashed" ]; then git stash pop -q; fi
+            python build_data.py
+            python dog_log.py || echo "::warning::dog_log.py 失敗"
+          fi
+          # 資料庫檔壞掉就不要 commit 上去
+          python -c "import sqlite3, sys; bad = [p for p in ('db/nba.db', 'db/dog_log.db') if sqlite3.connect(p).execute('PRAGMA integrity_check').fetchone()[0] != 'ok']; sys.exit('資料庫完整性檢查失敗：%s' % bad if bad else 0)"
           git add db data
           if git diff --cached --quiet; then
             echo "資料沒有變動，不 commit"
@@ -90,4 +109,10 @@ jobs:
         if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main
+        run: |
+          for i in 1 2 3; do
+            if gh workflow run pages.yml --ref main; then exit 0; fi
+            echo "::warning::觸發網站發布失敗（第 $i 次），30 秒後再試"
+            sleep 30
+          done
+          exit 1

@@ -26,7 +26,7 @@ periods = 4 + max(0, round((比賽分鐘數 − 48) ÷ 5))（延長賽每節 5 �
 讀取用 store.connect_history()（唯讀）和 store.read_hist_games(conn, season)。
 
 執行：python make_history_db.py [來源資料夾]
-  不給資料夾就用下面 SOURCE_DIR（原本的暫存資料夾）。約幾秒鐘。
+  不給資料夾就用下面 SOURCE_DIR（raw/history_src/）。約幾秒鐘。
 """
 import json
 import sqlite3
@@ -38,7 +38,7 @@ sys.dont_write_bytecode = True
 import store  # noqa: E402
 from build_data import TEAMS  # noqa: E402  （用來檢查隊名：全部要是 30 隊的正式名稱）
 
-SOURCE_DIR = Path("C:/Users/kop03/AppData/Local/Temp/claude/2ebd7a3c60bd92da/6a3b84f2-e21b-4b20-9e0e-bc37ac95d4c9/scratchpad")
+SOURCE_DIR = Path(__file__).parent / "raw" / "history_src"  # 原始 jsonl 放這裡（只留在本機，見 .gitignore）
 FILES = ("boxes.jsonl", "players.jsonl", "hist_odds.jsonl", "hist_odds2.jsonl")
 NAME_FIX = {"LA Clippers": "Los Angeles Clippers"}  # ESPN 的隊名 -> build_data.py 的 TEAMS 用的隊名
 ALT_PRIORITY = ("espn bet", "caesars", "mgm", "unibet", "betfair", "bet365")  # 備用莊家的優先順序（名稱含這些字，不分大小寫）

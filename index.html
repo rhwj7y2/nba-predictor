@@ -2,31 +2,14 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
+  <!-- 內容安全政策（CSP）：只准執行本站的程式、只准連到 ESPN 和留言用的 Firebase。新增外部來源時要在這裡放行（file: 是給直接雙擊打開本機檔案看的） -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data:; connect-src 'self' https://site.api.espn.com https://*.firebasedatabase.app; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NBA 勝負預測</title>
   <meta name="description" content="用 NBA 例行賽數據，預測任意兩支 NBA 球隊對戰的比分與勝負。">
   <link rel="stylesheet" href="style.css">
-  <script>
-    // 主題：邏輯放在網頁檔自己裡面（不放在 app.js），這樣就算手機還留著舊的 app.js，主題按鈕也一定點得動
-    // 之前選過的主題：在畫面出來之前先套上，才不會先閃一下預設顏色
-    try { var t = localStorage.getItem("nba-theme"); if (/^(white|khaki|pink|teal|blue|dark|black)$/.test(t)) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-    // 目前生效的主題：選過的，沒選過就跟系統（淺色 = 卡其、深色 = 黑色）；按鈕的亮起也在這裡處理
-    window.nbaMarkTheme = function () {
-      var cur = document.documentElement.getAttribute("data-theme") ||
-        (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "black" : "khaki");
-      var bs = document.querySelectorAll("#theme-pick .tp-btn");
-      for (var i = 0; i < bs.length; i++) bs[i].setAttribute("aria-pressed", bs[i].getAttribute("data-t") === cur ? "true" : "false");
-    };
-    document.addEventListener("click", function (e) {
-      var b = e.target.closest ? e.target.closest("#theme-pick .tp-btn") : null;
-      if (!b) return;
-      var t = b.getAttribute("data-t");
-      document.documentElement.setAttribute("data-theme", t);
-      try { localStorage.setItem("nba-theme", t); } catch (err) { /* 瀏覽器不讓存就只有這次有效 */ }
-      window.nbaMarkTheme();
-      window.dispatchEvent(new Event("nba-theme"));  // app.js 聽到會重畫（隊色要跟著主題重算）
-    });
-    document.addEventListener("DOMContentLoaded", window.nbaMarkTheme);  </script>
+  <!-- 主題腳本放在 theme.js（不放在 app.js），而且要在畫面出來之前跑完，才不會先閃一下預設顏色 -->
+  <script src="theme.js"></script>
 </head>
 <body>
   <main class="wrap">
@@ -95,7 +78,7 @@
       </details>
 
       <!-- 交流區：首頁的留言板，匿名、大家共用一串（內容由 app.js 畫，和比賽頁的留言同一套） -->
-      <div class="card comment-card" id="board-card" hidden></div>
+      <div class="card comment-card" id="talk-card" hidden></div>
 
       <!-- 排名：東區 / 西區 -->
       <div class="card standings" id="standings">

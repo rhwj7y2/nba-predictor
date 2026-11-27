@@ -8,8 +8,9 @@
   injury_snapshots  ESPN 現在的傷病名單；名單有變才新增一份快照，build_data.py 用最新一份算還沒開打的比賽的傷病扣分
 
 單場的 summary（ESPN 一次給 boxscore、球員數據、盤口）每場只抓一次，三種資料一起存。
-ESPN 日期是美東日期，和 Basketball-Reference 一致。任何一天或任何一場抓取失敗就直接報錯，不會默默少資料。
-賽程每天都從開幕夜一路抓到例行賽最後一天（ESPN 不支援一次抓一段日期，所以是一天一天抓）；已經全部打完、又是幾天前的日子不再重抓。
+ESPN 日期是美東日期，和 Basketball-Reference 一致。某一天或某一場抓取失敗：跳過它、印 ::warning:: 、下次再試（超過 MAX_FAILURES 才整個停掉）；
+隊名對不上這種需要人處理的問題仍然直接報錯。
+賽程從開幕夜到例行賽最後一天一天一天抓（ESPN 不支援一次抓一段日期）；已經全部打完、又是幾天前的日子不再重抓，7 天以後的賽程大約一天抓一次。
 
 執行：python fetch_espn_games.py
       python fetch_espn_games.py --end 2026-11-10     （只抓到指定日期）
@@ -33,10 +34,21 @@ SEASON_START = date(2026, 10, 20)  # 2026-27 開幕夜
 SEASON_END = date(2027, 4, 11)  # 例行賽最後一天（美東日期）
 PRE_HOURS = 48  # 未來幾小時內要開賽的比賽，更新時就先記下目前的盤口（開賽後 ESPN 賽事列表就不給盤口了）
 SKIP_RECENT_DAYS = 2  # 「全部打完」而且早於今天這麼多天的日子，不再重抓
+FAR_DAYS = 7  # 幾天以後算「很遠的賽程」
+FAR_REFRESH_HOURS = 20  # 很遠的賽程多久才重抓一次（大約一天一次）
+MAX_FAILURES = 10  # 一次更新裡超過這麼多天 / 場抓不到就整個停掉（讓 Actions 顯示失敗、寄通知）
 URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={}"
 SUMMARY_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event={}"
 INJ_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
 NAME_FIX = {"LA Clippers": "Los Angeles Clippers"}  # ESPN 隊名 -> build_data.py 的 TEAMS 隊名
+
+
+class FetchError(Exception):
+    """向 ESPN 要資料失敗（重試完還是不行）"""
+
+
+def warn(message):
+    print(f"::warning::{message}")  # GitHub Actions 上會顯示在那次執行的摘要頁
 
 
 def fetch_json(url, what):
@@ -49,7 +61,7 @@ def fetch_json(url, what):
         except Exception as e:  # 網路錯誤、JSON 壞掉都重試
             last_err = e
             time.sleep(1.5 * (attempt + 1))
-    raise SystemExit(f"{what} 抓取失敗（已重試 4 次）：{last_err}")
+    raise FetchError(f"{what} 抓取失敗（已重試 4 次）：{last_err}")
 
 
 # ---------------------------------------------------------------- 比賽（賽程 + 比分）
@@ -92,18 +104,35 @@ def day_is_settled(conn, d, today):
     return bool(rows) and all(r["utc"] and (r["status"] == "STATUS_FINAL" or "POSTPONED" in r["status"] or "CANCELED" in r["status"]) for r in rows)
 
 
+def far_day_is_fresh(conn, d, today, now):
+    """超過 FAR_DAYS 天以後的賽程很少變：FAR_REFRESH_HOURS 小時內要過一次就不再要（要過的時間記在 meta 表 fetched:日期）。"""
+    if d <= today + timedelta(days=FAR_DAYS):
+        return False
+    row = conn.execute("SELECT value FROM meta WHERE key = ?", (f"fetched:{d.isoformat()}",)).fetchone()
+    return bool(row) and now - datetime.fromisoformat(row[0]) < timedelta(hours=FAR_REFRESH_HOURS)
+
+
 def fetch_games(conn, first, last):
-    today = date.today()
-    d, n_days, n_games = first, 0, 0
+    today, now = date.today(), datetime.now(timezone.utc)
+    d, n_days, n_games, failed = first, 0, 0, []
     while d <= last:
-        if not day_is_settled(conn, d, today):
-            rows = games_of_day(d)
-            store.upsert_games(conn, rows)
-            n_games += len(rows)
-            n_days += 1
+        if not day_is_settled(conn, d, today) and not far_day_is_fresh(conn, d, today, now):
+            try:
+                rows = games_of_day(d)
+                store.upsert_games(conn, rows)
+                if d > today + timedelta(days=FAR_DAYS):
+                    conn.execute("INSERT OR REPLACE INTO meta VALUES (?, ?)", (f"fetched:{d.isoformat()}", now.isoformat(timespec="seconds")))
+                n_games += len(rows)
+                n_days += 1
+            except Exception as e:  # 這一天壞掉就留著舊資料，繼續下一天（隊名對不上是 SystemExit，不會被吞掉）
+                failed.append(f"{d}: {type(e).__name__} {e}")
+                if len(failed) > MAX_FAILURES:
+                    raise SystemExit(f"超過 {MAX_FAILURES} 天抓取失敗，停止更新（多半是 ESPN 改版或連不上）：{failed[:3]}")
             time.sleep(0.2)
         d += timedelta(days=1)
     conn.commit()
+    if failed:
+        warn(f"{len(failed)} 天的賽程這次抓不到，保留舊資料：{failed[:3]}")
     total = conn.execute("SELECT COUNT(*) FROM games WHERE season = ?", (SEASON,)).fetchone()[0]
     final = conn.execute("SELECT COUNT(*) FROM games WHERE season = ? AND status = 'STATUS_FINAL'", (SEASON,)).fetchone()[0]
     print(f"賽程與比分：{first} ~ {last}，這次向 ESPN 要了 {n_days} 天（{n_games} 場）；資料庫共 {total} 場，已完賽 {final} 場")
@@ -220,6 +249,7 @@ def fetch_summaries(conn):
     have_players = {r[0] for r in conn.execute("SELECT DISTINCT game_id FROM player_box WHERE fga IS NOT NULL AND blk IS NOT NULL")}  # 還沒有投籃、阻攻數據的舊紀錄也算「缺」，會重抓一次補上
     odds_st = {r["game_id"]: r["st"] for r in conn.execute("SELECT game_id, st FROM odds")}
     new_box = new_odds = missing = 0
+    failed = []
     for g in conn.execute("SELECT * FROM games WHERE season = ? AND away IS NOT NULL AND home IS NOT NULL ORDER BY date, seq, id", (SEASON,)).fetchall():
         g = dict(g)
         status = g["status"]
@@ -235,20 +265,29 @@ def fetch_summaries(conn):
             odds_st_new = "live" if g["id"] not in odds_st else None
         if not need_box and not odds_st_new:
             continue
-        summary = fetch_json(SUMMARY_URL.format(g["id"]), f"事件 {g['id']} 的 summary")
-        time.sleep(0.3)
-        if need_box:
-            store.save_team_box(conn, g["id"], box_of(summary, g))
-            store.save_player_box(conn, g["id"], players_of(summary, g))
-            new_box += 1
-        if odds_st_new:
-            rec = odds_of(summary)
-            if rec is None:
-                missing += 1  # 這場查不到盤口：不存，下次更新再試
-            else:
-                store.save_odds(conn, g["id"], {"utc": g["utc"], "away": g["away"], "home": g["home"], "st": odds_st_new, **rec})
-                new_odds += 1
-        conn.commit()  # 一場一存：中途出錯，前面抓好的不會白費
+        try:  # 一場壞掉只跳過那一場（下次更新再試），其他場和傷病名單照常更新
+            summary = fetch_json(SUMMARY_URL.format(g["id"]), f"事件 {g['id']} 的 summary")
+            time.sleep(0.3)
+            if need_box:
+                team_box, player_box = box_of(summary, g), players_of(summary, g)  # 兩樣都看得懂才存，不會只存一半
+                store.save_team_box(conn, g["id"], team_box)
+                store.save_player_box(conn, g["id"], player_box)
+                new_box += 1
+            if odds_st_new:
+                rec = odds_of(summary)
+                if rec is None:
+                    missing += 1  # 這場查不到盤口：不存，下次更新再試
+                else:
+                    store.save_odds(conn, g["id"], {"utc": g["utc"], "away": g["away"], "home": g["home"], "st": odds_st_new, **rec})
+                    new_odds += 1
+            conn.commit()  # 一場一存：中途出錯，前面抓好的不會白費
+        except Exception as e:
+            conn.rollback()
+            failed.append(f"事件 {g['id']}: {type(e).__name__} {e}")
+            if len(failed) > MAX_FAILURES:
+                raise SystemExit(f"超過 {MAX_FAILURES} 場抓取失敗，停止更新（多半是 ESPN 改版或連不上）：{failed[:3]}")
+    if failed:
+        warn(f"{len(failed)} 場的單場資料這次沒抓成，下次再試：{failed[:3]}")
     have = conn.execute("SELECT COUNT(DISTINCT game_id) FROM team_box").fetchone()[0]
     print(f"boxscore 與球員數據：新抓 {new_box} 場，共 {have} 場；賭盤紀錄：新存 {new_odds} 場，查不到 {missing} 場")
 
@@ -282,7 +321,11 @@ def main(end, with_schedule=True):
     conn = store.connect()
     fetch_games(conn, SEASON_START, SEASON_END if with_schedule else end)
     fetch_summaries(conn)
-    fetch_injuries(conn)
+    try:
+        fetch_injuries(conn)
+    except Exception as e:  # 傷病名單抓不到就沿用上一份快照，比分和賽程照常更新
+        conn.rollback()
+        warn(f"傷病名單這次抓不到，沿用上一份：{type(e).__name__} {e}")
     conn.close()
 
 

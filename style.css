@@ -633,6 +633,9 @@ a.game:hover { border-color: var(--accent); }
   border-top: 1px solid var(--line);
   text-align: center; font-size: .9rem;
 }
+/* 已完賽的固定頁面：這張卡只留交手紀錄（上面已經有實際比分和賽前預測） */
+.card.board.only-h2h > :not(.h2h) { display: none; }
+.card.board.only-h2h > .h2h { margin-top: 0; padding-top: 0; border-top: 0; }
 .alt {
   margin-top: 14px; padding-top: 12px;
   border-top: 1px solid var(--line);
@@ -644,6 +647,12 @@ a.game:hover { border-color: var(--accent); }
 .conf { font-weight: 700; }
 .conf-high { color: var(--win); }
 .conf-mid { color: var(--accent); }
+/* 淺色主題的重點色當小字對比不到 4.5（看不清楚），「中信心」改用同色系深一點的顏色 */
+:root[data-theme="khaki"] .conf-mid { color: #7b6120; }
+:root[data-theme="pink"] .conf-mid { color: #b7426d; }
+:root[data-theme="teal"] .conf-mid { color: #1b7975; }
+:root[data-theme="blue"] .conf-mid { color: #2770b1; }
+@media (not (prefers-color-scheme: dark)) { :root:not([data-theme]) .conf-mid { color: #7b6120; } }
 .conf-low { color: var(--bad); }
 .alt-line .conf { font-size: 1.1rem; }
 .h2h-block + .h2h-block { margin-top: 10px; }

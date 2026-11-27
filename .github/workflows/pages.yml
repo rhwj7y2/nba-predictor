@@ -31,10 +31,18 @@ jobs:
       - name: Set up Pages
         uses: actions/configure-pages@v5
 
+      # 只發布網站用得到的檔案（資料庫、程式、說明文件不放上網站）。index.html 引用了清單以外的檔案時，這一步會失敗提醒
+      - name: Collect site files
+        run: |
+          mkdir _site
+          cp index.html style.css theme.js i18n.js app.js _site/
+          cp -r data _site/
+          python3 -c "import os, re, sys; h = open('_site/index.html', encoding='utf-8').read(); miss = [u for u in re.findall(r'(?:src|href)=\"([^\"#:]+)\"', h) if not os.path.exists(os.path.join('_site', u))]; sys.exit('網站少了檔案：%s' % miss if miss else 0)"
+
       - name: Package the site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       # 打包檔上傳後，GitHub 要過幾秒才查得到；太快去部署會報 "No artifacts named github-pages"（2026-11-22 連續失敗），所以先等一下
       - name: Wait for the artifact to register

@@ -44,6 +44,10 @@
     "有機會倒打": "could pull off an upset",
     "🚨 有機會倒打勝率": "🚨 Upset pick win rate",
     "受讓隊直接贏球才算": "A hit means the underdog won outright",
+    "定規則時看過這三季（樣本內）": "Rules were set after seeing these seasons (in-sample)",
+    "留言內容": "Comment text",
+    "比近 10 場變好": "Better than last 10 games",
+    "比近 10 場變差": "Worse than last 10 games",
     "⚠️ 別拿預測比分去賭分數：": "⚠️ Don't bet on predicted scores:",
     "⚠️ 別拿預測比分去賭分數": "⚠️ Don't bet on predicted scores",
     "ESPN（本季數據、賭盤、傷病）": "ESPN (this season's data, odds, injuries)",
@@ -331,6 +335,10 @@
     [/第\s*(\d+)\s*節/g, "Q$1"],
     [/每天（(\d+) 個比賽日）/, "By day ($1 game days)"],
     [/單隊平均誤差\s*([\d.]+)\s*分/, "average error per team score: $1 points"],
+    [/說點什麼吧（匿名，最多\s*(\d+)\s*字）/, "Say something (anonymous, max $1 characters)"],
+    [/定案後（台灣 ([\d\/]+) 起）\s*(\d+ \/ \d+)/, "Since the rules were fixed (from $1 Taiwan time): $2"],
+    [/其中 (\d+) 場的傷病扣分是事後回補/, "$1 of these had injury adjustments added after the fact"],
+    [/不含這些場次 (\d+ \/ \d+)（([^）]+)）/, "Without them: $1 ($2)"],
     [/([\d\/]+~[\d\/]+) 比賽在([\d\/]+)賽後更新納入傷病/, "Games $1 were re-predicted after $2 with injuries factored in"]
   ];
   // 詞組表套完之後，剩下的「數字＋單位」
@@ -389,6 +397,7 @@
   var left = window.__i18nLeft = {};
   var ATTRS = ["placeholder", "title", "aria-label", "content", "alt"];
   var skipSel = ".cm-m, textarea, script, style, [translate=no]";
+  var skipAttrSel = ".cm-m, script, style, [translate=no]";  // 屬性（提示字、aria-label）連輸入框的也要翻；輸入框裡打的字不會碰
 
   function skip(n) {
     var el = n.nodeType === 3 ? n.parentNode : n;
@@ -407,7 +416,7 @@
     if (HAN.test(t)) left[t] = 1;
   }
   function doAttrs(el) {
-    if (!el.getAttribute || skip(el)) return;
+    if (!el.getAttribute || el.closest(skipAttrSel)) return;
     ATTRS.forEach(function (a) {
       var v = el.getAttribute(a);
       if (v && HAN.test(v)) {

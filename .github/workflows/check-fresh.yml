@@ -1,0 +1,21 @@
+# 每天檢查一次線上網站的資料有沒有停在舊的：有比賽早該打完卻還顯示「未開打」就讓這支流程失敗（GitHub 會寄通知信）
+name: Check data freshness
+
+on:
+  schedule:
+    - cron: "30 8 * * *"  # 台灣 16:30（前一晚的比賽早就打完了）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Check the live site
+        run: python3 check_fresh.py

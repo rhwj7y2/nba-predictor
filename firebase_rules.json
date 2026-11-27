@@ -3,12 +3,13 @@
     ".read": false,
     ".write": false,
     "comments": {
-      ".read": true,
       "$game": {
+        ".read": true,
+        ".indexOn": ["t"],
         ".validate": "$game.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}_[A-Z]{2,4}_[A-Z]{2,4}$/)",
         "$id": {
           ".write": "!data.exists() && newData.exists()",
-          ".validate": "newData.hasChildren(['m', 't'])",
+          ".validate": "$id.matches(/^-[A-Za-z0-9_-]{19}$/) && newData.hasChildren(['m', 't'])",
           "m": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 200" },
           "t": { ".validate": "newData.val() == now" },
           "$other": { ".validate": false }

@@ -59,7 +59,11 @@ NEED_GAMES = 7  # 兩隊賽前都至少打過 7 場（同一季）
 SPREAD_MAX2 = 9.5  # 策略二：受讓不超過（含）
 NEED_GAMES2 = 10  # 策略二：兩隊賽前都至少打過 10 場
 SHORT, LONG = 5, 10  # 策略二：近 5 場比近 10 場
+# 網站準確率頁顯示的三季回測：策略一（<= SPREAD_MAX）或策略二（<= SPREAD_MAX2）符合的場次、受讓隊直接贏的場數。改規則要重算（python dog_rule.py）
+BACKTEST = {"win": 210, "n": 488}
+OOS_FROM = "2026-11-28"  # 兩個策略都定案之後的第一個比賽日（台灣日期）；這天起的成績才不是樣本內
 CUP_NOTE = "NBA Cup Championship"  # 本季盃賽決賽（games.note）
+CURRENT_END = "2027-04-11"  # 本季例行賽最後一天（美東日期）；之後的比賽不算、不標
 REG_END = {"2023-24": "2024-04-14", "2024-25": "2025-04-13", "2025-26": "2026-04-12"}  # 例行賽最後一天（美東日期）
 CUP_FINALS = {("2023-12-09", "Indiana Pacers", "Los Angeles Lakers"), ("2024-12-17", "Milwaukee Bucks", "Oklahoma City Thunder"),
               ("2025-12-16", "San Antonio Spurs", "New York Knicks")}
@@ -165,7 +169,7 @@ def _walk_finals(raw_games, boxes, flag=None):
     """逐日走過本季已完賽的比賽。回傳 (排好序的比賽, 目前每隊的紀錄 hist, 已完賽比賽的旗標 {場次編號: "a"/"h"/"ah"})；
     flag = 用哪個策略算旗標（預設策略一的 _flag，策略二傳 _flag2）"""
     flag = flag or _flag
-    games = sorted((g for g in raw_games if g["utc"] and g["away"] and g["home"] and g.get("note") != CUP_NOTE),
+    games = sorted((g for g in raw_games if g["utc"] and g["away"] and g["home"] and g.get("note") != CUP_NOTE and _et_day(g) <= CURRENT_END),
                    key=lambda g: (g["utc"], g["id"]))
     hist, flags = defaultdict(list), {}
     finals = [g for g in games if g["status"] == "STATUS_FINAL" and g["id"] in boxes and len(boxes[g["id"]]["stats"]) == 2

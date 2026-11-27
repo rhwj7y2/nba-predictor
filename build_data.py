@@ -228,6 +228,11 @@ def cup_final_games(conn):
     return out
 
 
+def warn(message):
+    """印出警告；在 GitHub Actions 上跑的時候，這種格式會顯示在那次執行的摘要頁。"""
+    print(f"::warning::{message}")
+
+
 class RawDataError(ValueError):
     """資料庫裡某一筆比分有問題；訊息格式「來源:第幾筆: 內容 (原因)」。"""
 
@@ -299,7 +304,8 @@ def team_paces(conn, games):
         minutes5 = 48 + 5 * (box["periods"] - 4)
         per[vis].append((game_poss, minutes5, vpts, hpts))
         per[home].append((game_poss, minutes5, hpts, vpts))
-    assert not missing, f"有 {len(missing)} 場比賽沒有 boxscore，請先執行 python fetch_espn_games.py：{missing[:3]}..."
+    if missing:  # 某場抓不到 boxscore：那場不算進 PACE / 效率值（比分和戰績照算），下次更新抓到就補回來
+        warn(f"有 {len(missing)} 場比賽沒有 boxscore，這次的 PACE 不含它們：{missing[:3]}")
 
     def pace_of(rows):
         mins = sum(r[1] for r in rows)
@@ -396,7 +402,8 @@ def _player_totals(conn, games):
                 p["reb"] += reb
                 p["ast"] += ast
                 p["pm"] += pm
-    assert not missing, f"有 {len(missing)} 場比賽沒有球員數據，請先執行 python fetch_espn_games.py：{missing[:3]}..."
+    if missing:  # 那場不算進球員場均（球隊場數也不算那場），下次更新抓到就補回來
+        warn(f"有 {len(missing)} 場比賽沒有球員數據，這次的球員場均不含它們：{missing[:3]}")
     return team_gp, tot
 
 
@@ -525,6 +532,8 @@ def build_schedule(conn):
                 item["mq"] = round(fair_probs(american_to_decimal(mh[1]), american_to_decimal(ma[1]))[0] * 100)
         games.append(item)
     games.sort(key=lambda x: (x["d"], x["t"], x["a"] or "", x["h"] or ""))
+    # 冷門策略的設定（受讓上限、三季回測、樣本外起算日），網頁直接讀，數字只在 dog_rule.py 寫一次
+    upset = {"max1": dog_rule.SPREAD_MAX, "max2": dog_rule.SPREAD_MAX2, "win": dog_rule.BACKTEST["win"], "n": dog_rule.BACKTEST["n"], "oos": dog_rule.OOS_FROM}
     # 每隊最近 5 場已完賽的比賽（還沒開打的比賽頁「最近五場戰績」卡片用，新到舊）：
     # recent[隊縮寫] = [[台灣日期, 對手縮寫, 1 主場 / 0 客場, 本隊得分, 對手得分, 本隊各節, 對手各節], ...]；各節 = 每節得分（第 5 個以後是延長賽），沒有就是空陣列。
     # 不受 SCHEDULE_SHOW_FROM 限制（賽程只從 11/1 開始顯示，但球隊的最近五場可能更早）
@@ -539,7 +548,7 @@ def build_schedule(conn):
             if len(recent[TEAMS[me][0]]) < 5:
                 recent[TEAMS[me][0]].append([day, TEAMS[opp][0], home_flag, mp, op, mq, oq])
     return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "retro": [B2B_FROM, RETRO_UNTIL],
-            "games": games, "recent": dict(recent)}
+            "upset": upset, "games": games, "recent": dict(recent)}
 
 
 def american_to_decimal(x):
@@ -742,19 +751,17 @@ def check_no_duplicates_or_future(games, today):
 
 
 def check_in_progress_limits(games):
-    """只在進行中模式檢查：每隊場數 <= 82、主客場各 <= 41。
+    """只在進行中模式檢查：每隊場數 <= 82、主客場各 <= 42（NBA 盃中立場地賽可能讓主客場變成 42 / 40）。
 
-    整季完成模式不能檢查「主客場各 <= 41」：NBA 盃淘汰賽（中立場地）會讓真實的整季資料出現
-    42/40 的主客場失衡（2025-26 的尼克、馬刺、雷霆、魔術都是），整季完成模式改靠「每隊剛好 82 場」把關。
+    整季完成模式不檢查主客場（2025-26 的尼克、馬刺、雷霆、魔術都是 42 / 40），改靠「每隊剛好 82 場」把關。
     """
     home_n, road_n = defaultdict(int), defaultdict(int)
     for _, vis, _, home, _ in games:
         road_n[vis] += 1
         home_n[home] += 1
     too_many = {t: (home_n[t], road_n[t]) for t in TEAMS
-                if home_n[t] + road_n[t] > 82 or home_n[t] > 41 or road_n[t] > 41}
-    assert not too_many, (f"有球隊場次超過上限（主場, 客場；總場數<=82、主客場各<=41）：{too_many}。"
-                          "若球季已接近尾聲（NBA 盃中立場地賽可能讓主客場變成 42/40），請改用 --complete")
+                if home_n[t] + road_n[t] > 82 or home_n[t] > 42 or road_n[t] > 42}
+    assert not too_many, f"有球隊場次超過上限（主場, 客場；總場數<=82、主客場各<=42）：{too_many}"
 
 
 def build_log(games):
@@ -896,45 +903,47 @@ def build_pregame(conn, games, schedule, prior, neutral):
     }
 
 
-def games_before_tw_day(games, schedule, day):
-    """台灣日期 day 開打「之前」的所有比賽（day 當天與之後的都不算）。
+def tw_day_map(conn):
+    """{(美東日期, 客隊, 主隊): 台灣日期}。比分只有美東日期，台灣日期要從同一場的開賽時間算（UTC+8）。
 
-    原始比分只有美東日期（台灣日期通常是它的隔天，偶爾同一天），所以用賽程的台灣日期來對：
-    同一對球隊（客隊, 主隊）在賽程裡的已完賽日期，和比分的美東日期差 0 或 1 天，就是同一場。
-    賽程對不到的（賽程範圍以前的比賽）一定比賽程最早的日期早，直接算「之前」。
+    一定要一場對一場：同一組主客隊連兩天打的時候，用「日期差 0 或 1 天」去猜會把第二場配到前一天，
+    那場的「賽前」數據就會含有自己的結果。
     """
-    name_of = {v[0]: k for k, v in TEAMS.items()}
-    tw_days = defaultdict(list)
-    for g in schedule["games"]:
-        if g["s"] == "F" and g["a"] and g["h"]:
-            tw_days[(name_of[g["a"]], name_of[g["h"]])].append(date.fromisoformat(g["d"]))
-    out = []
-    for g in games:
-        et = g[0].date()
-        tw = [d for d in tw_days.get((g[1], g[3]), []) if (d - et).days in (0, 1)]
-        if (tw[0] if tw else et) < day:
-            out.append(g)
-    return out
+    rows = conn.execute("SELECT date, utc, away, home FROM games WHERE season = ? AND utc IS NOT NULL AND away IS NOT NULL AND home IS NOT NULL", (SEASON_LABEL,))
+    return {(date.fromisoformat(r[0]), r[2], r[3]): (datetime.strptime(r[1], "%Y-%m-%dT%H:%MZ") + timedelta(hours=8)).date() for r in rows}
+
+
+def games_before_tw_day(games, tw_of, day):
+    """台灣日期 day 開打「之前」的所有比賽（day 當天與之後的都不算）。tw_of = tw_day_map() 的結果；
+    對不到的（沒有開賽時間的舊紀錄）用美東日期判斷。"""
+    return [g for g in games if tw_of.get((g[0].date(), g[1], g[3]), g[0].date()) < day]
 
 
 def build_pre_days(conn, games, schedule, latest, prior, neutral):
     """賽程分頁裡「比最近一個比賽日更早」的每個比賽日，各存一份開打前的球隊數據，
     讓那些日子的卡片也能顯示賽前預測比分。只留預測公式要用的欄位，檔案才不會太大。
-    （最近一個比賽日另外存在 pre，裡面還有交手紀錄，因為那天的比賽可以點進去看完整預測。）
+    （最近一個比賽日另外存在 pre，裡面還有整份交手紀錄。）
+
+    回傳 (preDays, preH2h)：preH2h[台灣日期][兩隊組合] = 那天開打前、本季這兩隊的交手比分（只存當天有比賽的組合），
+    已完賽頁的「本季交手」才不會包含當場和之後的比賽。
     """
     days = sorted({g["d"] for g in schedule["games"]
                    if g["s"] == "F" and g["a"] and g["h"] and SCHEDULE_SHOW_FROM <= g["d"] < latest})
     # 預測公式要用的欄位，加上對戰頁「本季數據對照」表要用的戰績欄位（已完賽的固定頁面顯示那天賽前的數據）
     keep = ("gp", "w", "l", "home", "road", "off", "def", "pace", "l10rec", "l10off", "l10def", "l5rec", "l5off", "l5def", "net", "net10", "rating", "l10pace", "l5pace", "ortg", "drtg", "l10ortg", "l10drtg", "l5ortg", "l5drtg")
-    out = {}
+    out, h2h_out = {}, {}
+    tw_of = tw_day_map(conn)
     for d in days:
-        pre_games = games_before_tw_day(games, schedule, date.fromisoformat(d))
+        pre_games = games_before_tw_day(games, tw_of, date.fromisoformat(d))
         if not pre_games:
             continue
+        before = build_h2h(pre_games)
+        pairs = {"-".join(sorted((g["a"], g["h"]))) for g in schedule["games"] if g["d"] == d and g["s"] == "F" and g["a"] and g["h"]}
+        h2h_out[d] = {k: before.get(k, []) for k in sorted(pairs)}
         pace_all, pace_10, pace_5, rtgs = team_paces(conn, pre_games)
         rows = team_rows(pre_games, pace_all, with_model=True, prior=prior, neutral=neutral, pace10=pace_10, pace5=pace_5, rtg=rtgs)
         out[d] = {k: {f: r[f] for f in keep} for k, r in rows.items()}
-    return out
+    return out, h2h_out
 
 
 def main(db_path, target, complete, backfill_injuries=False):
@@ -997,13 +1006,13 @@ def main(db_path, target, complete, backfill_injuries=False):
         pre = build_pregame(conn, games, schedule, prior, neutral)
         if pre:
             payload["pre"] = pre
-            payload["preDays"] = build_pre_days(conn, games, schedule, pre["date"], prior, neutral)
+            payload["preDays"], payload["preH2h"] = build_pre_days(conn, games, schedule, pre["date"], prior, neutral)
 
     payload["teams"] = out
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
         "// 由 build_data.py 自動產生，請勿手改\nwindow.NBA_DATA = "
-        + json.dumps(payload, ensure_ascii=False, indent=1) + ";\n",
+        + json.dumps(payload, ensure_ascii=False, separators=(",", ":")).replace('},"', '},\n"').replace(']],"', ']],\n"') + ";\n",
         encoding="utf-8",
     )
     print(f"完成（{'整季完成' if complete else '進行中'}模式）：{len(out)} 隊，例行賽 {len(games)} 場，"

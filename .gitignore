@@ -1,0 +1,5 @@
+# 只留在本機、不上傳的東西
+.claude/
+__pycache__/
+# 三季歷史回測的原始檔（make_history_db.py 的輸入）；產生出來的 db/history.db 有進版本庫
+raw/history_src/
