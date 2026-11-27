@@ -563,7 +563,16 @@
         ratingText(h), '<span class="rate">已打 ' + h.gp + " 場</span>", betterHigh(Number(f1(rating(a))), Number(f1(rating(h))))]);
     }
     var rec = function (label, ra, rh) { return [label, ra, rateSub(ra), rh, rateSub(rh), betterRecord(ra, rh)]; };
-    rows.push(rec(COPY.recLabel, a.w + "-" + a.l, h.w + "-" + h.l));
+    // 看的是 NBA 盃比賽：本季戰績那一格下面再寫盃賽戰績（已完賽的固定頁面算到開打前，和上面的戰績一致）
+    var cupGame = adjGame && isCupGame(adjGame) ? adjGame : null;
+    var cupSub = function (t) {
+      var r = cupGame ? cupRecord(t.abbr, pregame ? cupGame.d : null) : "";
+      return r ? '<span class="rate rate-cup" title="NBA 盃戰績">(' + r + ")</span>" : "";
+    };
+    var season = rec(COPY.recLabel, a.w + "-" + a.l, h.w + "-" + h.l);
+    season[2] += cupSub(a);
+    season[4] += cupSub(h);
+    rows.push(season);
     rows.push(rec("主場戰績", a.home, h.home));
     rows.push(rec("客場戰績", a.road, h.road));
     rows.push(["場均得分", f1(a.off), "", f1(h.off), "", betterHigh(a.off, h.off)]);
@@ -1397,15 +1406,17 @@
   // NBA 盃的比賽：賽程備註標籤是「NBA 盃…」開頭（小組賽、八強、四強、決賽）
   function isCupGame(g) { return !!g.tag && g.tag.indexOf("NBA 盃") === 0; }
   // 這隊本季 NBA 盃戰績 "勝-敗"。打完的場次由 build_data.py 算在賽程資料的 cup（賽程清單只從 11/1 開始，盃賽更早開打，不能用清單數）；
-  // 再加上 ESPN 剛說打完、資料還沒更新的場次。舊資料檔沒有 cup 就回傳空字串（不顯示，免得顯示少算的數字）
-  function cupRecord(abbr) {
-    if (!SCHEDULE.cup) return "";
+  // 再加上 ESPN 剛說打完、資料還沒更新的場次。舊資料檔沒有 cup 就回傳空字串（不顯示，免得顯示少算的數字）。
+  // before = 台灣日期：只算到那天開打之前（已完賽的固定頁面用）——把那天起打完的場次扣回去
+  function cupRecord(abbr, before) {
+    if (!SCHEDULE || !SCHEDULE.cup) return "";
     var base = SCHEDULE.cup[abbr] || [0, 0], w = base[0], l = base[1];
     SCHEDULE.games.forEach(function (g0) {
       if (!isCupGame(g0) || (g0.a !== abbr && g0.h !== abbr)) return;
       var g = withLive(g0);
-      if (!g.live) return;
-      if ((g.h === abbr) === (g.hs > g.as)) w++; else l++;
+      if (g.s !== "F" || g.as == null) return;
+      var n = (g.live ? 1 : 0) - (before && g.d >= before ? 1 : 0);  // 還沒進資料的要加、開打當天起的要扣
+      if ((g.h === abbr) === (g.hs > g.as)) w += n; else l += n;
     });
     return w + "-" + l;
   }
@@ -1487,7 +1498,7 @@
     var head = g.s === "F" && a && h && pi
       ? '<div class="gm-head' + (tags ? "" : " solo") + '"><div class="gm-head-l">' + tags + '</div><span class="gm-res ' + (pi.ok1 ? "ok" : "bad") + '">' + (pi.ok1 ? "預測正確" : "預測失敗") + '</span></div>'
       : tags ? '<div class="gm-tags">' + tags + "</div>" : "";
-    var showCup = mode === "home" && a && h && isCupGame(g);  // 首頁的 NBA 盃比賽：兩隊戰績下面再寫盃賽戰績
+    var showCup = a && h && isCupGame(g);  // NBA 盃比賽（首頁和賽程頁）：兩隊戰績下面再寫盃賽戰績
     el.innerHTML = head +
       '<div class="gm-row"' + (nTop ? ' style="--gm-top:' + nTop * 19 + 'px"' : "") + ">" + teamCell(a, hasTop ? stA : undefined, showCup && cupRecord(g.a)) +
       '<div class="gm-mid">' + mid + "</div>" + teamCell(h, hasTop ? stH : undefined, showCup && cupRecord(g.h)) + "</div>" +
