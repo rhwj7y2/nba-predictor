@@ -1452,7 +1452,7 @@
     } else if (!(a && h)) {
       line = "兩隊要等前一輪打完才決定";
     } else if (homePred) {
-      line = upsetIcon(g, a, h) + confHtml(homePred.p1) + winBar(homePred.p1, a, h);
+      line = '<span class="gm-conf-mid">' + upsetIcon(g, a, h) + confHtml(homePred.p1) + "</span>" + winBar(homePred.p1, a, h);  // 信心字樣置中，🚨 掛在它左邊、不把字推歪
     } else if (MODEL && canPredict(g, date)) {  // 下一個比賽日、或兩隊都已沒有未打完比賽的隔天，才顯示預測和信心；更後面的日子先不顯示
       var c = compareModels(a, h, g.n, gameAdj(g));
       var wn = c.w1 === "home" ? h.zh : a.zh;  // 預測會贏的那隊
