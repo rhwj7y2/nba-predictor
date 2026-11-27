@@ -1386,11 +1386,28 @@
   }
   // 隊徽上面的小行（固定 19px 高；兩隊都留這一行，隊徽、隊名才會對齊）：
   //   streak：undefined = 沒有這一行；字串 = 這一行的內容（連勝 / 連敗的字；什麼都沒有就是空字串，留空白）
-  function teamCell(t, streak) {
+  //   cup：NBA 盃戰績（例如 "2-1"），寫在本季戰績下面；不給就沒有這一行
+  function teamCell(t, streak, cup) {
     var top = streak !== undefined ? '<div class="gm-topl">' + streak + "</div>" : "";
     if (!t) return '<div class="gm-team">' + top + '<span class="mini-badge tbd">?</span><div class="gm-name">待定</div></div>';
     return '<div class="gm-team">' + top + miniBadge(t) + '<div class="gm-name">' + t.zh + '</div><div class="gm-rec">' +
-      t.w + "-" + t.l + "</div></div>";
+      t.w + "-" + t.l + "</div>" + (cup ? '<div class="gm-cup" title="NBA 盃戰績">(' + cup + ")</div>" : "") + "</div>";
+  }
+
+  // NBA 盃的比賽：賽程備註標籤是「NBA 盃…」開頭（小組賽、八強、四強、決賽）
+  function isCupGame(g) { return !!g.tag && g.tag.indexOf("NBA 盃") === 0; }
+  // 這隊本季 NBA 盃戰績 "勝-敗"。打完的場次由 build_data.py 算在賽程資料的 cup（賽程清單只從 11/1 開始，盃賽更早開打，不能用清單數）；
+  // 再加上 ESPN 剛說打完、資料還沒更新的場次。舊資料檔沒有 cup 就回傳空字串（不顯示，免得顯示少算的數字）
+  function cupRecord(abbr) {
+    if (!SCHEDULE.cup) return "";
+    var base = SCHEDULE.cup[abbr] || [0, 0], w = base[0], l = base[1];
+    SCHEDULE.games.forEach(function (g0) {
+      if (!isCupGame(g0) || (g0.a !== abbr && g0.h !== abbr)) return;
+      var g = withLive(g0);
+      if (!g.live) return;
+      if ((g.h === abbr) === (g.hs > g.as)) w++; else l++;
+    });
+    return w + "-" + l;
   }
 
   // 賽程列表的一場比賽，版型仿 NBA 官網：客隊在左、主隊在右，中間是開賽時間（已完賽改顯示比分）。
@@ -1470,9 +1487,10 @@
     var head = g.s === "F" && a && h && pi
       ? '<div class="gm-head' + (tags ? "" : " solo") + '"><div class="gm-head-l">' + tags + '</div><span class="gm-res ' + (pi.ok1 ? "ok" : "bad") + '">' + (pi.ok1 ? "預測正確" : "預測失敗") + '</span></div>'
       : tags ? '<div class="gm-tags">' + tags + "</div>" : "";
+    var showCup = mode === "home" && a && h && isCupGame(g);  // 首頁的 NBA 盃比賽：兩隊戰績下面再寫盃賽戰績
     el.innerHTML = head +
-      '<div class="gm-row"' + (nTop ? ' style="--gm-top:' + nTop * 19 + 'px"' : "") + ">" + teamCell(a, hasTop ? stA : undefined) +
-      '<div class="gm-mid">' + mid + "</div>" + teamCell(h, hasTop ? stH : undefined) + "</div>" +
+      '<div class="gm-row"' + (nTop ? ' style="--gm-top:' + nTop * 19 + 'px"' : "") + ">" + teamCell(a, hasTop ? stA : undefined, showCup && cupRecord(g.a)) +
+      '<div class="gm-mid">' + mid + "</div>" + teamCell(h, hasTop ? stH : undefined, showCup && cupRecord(g.h)) + "</div>" +
       (line ? '<div class="game-pred">' + line + "</div>" : "");
     var li = document.createElement("li");
     li.appendChild(el);

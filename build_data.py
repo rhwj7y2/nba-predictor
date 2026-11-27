@@ -547,8 +547,16 @@ def build_schedule(conn):
                                                     (g["home"], g["away"], 1, g["home_pts"], g["away_pts"], hq, aq)):
             if len(recent[TEAMS[me][0]]) < 5:
                 recent[TEAMS[me][0]].append([day, TEAMS[opp][0], home_flag, mp, op, mq, oq])
+    # NBA 盃戰績：cup[隊縮寫] = [勝, 敗]，本季所有打完的盃賽（備註「NBA Cup…」），首頁盃賽卡片用。
+    # 不受 SCHEDULE_SHOW_FROM 限制（盃賽 10 月底就開打）
+    cup = defaultdict(lambda: [0, 0])
+    for g in finals:
+        if (g["note"] or "").startswith("NBA Cup"):
+            home_won = g["home_pts"] > g["away_pts"]
+            cup[TEAMS[g["home"]][0]][0 if home_won else 1] += 1
+            cup[TEAMS[g["away"]][0]][1 if home_won else 0] += 1
     return {"season": SEASON_LABEL, "timezone": "Asia/Taipei", "b2bDeduct": B2B_DEDUCT, "retro": [B2B_FROM, RETRO_UNTIL],
-            "upset": upset, "games": games, "recent": dict(recent)}
+            "upset": upset, "games": games, "recent": dict(recent), "cup": dict(cup)}
 
 
 def american_to_decimal(x):

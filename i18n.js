@@ -47,6 +47,7 @@
     "定規則時看過這三季（樣本內）": "Rules were set after seeing these seasons (in-sample)",
     "留言內容": "Comment text",
     "比近 10 場變好": "Better than last 10 games",
+    "NBA 盃戰績": "NBA Cup record",
     "比近 10 場變差": "Worse than last 10 games",
     "⚠️ 別拿預測比分去賭分數：": "⚠️ Don't bet on predicted scores:",
     "⚠️ 別拿預測比分去賭分數": "⚠️ Don't bet on predicted scores",
