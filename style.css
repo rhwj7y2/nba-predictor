@@ -218,6 +218,21 @@
 .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
 /* 英文版「賽前預測比分」那句很長：標題自己一行，比分寫在下面 */
 html[lang="en"] .ps-lbl, html[lang="en"] .h2h-rec { display: block; }  /* 交手紀錄標題的「幾勝幾敗」也換到下一行 */
+/* 英文版手機：比分那一排（比分＋箭頭＋比分）要放得進中間欄、數據表的英文欄名要能換行，不然會疊字或撐出畫面 */
+@media (max-width: 480px) {
+  html[lang="en"] .gm-score { gap: 4px; }
+  html[lang="en"] .gm-pts { font-size: 1.3rem; }  /* 即時比分中間是「Halftime」之類的字，三位數比分要小一點才放得下 */
+  html[lang="en"] .gm-pts.pred { font-size: 1.05rem; }
+  html[lang="en"] .stats td:nth-child(2), html[lang="en"] .stats th:nth-child(2) { white-space: normal; }
+  html[lang="en"] .nb, html[lang="en"] .h2h-total .nw { white-space: normal; }  /* 警語、三季平均比分這些英文長句放不下就換行 */
+  html[lang="en"] .tabs .tab { min-width: 0; white-space: normal; font-size: .8rem; line-height: 1.25; }  /* 「Custom matchup」放不下就換行 */
+  html[lang="en"] .st-head { flex-wrap: wrap; }  /* 排名卡的分區按鈕放不下就換到標題下面 */
+  html[lang="en"] .hero h1 { padding-right: 132px; font-size: 1.45rem; line-height: 1.25; }  /* 右上角兩顆按鈕的位置留給它們，「Game Predictor」放不下就分兩行 */
+}
+@media (max-width: 340px) {  /* 很窄的手機：中文警語也放不下要能換行；英文標題字再小一點 */
+  .backrow .backrow-warn .nb { white-space: normal; }
+  html[lang="en"] .hero h1 { font-size: 1.2rem; }
+}
 /* 英文隊名比較長：不要把字拆成「Clipper / s」，手機上字再小一點 */
 html[lang="en"] .gm-name { overflow-wrap: break-word; }
 @media (max-width: 480px) { html[lang="en"] .gm-name { font-size: .72rem; letter-spacing: -.01em; } html[lang="en"] .game { --gm-mid: 8.4rem; } html[lang="en"] .gm-row { grid-template-columns: minmax(0, 1fr) 8.4rem minmax(0, 1fr); } }  /* 中間欄縮窄一點，隊名欄才放得下 Mavericks */
@@ -699,7 +714,7 @@ a.game:hover { border-color: var(--accent); }
 .bad { color: var(--bad); font-weight: 600; }
 .backrow { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
 .backrow .back { margin: 0; flex: none; }
-.backrow-warn { margin: 0; flex: 1; text-align: center; font-size: .78rem; font-weight: 700; color: var(--bad); line-height: 1.4; }  /* 對戰頁：警語放在「回到賽程」右邊、在剩下的空間裡置中 */
+.backrow-warn { margin: 0; min-width: 0; flex: 1; text-align: center; font-size: .78rem; font-weight: 700; color: var(--bad); line-height: 1.4; }  /* 對戰頁：警語放在「回到賽程」右邊、在剩下的空間裡置中 */
 @media (min-width: 640px) {  /* 寬螢幕：警語在整排正中間（和下面「第 1 / 6 場」同一條中線），「回到賽程」靠左；窄螢幕才退回「右邊剩下的空間裡置中」 */
   .backrow { display: grid; grid-template-columns: 1fr auto 1fr; }
   .backrow .back { grid-column: 1; }
@@ -808,6 +823,7 @@ td:first-child, th:first-child { text-align: left; }
 .trend-down { color: var(--win); }  /* 變差 = 綠色向下三角形 */
 .trend-l { right: 100%; margin-right: 4px; }
 .trend-r { left: 100%; margin-left: 4px; }
+@media (max-width: 480px) { .stats td:first-child, .stats th:first-child, .stats td:last-child, .stats th:last-child { width: 5.2rem; } }  /* 手機：兩邊欄位留夠寬，星星才不會跑到卡片外面 */
 .stats td.adv { font-weight: 700; }  /* 數據對照：較優的一邊用粗體 */
 .row-note { display: block; font-size: .72rem; }
 .stats td:first-child, .stats th:first-child, .stats td:last-child, .stats th:last-child { text-align: center; }
