@@ -2,6 +2,7 @@
    選過的記在瀏覽器 localStorage，沒選過預設藏青。下面「沒有 data-theme 就跟系統淺深色」的樣式只在 theme.js 沒跑到時才用得到 */
 :root {
   --radius: 14px;
+  --card-alpha: .96;  /* 卡片底的不透明度（所有主題共用）；調低會讓背景特效透得更清楚、字比較難讀 */
   --surface-rgb: 244, 240, 228; --bg-rgb: 233, 228, 212; --soft-rgb: 239, 231, 204; --snow-rgb: 150, 112, 40;
   /* 卡其（預設淺色） */
   --bg: #e9e4d4;
@@ -109,7 +110,7 @@
 }
 :root[data-theme="winter"] .home-main { border-color: var(--accent2); }
 /* 下雪背景（所有主題都有；theme.js 只放三個空圖層）：固定鋪滿畫面、在內容後面、不擋點擊。雪的顏色是各主題的 --snow-rgb；
-   卡片是微透明的（rgba(var(--surface-rgb), .82)），手機上卡片佔滿畫面時也看得到後面的雪。
+   卡片幾乎不透明（透明度在下面的 --card-alpha，1 = 完全不透明），特效主要從卡片之間的空隙看到，卡片裡只透出很淡一點。
    每層是一塊重複拼貼的雪花，整層用 transform 往下移一塊的高度再接回原位；transform 動畫交給繪圖晶片跑，不逐格重畫，手機才順 */
 #snow { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 :root[data-theme="winter"] #snow { background: linear-gradient(180deg, #071020 0%, #0a1424 45%, #112442 100%); }
@@ -303,7 +304,7 @@ select:focus-visible, .swap:focus-visible {
   display: block;
   padding: 18px 16px;
   color: inherit; text-decoration: none;
-  background: linear-gradient(160deg, rgba(var(--surface-rgb), .82), rgba(var(--bg-rgb), .82));
+  background: linear-gradient(160deg, rgba(var(--surface-rgb), var(--card-alpha)), rgba(var(--bg-rgb), var(--card-alpha)));
   border: 1px solid var(--line);
   border-radius: 18px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
@@ -312,7 +313,7 @@ select:focus-visible, .swap:focus-visible {
 a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); transform: translateY(-2px); outline: none; }
 .home-main {
   padding: 22px 20px 20px;
-  background: linear-gradient(135deg, rgba(var(--soft-rgb), .82), rgba(var(--surface-rgb), .82));
+  background: linear-gradient(135deg, rgba(var(--soft-rgb), var(--card-alpha)), rgba(var(--surface-rgb), var(--card-alpha)));
   border-color: var(--accent);
   box-shadow: 0 8px 24px rgba(var(--glow-rgb, 232, 89, 12), .18);  /* 光暈顏色跟著主題的重點色走 */
 }
@@ -328,11 +329,11 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 }
 /* 黑白灰三個主題（白色、深色、黑色）：賽程大卡片跟下面其他卡片一樣，不要特別亮的邊框和光暈，按鈕也只留一點點陰影 */
 :root[data-theme="white"] .home-main, :root[data-theme="dark"] .home-main, :root[data-theme="black"] .home-main {
-  background: linear-gradient(160deg, rgba(var(--surface-rgb), .82), rgba(var(--bg-rgb), .82)); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+  background: linear-gradient(160deg, rgba(var(--surface-rgb), var(--card-alpha)), rgba(var(--bg-rgb), var(--card-alpha))); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
 }
 :root[data-theme="white"] .home-result, :root[data-theme="dark"] .home-result, :root[data-theme="black"] .home-result { box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
 @media (prefers-color-scheme: dark) {  /* 沒選過主題、系統是深色 = 黑色主題，同樣處理 */
-  :root:not([data-theme]) .home-main { background: linear-gradient(160deg, rgba(var(--surface-rgb), .82), rgba(var(--bg-rgb), .82)); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
+  :root:not([data-theme]) .home-main { background: linear-gradient(160deg, rgba(var(--surface-rgb), var(--card-alpha)), rgba(var(--bg-rgb), var(--card-alpha))); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
   :root:not([data-theme]) .home-result { box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
 }
 @media (max-width: 420px) { .home-btns { top: 20px; right: 14px; gap: 6px; } .home-result { padding: 6px 10px; font-size: .78rem; } }  /* 手機：兩顆按鈕縮小，才不會貼到左邊的「賽程」 */
@@ -562,7 +563,7 @@ body[data-view="stats"] .foot-warn, body[data-view="matchup"] .foot-warn { displ
   display: block;
   padding: 14px 14px 12px;
   color: inherit; text-decoration: none;
-  background: rgba(var(--surface-rgb), .82);
+  background: rgba(var(--surface-rgb), var(--card-alpha));
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -665,7 +666,7 @@ a.game:hover { border-color: var(--accent); }
 /* 結果 */
 .result { margin-top: 16px; }
 .card {
-  background: rgba(var(--surface-rgb), .82);
+  background: rgba(var(--surface-rgb), var(--card-alpha));
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 16px;
