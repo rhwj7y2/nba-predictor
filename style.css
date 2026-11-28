@@ -111,7 +111,7 @@
 :root[data-theme="winter"] .home-main { border-color: var(--accent2); }
 /* 下雪背景（所有主題都有；theme.js 只放三個空圖層）：固定鋪滿畫面、在內容後面、不擋點擊。雪的顏色是各主題的 --snow-rgb；
    卡片幾乎不透明（透明度在下面的 --card-alpha，1 = 完全不透明），特效主要從卡片之間的空隙看到，卡片裡只透出很淡一點。
-   每層是一塊重複拼貼的雪花，整層用 transform 往下移一塊的高度再接回原位；transform 動畫交給繪圖晶片跑，不逐格重畫，手機才順 */
+   電腦版每層是一塊重複拼貼的雪花，整層用 transform 往下移一塊的高度再接回原位；transform 動畫交給繪圖晶片跑，不逐格重畫，手機才順 */
 #snow { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 :root[data-theme="winter"] #snow { background: linear-gradient(180deg, #071020 0%, #0a1424 45%, #112442 100%); }
 #snow i { position: absolute; left: -24px; right: -24px; bottom: 0; background-repeat: repeat; will-change: transform; }
@@ -154,6 +154,46 @@
 @keyframes bubble-3 { 0% { transform: translate3d(0px, -0px, 0); } 12.5% { transform: translate3d(15px, -55px, 0); } 25% { transform: translate3d(22px, -110px, 0); } 37.5% { transform: translate3d(15px, -165px, 0); } 50% { transform: translate3d(0px, -220px, 0); } 62.5% { transform: translate3d(-15px, -275px, 0); } 75% { transform: translate3d(-22px, -330px, 0); } 87.5% { transform: translate3d(-15px, -385px, 0); } 100% { transform: translate3d(0px, -440px, 0); } }
 :root[data-theme="white"] #snow { display: none; }  /* 白色主題：不放任何飄落動畫 */
 @media (prefers-reduced-motion: reduce) { #snow i { animation: none !important; will-change: auto; } }  /* 系統開了「減少動態效果」：雪、花瓣、楓葉、雨、泡泡都不動 */
+/* 手機（窄畫面或觸控螢幕）：不用上面三張滿版圖層——每一格都要把三張「比整個螢幕還大」的半透明圖層疊起來，手機容易卡。
+   改成幾十顆小圖案各自飄（theme.js 放的 <b>，分 s1 遠 / s2 中 / s3 近），要疊的面積少非常多；--x = 水平位置、--p = 起跑進度、--r = 花瓣和楓葉的角度 */
+#snow b { display: none; }
+@media (max-width: 719px), (pointer: coarse) {
+  #snow { bottom: auto; height: 100vh; height: 100lvh; }  /* 高度固定用「網址列收起來時」的畫面高，網址列收放時特效不會跟著重排 */
+  #snow i { display: none; }
+  #snow b { display: block; position: absolute; top: -40px; left: calc(var(--x) * 100%); width: var(--size); height: var(--size); will-change: transform; animation: lite-drift var(--dur) linear infinite; animation-delay: calc(var(--p) * var(--dur) * -1); }
+  #snow b::before { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; background: rgba(var(--snow-rgb), var(--a)); }
+  #snow b.s1 { --size: 3px; --dur: 64s; --a: .65; }
+  #snow b.s2 { --size: 4.5px; --dur: 42s; --a: .85; }
+  #snow b.s3 { --size: 6.5px; --dur: 27s; --a: .9; }
+  :root[data-theme="pink"] #snow b { animation-name: lite-drift-wide; }
+  :root[data-theme="pink"] #snow b::before { border-radius: 0; transform: rotate(var(--r)); background: var(--img) center / contain no-repeat; opacity: .85; }
+  :root[data-theme="pink"] #snow b.s1 { --size: 9px; --dur: 72s; --img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' fill='%23f8b8d0'/%3E%3C/svg%3E"); }
+  :root[data-theme="pink"] #snow b.s2 { --size: 13px; --dur: 44s; --img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' fill='%23f6a5c4'/%3E%3C/svg%3E"); }
+  :root[data-theme="pink"] #snow b.s3 { --size: 20px; --dur: 29s; --img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' fill='%23f77fab'/%3E%3C/svg%3E"); }
+  :root[data-theme="khaki"] #snow b { animation-name: lite-drift-wide; }
+  :root[data-theme="khaki"] #snow b:nth-of-type(n+25) { display: none; }
+  :root[data-theme="khaki"] #snow b::before { border-radius: 0; transform: rotate(var(--r)); background: var(--img) center / contain no-repeat; opacity: .85; }
+  :root[data-theme="khaki"] #snow b.s1 { --size: 12px; --dur: 70s; --img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23c9772a'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/svg%3E"); }
+  :root[data-theme="khaki"] #snow b.s2 { --size: 17px; --dur: 42s; --img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23d98a24'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/svg%3E"); }
+  :root[data-theme="khaki"] #snow b.s3 { --size: 26px; --dur: 27s; --img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23b8431c'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/svg%3E"); }
+  :root[data-theme="teal"] #snow b { top: auto; bottom: -40px; animation-name: lite-rise; }
+  :root[data-theme="teal"] #snow b:nth-of-type(n+31) { display: none; }
+  :root[data-theme="teal"] #snow b::before { background: radial-gradient(circle at 32% 32%, #ffffff 0 10%, rgba(63, 184, 174, .12) 16%); border: 1px solid #1f8a85; opacity: .55; }
+  :root[data-theme="teal"] #snow b.s1 { --size: 7px; --dur: 75s; }
+  :root[data-theme="teal"] #snow b.s2 { --size: 13px; --dur: 47s; }
+  :root[data-theme="teal"] #snow b.s3 { --size: 23px; --dur: 29s; }
+  :root[data-theme="blue"] #snow b { left: calc(var(--x) * 135%); width: 1px; height: var(--size); animation-name: lite-rain; }
+  :root[data-theme="blue"] #snow b:nth-of-type(n+22) { display: none; }
+  :root[data-theme="blue"] #snow b::before { border-radius: 1px; transform: rotate(9deg); background: #4a8fd2; opacity: .42; }
+  :root[data-theme="blue"] #snow b.s1 { --size: 7px; --dur: 6.4s; }
+  :root[data-theme="blue"] #snow b.s2 { --size: 10px; --dur: 4.4s; }
+  :root[data-theme="blue"] #snow b.s3 { --size: 13px; --dur: 3.1s; }
+}
+@keyframes lite-drift { 0% { transform: translate3d(0px, 0vh, 0); } 6.25% { transform: translate3d(10px, 6.75vh, 0); } 12.5% { transform: translate3d(14px, 13.5vh, 0); } 18.75% { transform: translate3d(10px, 20.25vh, 0); } 25% { transform: translate3d(0px, 27vh, 0); } 31.25% { transform: translate3d(-10px, 33.75vh, 0); } 37.5% { transform: translate3d(-14px, 40.5vh, 0); } 43.75% { transform: translate3d(-10px, 47.25vh, 0); } 50% { transform: translate3d(0px, 54vh, 0); } 56.25% { transform: translate3d(10px, 60.75vh, 0); } 62.5% { transform: translate3d(14px, 67.5vh, 0); } 68.75% { transform: translate3d(10px, 74.25vh, 0); } 75% { transform: translate3d(0px, 81vh, 0); } 81.25% { transform: translate3d(-10px, 87.75vh, 0); } 87.5% { transform: translate3d(-14px, 94.5vh, 0); } 93.75% { transform: translate3d(-10px, 101.25vh, 0); } 100% { transform: translate3d(0px, 108vh, 0); } }
+@keyframes lite-drift-wide { 0% { transform: translate3d(0px, 0vh, 0); } 6.25% { transform: translate3d(23px, 6.75vh, 0); } 12.5% { transform: translate3d(32px, 13.5vh, 0); } 18.75% { transform: translate3d(23px, 20.25vh, 0); } 25% { transform: translate3d(0px, 27vh, 0); } 31.25% { transform: translate3d(-23px, 33.75vh, 0); } 37.5% { transform: translate3d(-32px, 40.5vh, 0); } 43.75% { transform: translate3d(-23px, 47.25vh, 0); } 50% { transform: translate3d(0px, 54vh, 0); } 56.25% { transform: translate3d(23px, 60.75vh, 0); } 62.5% { transform: translate3d(32px, 67.5vh, 0); } 68.75% { transform: translate3d(23px, 74.25vh, 0); } 75% { transform: translate3d(0px, 81vh, 0); } 81.25% { transform: translate3d(-23px, 87.75vh, 0); } 87.5% { transform: translate3d(-32px, 94.5vh, 0); } 93.75% { transform: translate3d(-23px, 101.25vh, 0); } 100% { transform: translate3d(0px, 108vh, 0); } }
+@keyframes lite-rise { 0% { transform: translate3d(0px, -0vh, 0); } 6.25% { transform: translate3d(10px, -6.75vh, 0); } 12.5% { transform: translate3d(14px, -13.5vh, 0); } 18.75% { transform: translate3d(10px, -20.25vh, 0); } 25% { transform: translate3d(0px, -27vh, 0); } 31.25% { transform: translate3d(-10px, -33.75vh, 0); } 37.5% { transform: translate3d(-14px, -40.5vh, 0); } 43.75% { transform: translate3d(-10px, -47.25vh, 0); } 50% { transform: translate3d(0px, -54vh, 0); } 56.25% { transform: translate3d(10px, -60.75vh, 0); } 62.5% { transform: translate3d(14px, -67.5vh, 0); } 68.75% { transform: translate3d(10px, -74.25vh, 0); } 75% { transform: translate3d(0px, -81vh, 0); } 81.25% { transform: translate3d(-10px, -87.75vh, 0); } 87.5% { transform: translate3d(-14px, -94.5vh, 0); } 93.75% { transform: translate3d(-10px, -101.25vh, 0); } 100% { transform: translate3d(0px, -108vh, 0); } }
+@keyframes lite-rain { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-17vh, 108vh, 0); } }
+@media (prefers-reduced-motion: reduce) { #snow b { animation: none !important; will-change: auto; top: calc(var(--p) * 100%) !important; bottom: auto !important; } }  /* 減少動態效果：手機的小圖案停在畫面各處 */
 
 /* 主題選擇：標題下面一排四個小按鈕，每個前面一顆該主題底色的小圓點 */
 .theme-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 22px; }
@@ -174,7 +214,7 @@
 .fx-btn:hover:not(:disabled) { border-color: var(--accent); }
 .fx-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .fx-btn:disabled { color: var(--muted); border-color: var(--line); opacity: .6; cursor: default; }  /* 白色主題沒有特效 */
-:root[data-fx-off] #snow i { display: none; }  /* 特效關掉：飄落的圖層整個不畫（藏青的深藍底色保留） */
+:root[data-fx-off] #snow i, :root[data-fx-off] #snow b { display: none; }  /* 特效關掉：飄落的圖層和小圖案整個不畫（藏青的深藍底色保留） */
 .lang-btn { font: inherit; font-size: .85rem; font-weight: 700; padding: 6px 14px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
 .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
 /* 英文版「賽前預測比分」那句很長：標題自己一行，比分寫在下面 */

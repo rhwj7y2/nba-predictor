@@ -7,13 +7,21 @@ var DEFAULT_THEME = "winter";
   document.documentElement.setAttribute("data-theme", /^(white|khaki|pink|teal|blue|dark|black|winter)$/.test(t) ? t : DEFAULT_THEME);
 })();
 
-// 下雪背景（所有主題都有）：這裡只負責放三個空圖層；雪花、顏色和飄落全部寫在 style.css 的 #snow（只移動圖層、不逐格重畫，手機才不會卡）
+// 下雪背景（所有主題都有）：這裡只負責放空元素，圖案、顏色和飄落全部寫在 style.css 的 #snow（只移動、不逐格重畫）
+// <i> = 電腦用的三張滿版圖層；<b> = 手機用的 42 顆小圖案（style.css 依畫面決定顯示哪一組，沒顯示的不會畫）
 function addSnow() {
   if (!document.body || document.getElementById("snow")) return;
   var el = document.createElement("div");
   el.id = "snow";
   el.setAttribute("aria-hidden", "true");
-  el.innerHTML = "<i></i><i></i><i></i>";  // 遠、中、近三層
+  var html = "<i></i><i></i><i></i>";  // 遠、中、近三層
+  var seed = 11, rnd = function () { seed = seed * 16807 % 2147483647; return seed / 2147483647; };  // 固定種子的亂數：看起來自然，每次打開都一樣
+  var count = [0, 0, 0, 0];
+  for (var k = 0; k < 42; k++) {  // 遠:中:近 = 4:2:1；同一種大小的起跑進度用黃金比例錯開（上下不會擠成一排，只顯示前面幾顆也一樣均勻）
+    var size = k % 7 < 4 ? 1 : k % 7 < 6 ? 2 : 3, p = (count[size]++ * 0.618034 + size * 0.29 + rnd() * 0.08) % 1;
+    html += '<b class="s' + size + '" style="--x:' + rnd().toFixed(3) + ";--p:" + p.toFixed(3) + ";--r:" + Math.floor(rnd() * 360) + 'deg"></b>';
+  }
+  el.innerHTML = html;
   document.body.insertBefore(el, document.body.firstChild);
 }
 
