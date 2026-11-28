@@ -1,7 +1,8 @@
-/* 八種主題：白色、卡其、粉色、藍綠、淺藍、深色、黑色、冬天。theme.js 一定會設 <html data-theme="white|khaki|pink|teal|blue|dark|black|winter">：
-   選過的記在瀏覽器 localStorage，沒選過預設冬天。下面「沒有 data-theme 就跟系統淺深色」的樣式只在 theme.js 沒跑到時才用得到 */
+/* 八種主題：白色、卡其、粉色、藍綠、淺藍、藏青（代號 winter）、深色、黑色。theme.js 一定會設 <html data-theme="white|khaki|pink|teal|blue|dark|black|winter">：
+   選過的記在瀏覽器 localStorage，沒選過預設藏青。下面「沒有 data-theme 就跟系統淺深色」的樣式只在 theme.js 沒跑到時才用得到 */
 :root {
   --radius: 14px;
+  --surface-rgb: 244, 240, 228; --bg-rgb: 233, 228, 212; --soft-rgb: 239, 231, 204; --snow-rgb: 150, 112, 40;
   /* 卡其（預設淺色） */
   --bg: #e9e4d4;
   --surface: #f4f0e4;
@@ -23,6 +24,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {  /* 黑色（預設深色） */
+    --surface-rgb: 10, 12, 16; --bg-rgb: 6, 8, 11; --soft-rgb: 27, 30, 36; --snow-rgb: 255, 255, 255;
     --bg: #06080b;
     --surface: #0a0c10;
     --text: #eceff4;
@@ -41,6 +43,7 @@
 }
 
 :root[data-theme="khaki"] {
+  --surface-rgb: 244, 240, 228; --bg-rgb: 233, 228, 212; --soft-rgb: 239, 231, 204; --snow-rgb: 150, 112, 40;
   --bg: #e9e4d4; --surface: #f4f0e4; --text: #1c1a15; --muted: #5f5b4f; --line: #d4ccb6;
   --accent: #8f7125; --accent-soft: #efe7cc; --accent2: #b8995a;
   --btn-a: #cdb673; --btn-b: #e6d8a8; --btn-text: #2a2008; --cold: #1c7ed6; --win: #0b7a3b; --bad: #c62828;
@@ -48,6 +51,7 @@
   color-scheme: light;
 }
 :root[data-theme="white"] {
+  --surface-rgb: 255, 255, 255; --bg-rgb: 244, 245, 247; --soft-rgb: 236, 238, 242; --snow-rgb: 95, 125, 180;
   --bg: #f4f5f7; --surface: #ffffff; --text: #15181e; --muted: #5d6573; --line: #dfe2e8;
   --accent: #20242c; --accent-soft: #eceef2; --accent2: #6b7380; --cold: #1c7ed6; --win: #0b7a3b; --bad: #c62828;  /* 黑白灰：重點色用近黑 */
   --btn-a: #d3d8e0; --btn-b: #eceff3; --btn-text: #15181e;  /* 按鈕：淺灰銀（白色主題） */
@@ -55,6 +59,7 @@
   color-scheme: light;
 }
 :root[data-theme="pink"] {
+  --surface-rgb: 254, 246, 248; --bg-rgb: 251, 238, 242; --soft-rgb: 253, 237, 242; --snow-rgb: 222, 66, 126;
   --bg: #fbeef2; --surface: #fef6f8; --text: #2b1a21; --muted: #7d5a68; --line: #f2dde5;
   --accent: #dc5083; --accent-soft: #fdedf2; --accent2: #f397b6; --cold: #1c7ed6; --win: #0b7a3b; --bad: #c62828;
   --glow-rgb: 220, 80, 131;
@@ -62,6 +67,7 @@
   color-scheme: light;
 }
 :root[data-theme="teal"] {
+  --surface-rgb: 244, 251, 250; --bg-rgb: 230, 244, 242; --soft-rgb: 220, 242, 239; --snow-rgb: 24, 135, 128;
   --bg: #e6f4f2; --surface: #f4fbfa; --text: #12262a; --muted: #4c6b6e; --line: #cde6e3;
   --accent: #1f8a85; --accent-soft: #dcf2ef; --accent2: #6cc0ba; --cold: #1c7ed6; --win: #0b7a3b; --bad: #c62828;
   --glow-rgb: 31, 138, 133;
@@ -69,6 +75,7 @@
   color-scheme: light;
 }
 :root[data-theme="blue"] {
+  --surface-rgb: 246, 250, 254; --bg-rgb: 234, 243, 251; --soft-rgb: 228, 240, 251; --snow-rgb: 40, 118, 200;
   --bg: #eaf3fb; --surface: #f6fafe; --text: #14202b; --muted: #50677b; --line: #d3e3f1;
   --accent: #2b7bc2; --accent-soft: #e4f0fb; --accent2: #6fb1e6; --cold: #1c7ed6; --win: #0b7a3b; --bad: #c62828;
   --glow-rgb: 43, 123, 194;
@@ -76,6 +83,7 @@
   color-scheme: light;
 }
 :root[data-theme="black"] {
+  --surface-rgb: 10, 12, 16; --bg-rgb: 6, 8, 11; --soft-rgb: 27, 30, 36; --snow-rgb: 255, 255, 255;
   --bg: #06080b; --surface: #0a0c10; --text: #eceff4; --muted: #9aa3b2; --line: #1f242d;
   --accent: #f2f4f8; --accent-soft: #1b1e24; --accent2: #8a929f; --cold: #74c0fc; --win: #4cd387; --bad: #ff6b6b;  /* 黑白灰：重點色用近白 */
   --btn-a: #2d323c; --btn-b: #474f5d; --btn-text: #eceff4;  /* 按鈕：炭灰（黑色主題） */
@@ -83,34 +91,68 @@
   color-scheme: dark;
 }
 :root[data-theme="dark"] {
+  --surface-rgb: 24, 28, 37; --bg-rgb: 15, 18, 24; --soft-rgb: 37, 43, 54; --snow-rgb: 255, 255, 255;
   --bg: #0f1218; --surface: #181c25; --text: #eceff4; --muted: #9aa3b2; --line: #2a303c;
   --accent: #eef1f6; --accent-soft: #252b36; --accent2: #98a1b0; --cold: #74c0fc; --win: #4cd387; --bad: #ff6b6b;  /* 黑白灰：重點色用近白 */
   --btn-a: #3a4457; --btn-b: #5a6579; --btn-text: #f1f4f9;  /* 按鈕：石板灰藍（深色主題） */
   --glow-rgb: 255, 255, 255;
   color-scheme: dark;
 }
-/* 冬天：深藍夜色底、冰藍重點色，背景下雪（雪花見下面的 #snow） */
+/* 藏青（代號 winter）：深藍夜色底、冰藍重點色 */
 :root[data-theme="winter"] {
+  --surface-rgb: 18, 32, 54; --bg-rgb: 10, 20, 36; --soft-rgb: 25, 50, 79; --snow-rgb: 255, 255, 255;
   --bg: #0a1424; --surface: #122036; --text: #eaf3ff; --muted: #9db2c9; --line: #25405f;
   --accent: #9ad4ff; --accent-soft: #19324f; --accent2: #5fa8dd; --cold: #8fd3ff; --win: #5fdb9a; --bad: #ff8080;
   --btn-a: #2c4a6e; --btn-b: #4a76a6; --btn-text: #f1f8ff;  /* 按鈕：冰湖藍 */
   --glow-rgb: 154, 212, 255;
   color-scheme: dark;
 }
-/* 卡片稍微透明，手機上卡片佔滿畫面時才看得到後面的雪 */
-:root[data-theme="winter"] .card, :root[data-theme="winter"] .game, :root[data-theme="winter"] .home-card { background: rgba(18, 32, 54, .8); }
 :root[data-theme="winter"] .home-main { border-color: var(--accent2); }
-/* 下雪背景（theme.js 只放三個空圖層）：固定鋪滿畫面、在內容後面、不擋點擊。
+/* 下雪背景（所有主題都有；theme.js 只放三個空圖層）：固定鋪滿畫面、在內容後面、不擋點擊。雪的顏色是各主題的 --snow-rgb；
+   卡片是微透明的（rgba(var(--surface-rgb), .82)），手機上卡片佔滿畫面時也看得到後面的雪。
    每層是一塊重複拼貼的雪花，整層用 transform 往下移一塊的高度再接回原位；transform 動畫交給繪圖晶片跑，不逐格重畫，手機才順 */
-#snow { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 0; background: linear-gradient(180deg, #071020 0%, #0a1424 45%, #112442 100%); }
+#snow { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+:root[data-theme="winter"] #snow { background: linear-gradient(180deg, #071020 0%, #0a1424 45%, #112442 100%); }
 #snow i { position: absolute; left: -24px; right: -24px; bottom: 0; background-repeat: repeat; will-change: transform; }
-#snow i:nth-child(1) { top: -220px; background-size: 220px 220px; background-image: radial-gradient(circle 1.6px at 23px 31px, rgba(255, 255, 255, 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 141px 12px, rgba(255, 255, 255, 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 188px 97px, rgba(255, 255, 255, 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 62px 128px, rgba(255, 255, 255, 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 113px 186px, rgba(255, 255, 255, 0.65) 0 55%, transparent 100%); animation: snow-1 17s linear infinite; }
-#snow i:nth-child(2) { top: -300px; background-size: 300px 300px; background-image: radial-gradient(circle 2.4px at 48px 212px, rgba(255, 255, 255, 0.85) 0 55%, transparent 100%), radial-gradient(circle 2.4px at 172px 64px, rgba(255, 255, 255, 0.85) 0 55%, transparent 100%), radial-gradient(circle 2.4px at 265px 158px, rgba(255, 255, 255, 0.85) 0 55%, transparent 100%), radial-gradient(circle 2.4px at 121px 281px, rgba(255, 255, 255, 0.85) 0 55%, transparent 100%); animation: snow-2 14s linear infinite; }
-#snow i:nth-child(3) { top: -420px; background-size: 420px 420px; background-image: radial-gradient(circle 3.4px at 96px 77px, rgba(255, 255, 255, 0.9) 0 55%, transparent 100%), radial-gradient(circle 3.4px at 331px 236px, rgba(255, 255, 255, 0.9) 0 55%, transparent 100%), radial-gradient(circle 3.4px at 187px 372px, rgba(255, 255, 255, 0.9) 0 55%, transparent 100%); animation: snow-3 12s linear infinite; }
+#snow i:nth-child(1) { top: -220px; background-size: 220px 220px; background-image: radial-gradient(circle 1.6px at 23px 31px, rgba(var(--snow-rgb), 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 141px 12px, rgba(var(--snow-rgb), 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 188px 97px, rgba(var(--snow-rgb), 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 62px 128px, rgba(var(--snow-rgb), 0.65) 0 55%, transparent 100%), radial-gradient(circle 1.6px at 113px 186px, rgba(var(--snow-rgb), 0.65) 0 55%, transparent 100%); animation: snow-1 17s linear infinite; }
+#snow i:nth-child(2) { top: -300px; background-size: 300px 300px; background-image: radial-gradient(circle 2.4px at 48px 212px, rgba(var(--snow-rgb), 0.85) 0 55%, transparent 100%), radial-gradient(circle 2.4px at 172px 64px, rgba(var(--snow-rgb), 0.85) 0 55%, transparent 100%), radial-gradient(circle 2.4px at 265px 158px, rgba(var(--snow-rgb), 0.85) 0 55%, transparent 100%), radial-gradient(circle 2.4px at 121px 281px, rgba(var(--snow-rgb), 0.85) 0 55%, transparent 100%); animation: snow-2 14s linear infinite; }
+#snow i:nth-child(3) { top: -420px; background-size: 420px 420px; background-image: radial-gradient(circle 3.4px at 96px 77px, rgba(var(--snow-rgb), 0.9) 0 55%, transparent 100%), radial-gradient(circle 3.4px at 331px 236px, rgba(var(--snow-rgb), 0.9) 0 55%, transparent 100%), radial-gradient(circle 3.4px at 187px 372px, rgba(var(--snow-rgb), 0.9) 0 55%, transparent 100%); animation: snow-3 12s linear infinite; }
 @keyframes snow-1 { 0% { transform: translate3d(0, 0, 0); } 25% { transform: translate3d(8px, 55px, 0); } 50% { transform: translate3d(0, 110px, 0); } 75% { transform: translate3d(-8px, 165px, 0); } 100% { transform: translate3d(0, 220px, 0); } }
 @keyframes snow-2 { 0% { transform: translate3d(0, 0, 0); } 25% { transform: translate3d(12px, 75px, 0); } 50% { transform: translate3d(0, 150px, 0); } 75% { transform: translate3d(-12px, 225px, 0); } 100% { transform: translate3d(0, 300px, 0); } }
 @keyframes snow-3 { 0% { transform: translate3d(0, 0, 0); } 25% { transform: translate3d(18px, 105px, 0); } 50% { transform: translate3d(0, 210px, 0); } 75% { transform: translate3d(-18px, 315px, 0); } 100% { transform: translate3d(0, 420px, 0); } }
-@media (prefers-reduced-motion: reduce) { #snow i { animation: none; will-change: auto; } }  /* 系統開了「減少動態效果」：雪不飄 */
+/* 粉色主題：不下雪，改飄櫻花花瓣（同一套三層、只移動圖層；花瓣是內嵌的 SVG 圖，左右飄得比雪大） */
+:root[data-theme="pink"] #snow i { left: -60px; right: -60px; }
+:root[data-theme="pink"] #snow i:nth-child(1) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(26 34) rotate(20) scale(0.45)' fill='%23f6a5c4' opacity='0.75'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(150 18) rotate(-55) scale(0.4)' fill='%23f8b8d0' opacity='0.7'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(196 104) rotate(110) scale(0.45)' fill='%23f290b5' opacity='0.7'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(60 126) rotate(200) scale(0.38)' fill='%23f8b8d0' opacity='0.75'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(118 188) rotate(-120) scale(0.45)' fill='%23f6a5c4' opacity='0.7'/%3E%3C/svg%3E"); animation: sakura-1 19s linear infinite; }
+:root[data-theme="pink"] #snow i:nth-child(2) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(52 208) rotate(35) scale(0.7)' fill='%23f290b5' opacity='0.85'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(176 66) rotate(-40) scale(0.62)' fill='%23f6a5c4' opacity='0.9'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(262 160) rotate(150) scale(0.7)' fill='%23f77fab' opacity='0.8'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(120 276) rotate(-100) scale(0.6)' fill='%23f8b0cb' opacity='0.85'/%3E%3C/svg%3E"); animation: sakura-2 15s linear infinite; }
+:root[data-theme="pink"] #snow i:nth-child(3) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(98 80) rotate(60) scale(1.0)' fill='%23f77fab' opacity='0.9'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(334 232) rotate(-30) scale(0.9)' fill='%23f290b5' opacity='0.9'/%3E%3Cpath d='M0 10C-7 5-9-3-4.5-9L0-6L4.5-9C9-3 7 5 0 10Z' transform='translate(196 360) rotate(135) scale(0.95)' fill='%23f6a5c4' opacity='0.9'/%3E%3C/svg%3E"); animation: sakura-3 13s linear infinite; }
+@keyframes sakura-1 { 0% { transform: translate3d(0px, 0px, 0); } 12.5% { transform: translate3d(15px, 27.5px, 0); } 25% { transform: translate3d(22px, 55px, 0); } 37.5% { transform: translate3d(15px, 82.5px, 0); } 50% { transform: translate3d(0px, 110px, 0); } 62.5% { transform: translate3d(-15px, 137.5px, 0); } 75% { transform: translate3d(-22px, 165px, 0); } 87.5% { transform: translate3d(-15px, 192.5px, 0); } 100% { transform: translate3d(0px, 220px, 0); } }
+@keyframes sakura-2 { 0% { transform: translate3d(0px, 0px, 0); } 12.5% { transform: translate3d(22px, 37.5px, 0); } 25% { transform: translate3d(32px, 75px, 0); } 37.5% { transform: translate3d(22px, 112.5px, 0); } 50% { transform: translate3d(0px, 150px, 0); } 62.5% { transform: translate3d(-22px, 187.5px, 0); } 75% { transform: translate3d(-32px, 225px, 0); } 87.5% { transform: translate3d(-22px, 262.5px, 0); } 100% { transform: translate3d(0px, 300px, 0); } }
+@keyframes sakura-3 { 0% { transform: translate3d(0px, 0px, 0); } 12.5% { transform: translate3d(32px, 52.5px, 0); } 25% { transform: translate3d(46px, 105px, 0); } 37.5% { transform: translate3d(32px, 157.5px, 0); } 50% { transform: translate3d(0px, 210px, 0); } 62.5% { transform: translate3d(-32px, 262.5px, 0); } 75% { transform: translate3d(-46px, 315px, 0); } 87.5% { transform: translate3d(-32px, 367.5px, 0); } 100% { transform: translate3d(0px, 420px, 0); } }
+/* 卡其主題：不下雪，改飄楓葉（做法和櫻花一樣） */
+:root[data-theme="khaki"] #snow i { left: -60px; right: -60px; }
+:root[data-theme="khaki"] #snow i:nth-child(1) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg transform='translate(40 44) rotate(25) scale(0.5)' opacity='0.7'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23c9772a'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/g%3E%3Cg transform='translate(158 160) rotate(-60) scale(0.45)' opacity='0.65'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23b4441f'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/g%3E%3C/svg%3E"); animation: maple-1 18s linear infinite; }
+:root[data-theme="khaki"] #snow i:nth-child(2) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cg transform='translate(70 214) rotate(40) scale(0.75)' opacity='0.85'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23c4501f'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/g%3E%3Cg transform='translate(224 74) rotate(-35) scale(0.68)' opacity='0.85'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23d98a24'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/g%3E%3C/svg%3E"); animation: maple-2 14s linear infinite; }
+:root[data-theme="khaki"] #snow i:nth-child(3) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cg transform='translate(100 86) rotate(55) scale(1.15)' opacity='0.9'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23b8431c'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/g%3E%3Cg transform='translate(300 296) rotate(-35) scale(1.05)' opacity='0.9'%3E%3Cpath d='M0-11L2-6.5L5-8L4-2L7.5-5L8.3-3L11.5-3.5L9.5 1L11 2.2L5.5 5.8L6.3 7.8L.7 6.8L.8 11.5L-.8 11.5L-.7 6.8L-6.3 7.8L-5.5 5.8L-11 2.2L-9.5 1L-11.5-3.5L-8.3-3L-7.5-5L-4-2L-5-8L-2-6.5Z' fill='%23d77f22'/%3E%3Cpath d='M0 8V-7M0 3L7-2.5M0 3L-7-2.5M0 5L5 5M0 5L-5 5' fill='none' stroke='%23fff2d8' stroke-opacity='.45' stroke-width='.6'/%3E%3C/g%3E%3C/svg%3E"); animation: maple-3 12s linear infinite; }
+@keyframes maple-1 { 0% { transform: translate3d(0px, 0px, 0); } 12.5% { transform: translate3d(17px, 27.5px, 0); } 25% { transform: translate3d(24px, 55px, 0); } 37.5% { transform: translate3d(17px, 82.5px, 0); } 50% { transform: translate3d(0px, 110px, 0); } 62.5% { transform: translate3d(-17px, 137.5px, 0); } 75% { transform: translate3d(-24px, 165px, 0); } 87.5% { transform: translate3d(-17px, 192.5px, 0); } 100% { transform: translate3d(0px, 220px, 0); } }
+@keyframes maple-2 { 0% { transform: translate3d(0px, 0px, 0); } 12.5% { transform: translate3d(25px, 37.5px, 0); } 25% { transform: translate3d(36px, 75px, 0); } 37.5% { transform: translate3d(25px, 112.5px, 0); } 50% { transform: translate3d(0px, 150px, 0); } 62.5% { transform: translate3d(-25px, 187.5px, 0); } 75% { transform: translate3d(-36px, 225px, 0); } 87.5% { transform: translate3d(-25px, 262.5px, 0); } 100% { transform: translate3d(0px, 300px, 0); } }
+@keyframes maple-3 { 0% { transform: translate3d(0px, 0px, 0); } 12.5% { transform: translate3d(36px, 52.5px, 0); } 25% { transform: translate3d(52px, 105px, 0); } 37.5% { transform: translate3d(36px, 157.5px, 0); } 50% { transform: translate3d(0px, 210px, 0); } 62.5% { transform: translate3d(-36px, 262.5px, 0); } 75% { transform: translate3d(-52px, 315px, 0); } 87.5% { transform: translate3d(-36px, 367.5px, 0); } 100% { transform: translate3d(0px, 420px, 0); } }
+/* 淺藍主題：不下雪，改下細雨（細斜線往下落；整層傾斜 9 度，沿著傾斜方向移動一塊高度再接回原位） */
+:root[data-theme="blue"] #snow i { left: -160px; right: -160px; bottom: -120px; }
+:root[data-theme="blue"] #snow i:nth-child(1) { top: -360px; background-size: 150px 240px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='240'%3E%3Cpath d='M34 30v7' stroke='%235a9cda' stroke-width='0.7' stroke-linecap='round' opacity='0.35' fill='none'/%3E%3C/svg%3E"); animation: rain-1 1.7s linear infinite; }
+:root[data-theme="blue"] #snow i:nth-child(2) { top: -450px; background-size: 210px 330px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='210' height='330'%3E%3Cpath d='M150 66v10' stroke='%234a8fd2' stroke-width='0.8' stroke-linecap='round' opacity='0.4' fill='none'/%3E%3Cpath d='M52 236v9' stroke='%236aa9e0' stroke-width='0.8' stroke-linecap='round' opacity='0.35' fill='none'/%3E%3C/svg%3E"); animation: rain-2 1.6s linear infinite; }
+:root[data-theme="blue"] #snow i:nth-child(3) { top: -560px; background-size: 290px 440px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='290' height='440'%3E%3Cpath d='M210 150v13' stroke='%233f86cc' stroke-width='1' stroke-linecap='round' opacity='0.45' fill='none'/%3E%3C/svg%3E"); animation: rain-3 1.5s linear infinite; }
+@keyframes rain-1 { from { transform: rotate(9deg) translate3d(0, 0, 0); } to { transform: rotate(9deg) translate3d(0, 240px, 0); } }
+@keyframes rain-2 { from { transform: rotate(9deg) translate3d(0, 0, 0); } to { transform: rotate(9deg) translate3d(0, 330px, 0); } }
+@keyframes rain-3 { from { transform: rotate(9deg) translate3d(0, 0, 0); } to { transform: rotate(9deg) translate3d(0, 440px, 0); } }
+/* 藍綠主題：不下雪，改飄泡泡（唯一往上飄的；圖層多留下面一塊，往上移一塊的高度再接回原位） */
+:root[data-theme="teal"] #snow i:nth-child(1) { top: 0; bottom: -230px; background-size: 230px 230px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='230' height='230'%3E%3Cg opacity='0.5'%3E%3Ccircle cx='34' cy='52' r='3.5' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='0.8'/%3E%3Ccircle cx='32.7' cy='50.7' r='0.8' fill='%23ffffff'/%3E%3C/g%3E%3Cg opacity='0.45'%3E%3Ccircle cx='158' cy='128' r='2.8' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='0.8'/%3E%3Ccircle cx='157.0' cy='127.0' r='0.7' fill='%23ffffff'/%3E%3C/g%3E%3Cg opacity='0.5'%3E%3Ccircle cx='96' cy='196' r='4' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='0.8'/%3E%3Ccircle cx='94.6' cy='194.6' r='1.0' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E"); animation: bubble-1 21s linear infinite; }
+:root[data-theme="teal"] #snow i:nth-child(2) { top: 0; bottom: -320px; background-size: 320px 320px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cg opacity='0.6'%3E%3Ccircle cx='64' cy='232' r='6.5' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='0.8'/%3E%3Ccircle cx='61.7' cy='229.7' r='1.6' fill='%23ffffff'/%3E%3C/g%3E%3Cg opacity='0.55'%3E%3Ccircle cx='204' cy='74' r='8' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='0.9'/%3E%3Ccircle cx='201.1' cy='71.1' r='1.9' fill='%23ffffff'/%3E%3C/g%3E%3Cg opacity='0.6'%3E%3Ccircle cx='272' cy='186' r='5.5' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='0.8'/%3E%3Ccircle cx='270.0' cy='184.0' r='1.3' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E"); animation: bubble-2 17s linear infinite; }
+:root[data-theme="teal"] #snow i:nth-child(3) { top: 0; bottom: -440px; background-size: 440px 440px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='440' height='440'%3E%3Cg opacity='0.6'%3E%3Ccircle cx='110' cy='108' r='13' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='1.4'/%3E%3Ccircle cx='105.3' cy='103.3' r='3.1' fill='%23ffffff'/%3E%3C/g%3E%3Cg opacity='0.65'%3E%3Ccircle cx='324' cy='300' r='10' fill='%233fb8ae' fill-opacity='.12' stroke='%231f8a85' stroke-width='1.1'/%3E%3Ccircle cx='320.4' cy='296.4' r='2.4' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E"); animation: bubble-3 14s linear infinite; }
+@keyframes bubble-1 { 0% { transform: translate3d(0px, -0px, 0); } 12.5% { transform: translate3d(6px, -28.8px, 0); } 25% { transform: translate3d(9px, -57.5px, 0); } 37.5% { transform: translate3d(6px, -86.2px, 0); } 50% { transform: translate3d(0px, -115px, 0); } 62.5% { transform: translate3d(-6px, -143.8px, 0); } 75% { transform: translate3d(-9px, -172.5px, 0); } 87.5% { transform: translate3d(-6px, -201.2px, 0); } 100% { transform: translate3d(0px, -230px, 0); } }
+@keyframes bubble-2 { 0% { transform: translate3d(0px, -0px, 0); } 12.5% { transform: translate3d(10px, -40px, 0); } 25% { transform: translate3d(15px, -80px, 0); } 37.5% { transform: translate3d(10px, -120px, 0); } 50% { transform: translate3d(0px, -160px, 0); } 62.5% { transform: translate3d(-10px, -200px, 0); } 75% { transform: translate3d(-15px, -240px, 0); } 87.5% { transform: translate3d(-10px, -280px, 0); } 100% { transform: translate3d(0px, -320px, 0); } }
+@keyframes bubble-3 { 0% { transform: translate3d(0px, -0px, 0); } 12.5% { transform: translate3d(15px, -55px, 0); } 25% { transform: translate3d(22px, -110px, 0); } 37.5% { transform: translate3d(15px, -165px, 0); } 50% { transform: translate3d(0px, -220px, 0); } 62.5% { transform: translate3d(-15px, -275px, 0); } 75% { transform: translate3d(-22px, -330px, 0); } 87.5% { transform: translate3d(-15px, -385px, 0); } 100% { transform: translate3d(0px, -440px, 0); } }
+:root[data-theme="white"] #snow { display: none; }  /* 白色主題：不放任何飄落動畫 */
+@media (prefers-reduced-motion: reduce) { #snow i { animation: none !important; will-change: auto; } }  /* 系統開了「減少動態效果」：雪、花瓣、楓葉、雨、泡泡都不動 */
 
 /* 主題選擇：標題下面一排四個小按鈕，每個前面一顆該主題底色的小圓點 */
 .theme-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 22px; }
@@ -123,8 +165,16 @@
 }
 .tp-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .tp-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-/* 中英切換：在主題按鈕那一排的最右邊 */
-.lang-btn { margin-left: auto; font: inherit; font-size: .85rem; font-weight: 700; padding: 6px 14px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+/* 特效開關和中英切換：固定在標題右上角（八個主題按鈕自己一排） */
+.hero { position: relative; }
+.hero-tools { position: absolute; top: 4px; right: 0; display: inline-flex; gap: 6px; }
+.fx-btn { font: inherit; font-size: .85rem; font-weight: 700; padding: 6px 12px; white-space: nowrap; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+.fx-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.fx-btn:hover:not(:disabled) { border-color: var(--accent); }
+.fx-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.fx-btn:disabled { color: var(--muted); border-color: var(--line); opacity: .6; cursor: default; }  /* 白色主題沒有特效 */
+:root[data-fx-off] #snow i { display: none; }  /* 特效關掉：飄落的圖層整個不畫（藏青的深藍底色保留） */
+.lang-btn { font: inherit; font-size: .85rem; font-weight: 700; padding: 6px 14px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
 .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
 /* 英文版「賽前預測比分」那句很長：標題自己一行，比分寫在下面 */
 html[lang="en"] .ps-lbl, html[lang="en"] .h2h-rec { display: block; }  /* 交手紀錄標題的「幾勝幾敗」也換到下一行 */
@@ -133,9 +183,7 @@ html[lang="en"] .gm-name { overflow-wrap: break-word; }
 @media (max-width: 480px) { html[lang="en"] .gm-name { font-size: .72rem; letter-spacing: -.01em; } html[lang="en"] .game { --gm-mid: 8.4rem; } html[lang="en"] .gm-row { grid-template-columns: minmax(0, 1fr) 8.4rem minmax(0, 1fr); } }  /* 中間欄縮窄一點，隊名欄才放得下 Mavericks */
 .lang-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .tp-dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(128, 128, 128, .55); }
-@media (max-width: 719px) {  /* 手機和窄視窗：八個按鈕要擠在同一排，圓點改放在字的上面（按鈕變窄），中英切換移到標題右上角 */
-  .hero { position: relative; }
-  .lang-btn { position: absolute; top: 4px; right: 0; margin: 0; }
+@media (max-width: 719px) {  /* 手機和窄視窗：八個按鈕要擠在同一排，圓點改放在字的上面（按鈕變窄） */
   .theme-pick { gap: 4px; }
   .theme-pick .tp-label { margin-right: 0; font-size: .8rem; }
   .tp-btn { flex-direction: column; gap: 3px; font-size: .78rem; line-height: 1.1; padding: 6px 8px 5px; border-radius: 16px; }
@@ -155,7 +203,7 @@ html[lang="en"] .gm-name { overflow-wrap: break-word; }
 .tp-btn[data-t="blue"] .tp-dot { background: #cfe3f5; }
 .tp-btn[data-t="dark"] .tp-dot { background: #181c25; }
 .tp-btn[data-t="black"] .tp-dot { background: #06080b; }
-.tp-btn[data-t="winter"] .tp-dot { background: radial-gradient(circle, #ffffff 0 28%, #12355c 34%); }  /* 深藍夜裡一顆雪 */
+.tp-btn[data-t="winter"] .tp-dot { background: #1b3a63; }  /* 藏青 */
 
 * { box-sizing: border-box; }
 
@@ -255,7 +303,7 @@ select:focus-visible, .swap:focus-visible {
   display: block;
   padding: 18px 16px;
   color: inherit; text-decoration: none;
-  background: linear-gradient(160deg, var(--surface), var(--bg));
+  background: linear-gradient(160deg, rgba(var(--surface-rgb), .82), rgba(var(--bg-rgb), .82));
   border: 1px solid var(--line);
   border-radius: 18px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
@@ -264,7 +312,7 @@ select:focus-visible, .swap:focus-visible {
 a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); transform: translateY(-2px); outline: none; }
 .home-main {
   padding: 22px 20px 20px;
-  background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+  background: linear-gradient(135deg, rgba(var(--soft-rgb), .82), rgba(var(--surface-rgb), .82));
   border-color: var(--accent);
   box-shadow: 0 8px 24px rgba(var(--glow-rgb, 232, 89, 12), .18);  /* 光暈顏色跟著主題的重點色走 */
 }
@@ -280,11 +328,11 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 }
 /* 黑白灰三個主題（白色、深色、黑色）：賽程大卡片跟下面其他卡片一樣，不要特別亮的邊框和光暈，按鈕也只留一點點陰影 */
 :root[data-theme="white"] .home-main, :root[data-theme="dark"] .home-main, :root[data-theme="black"] .home-main {
-  background: linear-gradient(160deg, var(--surface), var(--bg)); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+  background: linear-gradient(160deg, rgba(var(--surface-rgb), .82), rgba(var(--bg-rgb), .82)); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
 }
 :root[data-theme="white"] .home-result, :root[data-theme="dark"] .home-result, :root[data-theme="black"] .home-result { box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
 @media (prefers-color-scheme: dark) {  /* 沒選過主題、系統是深色 = 黑色主題，同樣處理 */
-  :root:not([data-theme]) .home-main { background: linear-gradient(160deg, var(--surface), var(--bg)); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
+  :root:not([data-theme]) .home-main { background: linear-gradient(160deg, rgba(var(--surface-rgb), .82), rgba(var(--bg-rgb), .82)); border-color: var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
   :root:not([data-theme]) .home-result { box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
 }
 @media (max-width: 420px) { .home-btns { top: 20px; right: 14px; gap: 6px; } .home-result { padding: 6px 10px; font-size: .78rem; } }  /* 手機：兩顆按鈕縮小，才不會貼到左邊的「賽程」 */
@@ -514,7 +562,7 @@ body[data-view="stats"] .foot-warn, body[data-view="matchup"] .foot-warn { displ
   display: block;
   padding: 14px 14px 12px;
   color: inherit; text-decoration: none;
-  background: var(--surface);
+  background: rgba(var(--surface-rgb), .82);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -617,7 +665,7 @@ a.game:hover { border-color: var(--accent); }
 /* 結果 */
 .result { margin-top: 16px; }
 .card {
-  background: var(--surface);
+  background: rgba(var(--surface-rgb), .82);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 16px;
