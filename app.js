@@ -410,6 +410,11 @@
   // 所以展開與否記在 foldOpen（卡片代號 -> 是否展開），重畫時照記的狀態開著；換一場比賽（render）就全部收回去
   var foldOpen = {};
   var FOLD_DEFAULT_OPEN = {};  // 預設就展開的卡片（用 foldHtml 畫的；render 依已完賽 / 還沒開賽設定）；其他一律預設收起
+  // 前面有 emoji 的標題：emoji 另外算（掛在文字左邊、不佔寬度），文字才會正中、每張卡片上下對得齊
+  function iconTitle(ico, text) {
+    return '<span class="t-mid"><span class="t-ico" aria-hidden="true">' + ico + '</span><span class="t-txt">' + text + "</span></span>";
+  }
+
   function foldHtml(id, title, inner) {
     var open = id in foldOpen ? foldOpen[id] : !!FOLD_DEFAULT_OPEN[id];
     return '<details class="ot-details fold" data-fold="' + id + '"' + (open ? " open" : "") + "><summary>" + title + "</summary>" + inner + "</details>";
@@ -1185,7 +1190,7 @@
   function renderInjuries(aKey, hKey, a, h, aColor, hColor) {
     var card = $("inj-card");
     var token = ++injToken;
-    var fold = function (inner) { return foldHtml("inj", "🚑 傷病名單", '<p class="inj-warn">11/8 開始有納入傷病</p>' + inner); };
+    var fold = function (inner) { return foldHtml("inj", iconTitle("🚑", "傷病名單"), '<p class="inj-warn">11/8 開始有納入傷病</p>' + inner); };
     card.innerHTML = fold('<p class="odds-msg">載入中…</p>');
     card.hidden = false;
     fetchInjuries().then(function (res) {
@@ -1695,7 +1700,7 @@
   var COMMENT_SHOW = 50;      // 每場最多顯示最新的幾則
   var BOARD_SHOW = 3;         // 首頁交流區直接顯示幾則，其餘收進下拉選單
   var COMMENT_GAP = 15000;    // 同一支瀏覽器兩則留言至少隔幾毫秒（擋連續洗版；只是前端的基本防護）
-  var cmt = { key: null, state: "loading", list: [], card: "comment-card", title: "💬 留言" };  // 目前畫面上那張留言卡的內容（比賽頁的留言卡或首頁的交流區，同一時間只會看到其中一張）：state = loading / ok / err
+  var cmt = { key: null, state: "loading", list: [], card: "comment-card", title: "留言" };  // 目前畫面上那張留言卡的內容（比賽頁的留言卡或首頁的交流區，同一時間只會看到其中一張）：state = loading / ok / err
   var BOARD_KEY = "0000-00-00_BBS_ALL";  // 首頁交流區用的固定編號：長得像「日期_客隊_主隊」，這樣 Firebase 規則（firebase_rules.json）不用改就能存
 
   function commentKey(g) { return g.d + "_" + g.a + "_" + g.h; }  // 台灣日期_客隊縮寫_主隊縮寫，例如 2026-11-10_LAL_ATL
@@ -1715,20 +1720,19 @@
     var isEn = window.NBA_LANG === "en", t = (isEn && x.en) || x;
     var L = isEn ? ["Pick", "Result", "Why", "Counterpoint"] : ["選擇", "結果", "原因", "反向"];
     var html = '<div class="an" translate="no">' +
-      '<div class="an-pick"><div class="an-main"><span class="an-label">' + L[0] + '</span><div class="an-line"><b class="an-pick-text">' + esc(t.pick) + "</b>" +
-      (x.odds ? '<span class="an-odds">(' + esc(x.odds) + ")</span>" : "") +
-      '</div></div><div class="an-res"><span class="an-label">' + L[1] + '</span><span class="an-res-mark">' + esc(x.result || "—") + "</span></div></div>" +
+      '<div class="an-pick"><div class="an-main"><span class="an-label">' + L[0] + '</span><b class="an-pick-text">' + esc(t.pick) + "</b></div>" +
+      '<div class="an-res"><span class="an-label">' + L[1] + '</span><span class="an-res-mark">' + esc(x.result || "—") + "</span></div></div>" +
       '<div class="an-h">' + L[2] + '</div><ol class="an-reasons">' + t.reasons.map(function (r) { return "<li><b>" + esc(r[0]) + "</b>" + esc(r[1]) + "</li>"; }).join("") + "</ol>" +
       (t.counter ? '<div class="an-counter"><b>' + L[3] + "</b>" + esc(t.counter) + "</div>" : "") +
       "</div>";
-    card.innerHTML = foldHtml("analysis", "📝 賽前分析", html);
+    card.innerHTML = foldHtml("analysis", iconTitle("📝", "賽前分析"), html);
     card.hidden = false;
   }
 
   function showComments(g) {
     var card = $("comment-card");
     if (!COMMENT_DB || !g || !g.a || !g.d || !g.h) { card.hidden = true; if (cmt.card === "comment-card") cmt.key = null; return; }
-    openComments("comment-card", commentKey(g), "comment", "💬 留言");
+    openComments("comment-card", commentKey(g), "comment", "留言");
   }
 
   // 首頁交流區：不屬於哪一場比賽、大家都能留言的一串（用固定編號 BOARD_KEY）。重畫首頁時如果已經在畫面上就只更新列表，不會洗掉打到一半的字
@@ -1736,13 +1740,13 @@
     var card = $("talk-card");
     if (!COMMENT_DB) { card.hidden = true; return; }
     if (cmt.key === BOARD_KEY && cmt.card === "talk-card" && card.querySelector(".cm-form")) { loadComments(BOARD_KEY); return; }
-    openComments("talk-card", BOARD_KEY, "board", "💬 意見交流區");
+    openComments("talk-card", BOARD_KEY, "board", "意見交流區");
   }
 
   function openComments(cardId, key, foldId, title) {
     var card = $(cardId);
     cmt = { key: key, state: "loading", list: [], card: cardId, title: title };
-    card.innerHTML = foldHtml(foldId, title,
+    card.innerHTML = foldHtml(foldId, iconTitle("💬", title),
       '<form class="cm-form" autocomplete="off"><textarea class="cm-input" aria-label="留言內容" maxlength="' + COMMENT_MAX + '" rows="3" placeholder="說點什麼吧（匿名，最多 ' + COMMENT_MAX + ' 字）"></textarea>' +
       '<div class="cm-bar"><span class="cm-count">0 / ' + COMMENT_MAX + '</span><button type="submit" class="cm-send">送出</button></div></form>' +
       '<p class="cm-msg" role="alert" hidden></p><ul class="cm-list"></ul>');
@@ -1759,7 +1763,7 @@
   }
 
   function drawComments() {  // 只更新標題的則數和列表；留言一律用 textContent 放進畫面（不會被當成 HTML 執行）
-    var card = $(cmt.card), ul = card.querySelector(".cm-list"), sum = card.querySelector("summary");
+    var card = $(cmt.card), ul = card.querySelector(".cm-list"), sum = card.querySelector("summary .t-txt");
     if (!ul || !sum) return;
     sum.textContent = cmt.title + (cmt.state === "ok" && cmt.list.length ? "（" + cmt.list.length + (cmt.list.length >= COMMENT_SHOW ? "+" : "") + "）" : "");
     var oldOpen = ul.querySelector(".cm-older"), olderOpen = !!(oldOpen && oldOpen.open);  // 重畫列表時，已經點開的「更早的留言」維持打開
@@ -2097,7 +2101,7 @@
       }).join("") + "</tbody></table></div>";
 
     var up = upsetRecord();
-    html += '<div class="card acc-big"><div class="acc-label">🚨 有機會倒打勝率</div>' +
+    html += '<div class="card acc-big"><div class="acc-label">' + iconTitle("🚨", "有機會倒打勝率") + "</div>" +
       '<div class="acc-num">' + up.win + " / " + up.n + "<small>" + pct(up.win, up.n) + "</small></div>" +
       '<p class="acc-note">三季回測 ' + pct(UPSET.win, UPSET.n) + "（" + UPSET.win + " / " + UPSET.n + "）<br>定規則時看過這三季（樣本內）<br>定案後（台灣 " + md(UPSET.oos) + " 起）" +
       up.oosWin + " / " + up.oosN + "<br>受讓隊直接贏球才算</p></div>";

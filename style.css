@@ -381,6 +381,10 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 @media (max-width: 560px) { html[lang="en"] .home-btns { position: static; justify-content: flex-end; margin: 0 0 10px; } }
 .home-result:hover, .home-result:focus-visible { transform: translateY(-1px); outline: 3px solid var(--accent); outline-offset: 2px; }
 .home-link { display: block; color: inherit; text-decoration: none; }
+/* 前面有 emoji 的標題（app.js 的 iconTitle、首頁的卡片）：文字在正中間，emoji 掛在左邊另外算 */
+.t-mid { position: relative; display: inline-block; }
+.t-ico { position: absolute; right: 100%; margin-right: .35em; white-space: nowrap; }
+.home-main .t-ico { position: static; }  /* 最上面的賽程大卡是靠左排版，emoji 留在字的前面（掛出去會超出卡片） */
 .home-title { display: block; font-size: 1.1rem; font-weight: 800; }
 .home-main .home-title { font-size: 1.8rem; font-weight: 900; }
 .home-desc { display: block; margin-top: 6px; color: var(--muted); font-size: .88rem; }
@@ -418,6 +422,7 @@ a.home-card:hover, a.home-card:focus-visible { border-color: var(--accent); tran
 .cm-list .cm-older-li { padding: 0; }
 .cm-older > summary { cursor: pointer; list-style: none; padding: 10px 0; text-align: center; color: var(--accent); font-weight: 700; font-size: .85rem; }
 .cm-older > summary::-webkit-details-marker { display: none; }
+.cm-older > summary::before { content: "▾ "; visibility: hidden; }  /* 左邊放看不見的箭頭，文字才會正中 */
 .cm-older > summary::after { content: " ▾"; }
 .cm-older[open] > summary::after { content: " ▴"; }
 .cm-older > ul { list-style: none; margin: 0; padding: 0; }
@@ -544,6 +549,7 @@ body[data-view="stats"] .foot-warn, body[data-view="matchup"] .foot-warn { displ
   cursor: pointer; list-style: none; font-size: 1.05rem; font-weight: 700;
 }
 .acc-details summary::-webkit-details-marker { display: none; }
+.acc-details summary::before { content: "▾"; visibility: hidden; }  /* 左邊放看不見的箭頭，文字才會正中 */
 .acc-details summary::after { content: "▾"; color: var(--accent); transition: transform .15s; }
 .acc-details[open] summary::after { transform: rotate(180deg); }
 .acc-details summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
@@ -828,7 +834,7 @@ td:first-child, th:first-child { text-align: left; }
 .fold[open] > summary { margin-bottom: 12px; }  /* 折疊卡片：展開後標題和內容之間留空 */
 .ot-details > summary::-webkit-details-marker { display: none; }
 .ot-details > summary::after { content: " ▾"; color: var(--muted); }
-.ot-details > summary::before { content: " ▾"; visibility: hidden; }  /* 左邊放一個看不見、跟右邊箭頭一樣寬的字，標題文字才會真的置中（箭頭不會把字推向左） */
+.ot-details > summary::before { content: "▾ "; visibility: hidden; }  /* 左邊放一個看不見、跟右邊箭頭一樣寬的字，標題文字才會真的置中（箭頭不會把字推向左） */
 .ot-details[open] > summary::after { content: " ▴"; }
 .ot-g { margin-top: 12px; font-variant-numeric: tabular-nums; }  /* 開盤 / 收盤：三欄（隊 | 開盤 | 收盤），每個盤口一小節，數字固定寬度、上下對齊 */
 .ot-h, .ot-r { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; column-gap: 8px; }  /* 三等分：隊名 | 初始 | 最終；中間那欄（初始）剛好在卡片正中間，和上面「賭盤變化」標題對齊 */
@@ -901,9 +907,7 @@ td:first-child, th:first-child { text-align: left; }
 .an-pick { display: flex; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-soft); }
 .an-main { flex: 1; min-width: 0; padding: 10px 14px; }
 .an-label { display: block; font-size: .75rem; font-weight: 700; color: var(--accent); }
-.an-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
-.an-pick-text { font-size: 1.35rem; font-weight: 900; }
-.an-odds { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+.an-pick-text { display: block; font-size: 1.35rem; font-weight: 900; }
 .an-res { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 68px; padding: 10px 12px; border-left: 1px dashed var(--accent); white-space: nowrap; }
 .an-res-mark { font-size: 1.35rem; }
 .an-h { margin: 16px 0 8px; font-weight: 800; }

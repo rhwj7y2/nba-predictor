@@ -1,7 +1,7 @@
 // 我的賽前分析（手寫紀錄，從 Notion 複製；網站不會自動同步，Notion 改了要重新複製）。
 // 比賽頁在「留言」上面多一張「📝 賽前分析」卡片（預設收起），只有這裡有寫到的場次才出現。
 // days["台灣日期"] = { games: { "客隊@主隊"（網站用的縮寫）: 那一場 } }
-// 每場：result = 結果（還沒開獎留空）、pick = 選擇、odds = 賠率、reasons = [[粗體小標, 內文], ...]、counter = 反向
+// 每場：result = 結果（還沒開獎留空）、pick = 選擇、odds = 賠率（只留紀錄，網站不顯示）、reasons = [[粗體小標, 內文], ...]、counter = 反向
 // en = 英文版的 pick / reasons / counter（網站切到 EN 時顯示；沒寫 en 的場次，英文版會顯示中文原文）
 window.NBA_ANALYSIS = {
   days: {
