@@ -109,7 +109,8 @@
   color-scheme: dark;
 }
 :root[data-theme="winter"] .home-main { border-color: var(--accent2); }
-/* 下雪背景（所有主題都有；theme.js 只放三個空圖層）：固定鋪滿畫面、在內容後面、不擋點擊。雪的顏色是各主題的 --snow-rgb；
+/* 特效一律會動，不看系統的「減少動態效果」設定（2026-11-29 決定）；不想看的人按標題右上角的特效開關。
+   下雪背景（所有主題都有；theme.js 只放空元素）：固定鋪滿畫面、在內容後面、不擋點擊。雪的顏色是各主題的 --snow-rgb；
    卡片幾乎不透明（透明度在下面的 --card-alpha，1 = 完全不透明），特效主要從卡片之間的空隙看到，卡片裡只透出很淡一點。
    電腦版每層是一塊重複拼貼的雪花，整層用 transform 往下移一塊的高度再接回原位；transform 動畫交給繪圖晶片跑，不逐格重畫，手機才順 */
 #snow { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 0; }
@@ -153,7 +154,6 @@
 @keyframes bubble-2 { 0% { transform: translate3d(0px, -0px, 0); } 12.5% { transform: translate3d(10px, -40px, 0); } 25% { transform: translate3d(15px, -80px, 0); } 37.5% { transform: translate3d(10px, -120px, 0); } 50% { transform: translate3d(0px, -160px, 0); } 62.5% { transform: translate3d(-10px, -200px, 0); } 75% { transform: translate3d(-15px, -240px, 0); } 87.5% { transform: translate3d(-10px, -280px, 0); } 100% { transform: translate3d(0px, -320px, 0); } }
 @keyframes bubble-3 { 0% { transform: translate3d(0px, -0px, 0); } 12.5% { transform: translate3d(15px, -55px, 0); } 25% { transform: translate3d(22px, -110px, 0); } 37.5% { transform: translate3d(15px, -165px, 0); } 50% { transform: translate3d(0px, -220px, 0); } 62.5% { transform: translate3d(-15px, -275px, 0); } 75% { transform: translate3d(-22px, -330px, 0); } 87.5% { transform: translate3d(-15px, -385px, 0); } 100% { transform: translate3d(0px, -440px, 0); } }
 :root[data-theme="white"] #snow { display: none; }  /* 白色主題：不放任何飄落動畫 */
-@media (prefers-reduced-motion: reduce) { #snow i { animation: none !important; will-change: auto; } }  /* 系統開了「減少動態效果」：雪、花瓣、楓葉、雨、泡泡都不動 */
 /* 手機（窄畫面或觸控螢幕）：不用上面三張滿版圖層——每一格都要把三張「比整個螢幕還大」的半透明圖層疊起來，手機容易卡。
    改成幾十顆小圖案各自飄（theme.js 放的 <b>，分 s1 遠 / s2 中 / s3 近），要疊的面積少非常多；--x = 水平位置、--p = 起跑進度、--r = 花瓣和楓葉的角度 */
 #snow b { display: none; }
@@ -193,7 +193,6 @@
 @keyframes lite-drift-wide { 0% { transform: translate3d(0px, 0vh, 0); } 6.25% { transform: translate3d(23px, 6.75vh, 0); } 12.5% { transform: translate3d(32px, 13.5vh, 0); } 18.75% { transform: translate3d(23px, 20.25vh, 0); } 25% { transform: translate3d(0px, 27vh, 0); } 31.25% { transform: translate3d(-23px, 33.75vh, 0); } 37.5% { transform: translate3d(-32px, 40.5vh, 0); } 43.75% { transform: translate3d(-23px, 47.25vh, 0); } 50% { transform: translate3d(0px, 54vh, 0); } 56.25% { transform: translate3d(23px, 60.75vh, 0); } 62.5% { transform: translate3d(32px, 67.5vh, 0); } 68.75% { transform: translate3d(23px, 74.25vh, 0); } 75% { transform: translate3d(0px, 81vh, 0); } 81.25% { transform: translate3d(-23px, 87.75vh, 0); } 87.5% { transform: translate3d(-32px, 94.5vh, 0); } 93.75% { transform: translate3d(-23px, 101.25vh, 0); } 100% { transform: translate3d(0px, 108vh, 0); } }
 @keyframes lite-rise { 0% { transform: translate3d(0px, -0vh, 0); } 6.25% { transform: translate3d(10px, -6.75vh, 0); } 12.5% { transform: translate3d(14px, -13.5vh, 0); } 18.75% { transform: translate3d(10px, -20.25vh, 0); } 25% { transform: translate3d(0px, -27vh, 0); } 31.25% { transform: translate3d(-10px, -33.75vh, 0); } 37.5% { transform: translate3d(-14px, -40.5vh, 0); } 43.75% { transform: translate3d(-10px, -47.25vh, 0); } 50% { transform: translate3d(0px, -54vh, 0); } 56.25% { transform: translate3d(10px, -60.75vh, 0); } 62.5% { transform: translate3d(14px, -67.5vh, 0); } 68.75% { transform: translate3d(10px, -74.25vh, 0); } 75% { transform: translate3d(0px, -81vh, 0); } 81.25% { transform: translate3d(-10px, -87.75vh, 0); } 87.5% { transform: translate3d(-14px, -94.5vh, 0); } 93.75% { transform: translate3d(-10px, -101.25vh, 0); } 100% { transform: translate3d(0px, -108vh, 0); } }
 @keyframes lite-rain { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-17vh, 108vh, 0); } }
-@media (prefers-reduced-motion: reduce) { #snow b { animation: none !important; will-change: auto; top: calc(var(--p) * 100%) !important; bottom: auto !important; } }  /* 減少動態效果：手機的小圖案停在畫面各處 */
 
 /* 主題選擇：標題下面一排四個小按鈕，每個前面一顆該主題底色的小圓點 */
 .theme-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 22px; }
