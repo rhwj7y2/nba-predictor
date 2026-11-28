@@ -470,6 +470,7 @@
     $("neutral-note").hidden = !neutral;
     $("odds-card").hidden = true;  // 盤口等這次預測算完、確定有這場比賽才會再打開
     $("comment-card").hidden = true;  // 留言卡片也一樣，算完才打開
+    $("analysis-card").hidden = true;  // 賽前分析也一樣
     $("inj-card").hidden = true;   // 傷病名單也一樣
     $("players-card").hidden = true;  // 得分前三球員也一樣
     $("recent-card").hidden = true;   // 最近五場戰績也一樣
@@ -611,7 +612,9 @@
     }).join("");
 
     result.hidden = false;
-    showComments(finalGame || (dayIdx >= 0 ? dayList[dayIdx] : null));  // 從賽程點進來的比賽（含已完賽）才有留言
+    var shownGame = finalGame || (dayIdx >= 0 ? dayList[dayIdx] : null);
+    showAnalysis(shownGame);  // 我的賽前分析（有寫到這場才出現，在留言上面）
+    showComments(shownGame);  // 從賽程點進來的比賽（含已完賽）才有留言
     if (!pregame) renderPlayers(aKey, hKey, a, h, aColor, hColor);   // 得分前三球員（本季場均）
     if (!pregame) renderRecent(a, h, aColor, hColor);                // 最近五場戰績（兩隊各一頁，選 A / B 隊；已完賽的固定頁面不顯示）
     else renderGameTop(a, h, aColor, hColor, finalGame);              // 已完賽的固定頁面：改顯示本場得分前三球員
@@ -1703,6 +1706,25 @@
   }
 
   // 一張留言卡片：標題 + 輸入框 + 留言列表。輸入框只建一次，之後只更新列表，不會因為讀到新留言就把你打到一半的字洗掉
+  // 賽前分析卡片：內容在 analysis.js（我的手寫紀錄），依「台灣日期」和「客隊@主隊」找這一場
+  // 英文版用那一場的 en（沒寫 en 就顯示中文原文）；translate="no" = 不讓 i18n.js 再翻一次
+  function showAnalysis(g) {
+    var card = $("analysis-card"), data = window.NBA_ANALYSIS;
+    var day = g && data && data.days[g.d], x = day && day.games[g.a + "@" + g.h];
+    if (!x) { card.hidden = true; return; }
+    var isEn = window.NBA_LANG === "en", t = (isEn && x.en) || x;
+    var L = isEn ? ["Pick", "Result", "Why", "Counterpoint"] : ["選擇", "結果", "原因", "反向"];
+    var html = '<div class="an" translate="no">' +
+      '<div class="an-pick"><div class="an-main"><span class="an-label">' + L[0] + '</span><div class="an-line"><b class="an-pick-text">' + esc(t.pick) + "</b>" +
+      (x.odds ? '<span class="an-odds">(' + esc(x.odds) + ")</span>" : "") +
+      '</div></div><div class="an-res"><span class="an-label">' + L[1] + '</span><span class="an-res-mark">' + esc(x.result || "—") + "</span></div></div>" +
+      '<div class="an-h">' + L[2] + '</div><ol class="an-reasons">' + t.reasons.map(function (r) { return "<li><b>" + esc(r[0]) + "</b>" + esc(r[1]) + "</li>"; }).join("") + "</ol>" +
+      (t.counter ? '<div class="an-counter"><b>' + L[3] + "</b>" + esc(t.counter) + "</div>" : "") +
+      "</div>";
+    card.innerHTML = foldHtml("analysis", "📝 賽前分析", html);
+    card.hidden = false;
+  }
+
   function showComments(g) {
     var card = $("comment-card");
     if (!COMMENT_DB || !g || !g.a || !g.d || !g.h) { card.hidden = true; if (cmt.card === "comment-card") cmt.key = null; return; }

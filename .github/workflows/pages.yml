@@ -35,7 +35,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir _site
-          cp index.html style.css theme.js i18n.js app.js _site/
+          cp index.html style.css theme.js i18n.js app.js analysis.js _site/
           cp -r data _site/
           python3 -c "import os, re, sys; h = open('_site/index.html', encoding='utf-8').read(); miss = [u for u in re.findall(r'(?:src|href)=\"([^\"#:]+)\"', h) if not os.path.exists(os.path.join('_site', u))]; sys.exit('網站少了檔案：%s' % miss if miss else 0)"
 

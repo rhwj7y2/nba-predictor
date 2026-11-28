@@ -48,6 +48,7 @@
     "留言內容": "Comment text",
     "比近 10 場變好": "Better than last 10 games",
     "NBA 盃戰績": "NBA Cup record",
+    "📝 賽前分析": "📝 My pre-game notes",
     "特效 開": "FX on",
     "特效 關": "FX off",
     "無特效": "No FX",
